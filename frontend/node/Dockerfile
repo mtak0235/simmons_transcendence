@@ -17,7 +17,7 @@ COPY ./app/ .
 RUN yarn
 #RUN npm install react react-dom
 #RUN npm install -g create-react-app
-#RUN npm install -g react-scripts
+RUN npm install -g react-scripts
 # Bundle app source
 #COPY --chown=node:node ../app .
 
