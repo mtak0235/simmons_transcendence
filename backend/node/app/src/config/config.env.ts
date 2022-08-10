@@ -5,9 +5,11 @@ export default () => ({
     secret: process.env.FT_API_SECRET,
     redirectUri: process.env.FT_API_REDIRECT,
   },
-  emailConfig: {
-    id: process.env.EMAIL_ID,
-    password: process.env.EMAIL_PASSWORD,
+  smtpConfig: {
+    user: process.env.SMTP_USER,
+    uid: process.env.SMTP_UID,
+    secret: process.env.SMTP_SECRET,
+    token: process.env.SMTP_TOKEN,
   },
   authConfig: {
     jwt: process.env.JWT_SECRET,

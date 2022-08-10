@@ -3,12 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class EmailStrategy extends PassportStrategy(Strategy, 'email') {
   constructor(private readonly configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromHeader('code'),
       ignoreExpiration: false,
       secretOrKey: configService.get('authConfig.jwt'),
       passReqToCallback: true,
@@ -16,9 +17,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(req: Request, payload: any) {
-    const url = /auth\/email-verify*/;
+    const code: any = req.query.code;
+    const hash: string = payload.code;
 
-    if (!url.test(req.url) && !payload.twoFactor)
+    if (!code || !(await bcrypt.compare(code, hash)))
       throw new UnauthorizedException();
 
     return payload;
