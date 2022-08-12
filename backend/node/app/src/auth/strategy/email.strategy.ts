@@ -23,9 +23,10 @@ export class EmailStrategy extends PassportStrategy(Strategy, 'email') {
   async validate(req: Request, payload: any) {
     const code: any = req.query.code;
     const hash: string = payload.code;
-    const userId = (
-      await this.encryptionService.decrypt(payload.id)
-    ).toString();
+    const userId = parseInt(
+      (await this.encryptionService.decrypt(payload.id)).toString(),
+      10,
+    );
 
     if (!code || !(await this.encryptionService.compare(code, hash)))
       throw new UnauthorizedException();

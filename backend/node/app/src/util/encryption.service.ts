@@ -18,7 +18,7 @@ export class EncryptionService {
     ).then();
   }
 
-  async encrypt(text: string) {
+  async encrypt(text: string): Promise<Buffer> {
     const cipher = createCipheriv(
       'aes-256-ctr',
       await this.secretKey,
@@ -28,14 +28,15 @@ export class EncryptionService {
     return Buffer.concat([cipher.update(text), cipher.final()]);
   }
 
-  async decrypt(text: Buffer) {
+  async decrypt(text: any): Promise<Buffer> {
+    const encryptedText = Buffer.from(text);
     const decipher = createDecipheriv(
       'aes-256-ctr',
       await this.secretKey,
       this.byte,
     );
 
-    return Buffer.concat([decipher.update(text), decipher.final()]);
+    return Buffer.concat([decipher.update(encryptedText), decipher.final()]);
   }
 
   /*

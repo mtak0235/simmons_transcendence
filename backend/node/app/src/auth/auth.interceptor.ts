@@ -24,7 +24,7 @@ export class TokenInterceptor implements NestInterceptor {
   ): Promise<Observable<any>> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
-    const userId = parseInt(req.user['id'], 10);
+    const userId: number = req.user['id'];
 
     if (req.user['requireTwoFactor'] === true) {
       res.cookie('code', await this.authService.generateMailCode(userId));
@@ -33,7 +33,6 @@ export class TokenInterceptor implements NestInterceptor {
         await this.authService.generateToken(userId);
       res.cookie('access_token', accessToken);
       res.cookie('refresh_token', refreshToken);
-      console.log(userId, typeof userId, typeof String(userId));
       await this.redisService.set(userId.toString(), refreshToken);
     }
 
