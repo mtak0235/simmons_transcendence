@@ -7,7 +7,7 @@ import { AppModule } from '@src/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = process.env.PORT || 5000;
+  const port = process.env.PORT || 3001;
 
   passport.serializeUser((user, done) => {
     if (user) done(null, user);
@@ -18,6 +18,7 @@ async function bootstrap() {
     else done('error', false);
   });
 
+  app.enableCors({ origin: '*', credentials: true });
   app.use(
     session({
       secret: 'simmons_transcendence',

@@ -10,6 +10,7 @@ import { FtStrategy } from '@auth/strategy/ft.strategy';
 import { UserModule } from '@user/user.module';
 import { JwtStrategy } from '@auth/strategy/jwt.strategy';
 import { EmailStrategy } from '@auth/strategy/email.strategy';
+import { TokenInterceptor } from '@auth/auth.interceptor';
 
 @Module({
   imports: [
@@ -44,7 +45,13 @@ import { EmailStrategy } from '@auth/strategy/email.strategy';
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, FtStrategy, JwtStrategy, EmailStrategy],
+  providers: [
+    AuthService,
+    FtStrategy,
+    JwtStrategy,
+    EmailStrategy,
+    TokenInterceptor,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

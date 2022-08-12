@@ -4,6 +4,7 @@ import { Strategy } from 'passport-42';
 import { ConfigService } from '@nestjs/config';
 
 import { AuthService } from '@auth/auth.service';
+import { UserType } from '@user/user.service';
 
 @Injectable()
 export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
@@ -19,9 +20,13 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
   }
 
   async validate(accessToken: string, refreshToken: string, profile: any) {
-    const user = await this.authService.validateUser(profile['username']);
+    const user: UserType = await this.authService.validateUser(
+      profile['username'],
+    );
 
     if (!user) throw new ForbiddenException();
+    if (user.twoFactor) user['requireTwoFactor'] = true;
+    console.log(user);
 
     return user;
   }

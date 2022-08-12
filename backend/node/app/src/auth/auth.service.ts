@@ -4,13 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 
 import { UserService, UserType } from '@user/user.service';
-
-import * as bcrypt from 'bcrypt'; // todo: delete: bcrypt 모듈 만들거임
+import { EncryptionService } from '@util/encryption.service';
 
 interface TokenType {
   accessToken: string;
   refreshToken: string;
-  codeToken?: string;
 }
 
 @Injectable()
@@ -20,6 +18,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   // todo: 추후 db 조회로 변경될 예정이라 Promise 반환
@@ -29,28 +28,24 @@ export class AuthService {
     return user;
   }
 
-  async generateToken(
-    id: number,
-    twoFactor: boolean,
-    isCode = false,
-  ): Promise<TokenType> {
-    const payload = {
-      id: id,
-      twoFactor: twoFactor,
-    };
-    const result: TokenType = {
-      accessToken: this.jwtService.sign(payload),
+  async generateToken(id: number): Promise<TokenType> {
+    const encryptId = await this.encryptionService.encrypt(String(id));
+
+    return {
+      accessToken: this.jwtService.sign({ id: encryptId }),
       refreshToken: this.jwtService.sign({}, { expiresIn: '30d' }),
     };
+  }
 
-    if (isCode) {
-      const code = await this.sendMail(id);
-      result.codeToken = this.jwtService.sign({
-        code: await bcrypt.hash(code, 10),
-      });
-    }
+  async generateMailCode(id: number): Promise<string> {
+    const code = await this.sendMail(id);
+    const encryptId = await this.encryptionService.encrypt(String(id));
+    const payload = {
+      id: encryptId,
+      code: await this.encryptionService.hash(code),
+    };
 
-    return result;
+    return this.jwtService.sign(payload);
   }
 
   async sendMail(id: number): Promise<string> {
@@ -62,7 +57,7 @@ export class AuthService {
         to: user.email,
         from: this.configService.get('smtpConfig.user'),
         subject: '이메일 인증 요청 메일입니다.',
-        html: `<h3>이메일 인증은 5분 이내에 진행해 주세요.</h3>6자리 인증 코드 : <b> ${number}</b>`,
+        html: `<h3>이메일 인증은 5분 내에 진행해 주세요.</h3>6자리 인증 코드 : <b> ${number}</b>`,
       });
 
       return String(number);
