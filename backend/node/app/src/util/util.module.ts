@@ -8,17 +8,8 @@ import { EncryptionService } from '@util/encryption.service';
 @Global()
 @Module({
   imports: [
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get('redisConfig.host'),
-        port: configService.get('redisConfig.port'),
-      }),
-    }),
     ConfigModule.forRoot({
-      // isGlobal: true,
+      isGlobal: true,
       envFilePath:
         process.env.NODE_ENV === 'development'
           ? '.env.dev'
@@ -27,6 +18,15 @@ import { EncryptionService } from '@util/encryption.service';
           : '.env.test',
       load: [envConfig],
       validationSchema: envValidation(),
+    }),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get('redisConfig.host'),
+        port: configService.get('redisConfig.port'),
+      }),
     }),
   ],
   providers: [RedisService, EncryptionService],
