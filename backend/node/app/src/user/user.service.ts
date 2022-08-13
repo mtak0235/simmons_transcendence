@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 export interface UserType {
   id: number;
@@ -26,6 +26,10 @@ export class UserService {
   async findOne(userId: string | number): Promise<UserType | null> {
     if (typeof userId === 'string') userId = parseInt(userId, 10);
 
-    return this.users.find((user) => user.id === userId);
+    const user = this.users.find((user) => user.id === userId);
+
+    if (!user) throw new BadRequestException();
+
+    return user;
   }
 }

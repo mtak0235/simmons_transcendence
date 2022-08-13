@@ -5,12 +5,14 @@ import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 
 import { EncryptionService } from '@util/encryption.service';
+import { UserService } from '@user/user.service';
 
 @Injectable()
 export class EmailStrategy extends PassportStrategy(Strategy, 'email') {
   constructor(
     private readonly configService: ConfigService,
     private readonly encryptionService: EncryptionService,
+    private readonly userService: UserService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -31,7 +33,6 @@ export class EmailStrategy extends PassportStrategy(Strategy, 'email') {
     if (!code || !(await this.encryptionService.compare(code, hash)))
       throw new UnauthorizedException();
 
-    payload.id = userId;
-    return payload;
+    return await this.userService.findOne(userId);
   }
 }

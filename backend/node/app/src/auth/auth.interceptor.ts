@@ -3,10 +3,10 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Request, Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 
 import { RedisService } from '@util/redis.service';
 import { AuthService } from '@auth/auth.service';
@@ -26,6 +26,13 @@ export class TokenInterceptor implements NestInterceptor {
     const res: Response = context.switchToHttp().getResponse();
     const userId: number = req.user['id'];
 
+    if (
+      req.url === '/auth/token' &&
+      req.cookies.refresh_token !==
+        (await this.redisService.get(userId.toString()))
+    )
+      throw new UnauthorizedException();
+
     if (req.user['requireTwoFactor'] === true) {
       res.cookie('code', await this.authService.generateMailCode(userId));
     } else {
@@ -35,8 +42,6 @@ export class TokenInterceptor implements NestInterceptor {
       res.cookie('refresh_token', refreshToken);
       await this.redisService.set(userId.toString(), refreshToken);
     }
-
-    console.log(res.getHeaders());
     return next.handle();
   }
 }

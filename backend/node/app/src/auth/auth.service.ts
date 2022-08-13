@@ -33,7 +33,7 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign({ id: encryptId }),
-      refreshToken: this.jwtService.sign({}, { expiresIn: '30d' }),
+      refreshToken: this.jwtService.sign({}, { expiresIn: '14d' }),
     };
   }
 

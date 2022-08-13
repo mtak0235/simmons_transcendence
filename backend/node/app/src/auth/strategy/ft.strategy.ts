@@ -26,7 +26,6 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
 
     if (!user) throw new ForbiddenException();
     if (user.twoFactor) user['requireTwoFactor'] = true;
-    console.log(user);
 
     return user;
   }
