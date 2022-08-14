@@ -4,6 +4,8 @@
 #- sessionID: (public용)reconnection시 sessionID로 userID(다른 기기로 접속한 mtak들의 소켓이 userID가 이름인 방 안에 계심.) 찾음.(한번 왔던 놈인지 확인)
 - userID: (private용)db의 userID와 동일하며, 무슨 sessionID로 접속하더라도 동일한 자기 room(방이름이 "userID")에 접속할 수 있다. 고로
 - 여러 내가 sessionID로 동시 접속시 userID방에 내 소켓이 여러개일 수 있다. 
+---
+
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -34,6 +36,11 @@ end
 # 소켓 연결 직후
 - 영속성을 위해 세션을 저장해준다.
 - blockList client로 내려줌
+--------------------------------
+- getBlockList
+```
+['']
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -47,7 +54,7 @@ participant rt as RoomTable
 
 c->>ga: <<connection>>
 ga->>cs: getBlockList(userID) :string[]
-ss->>ga: string[[userID], ...]
+cs->>ga: string[[userID], ...]
 ga->>c: to(userID)<<getBlockList>> {string[userID, ...]}
 c->>cls: {blockList: string[userID, ...]}
 
@@ -98,7 +105,7 @@ participant cs as ChannelService
 participant rt as RoomTable
 
 c->>ga: <<inChannel>>(channelName)
-cs->>cs: enterChannel(client, channelName) :channelName
+ga->>cs: enterChannel(client, channelName) :channelName
 cs->>rt: client.rooms.has(channelName)
 rt->>cs: bool
 alt: false
@@ -106,8 +113,9 @@ cs->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
 loop
 cs->>rt: leave(삭제할 방 이름)
 end
+end
 cs->>rt: join(channelName)
-cs->>ga: broadcast.except(channelName)<<UserEnteredServer>>{userID, channelName}
+cs->>ga: broadcast.except(channelName)<<userEnteredServer>>{userID, channelName}
 cs->>ga: to(channelName)<<getMessage>>(`${userName}님이 ${channelName}에 입장하셨습니다`}
 ```
 
@@ -126,8 +134,8 @@ participant rt as RoomTable
 
 c->>ga: <<outChannel>>
 ga->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
-cs->> ga: string[]
 ga->>cs: exitChannel(client,string[])
+cs->> ga: string[]
 cs->>rt: leave(channelName)
 alt 
 sc->>c: broadcast<<getMessage>>(`${userName}님이 퇴장하셨습니다.`)
