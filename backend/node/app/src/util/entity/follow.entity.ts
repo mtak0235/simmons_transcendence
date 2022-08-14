@@ -15,7 +15,7 @@ export default class Follows {
   sourceId: number;
 
   @PrimaryColumn()
-  target_id: number;
+  targetId: number;
 
   @CreateDateColumn()
   createdAt: Date;

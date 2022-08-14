@@ -21,7 +21,7 @@ export default class GameLogs {
   @Column('integer')
   playerBId: number;
 
-  @Column('tinyint')
+  @Column('smallint')
   result: number;
 
   @CreateDateColumn()
