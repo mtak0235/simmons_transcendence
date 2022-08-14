@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: ./backend/node
+      # Only will build development stage from our dockerfile
+      target: development
+    volumes:
+      - ./backend/node/app:/usr/src/app
+    #env_file:
+    #  - .env
+    # Run a command against the development stage of the image
+    command: npm run start:dev
+    ports:
+      - 3001:3001
+  front_end:
+    build:
+      context: ./frontend/node
+      # Only will build development stage from our dockerfile
+      target: development
+    volumes:
+      - ./frontend/node/app:/usr/src/app
+    #env_file:
+    #  - .env
+    # Run a command against the development stage of the image
+    command: npm start
+    ports:
+      - 80:3000
+  db:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "gilee"
+      POSTGRES_PASSWORD: "1234"
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
