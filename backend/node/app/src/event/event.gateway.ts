@@ -34,18 +34,18 @@ export class EventGateway
   @UseInterceptors(EventInterceptor)
   afterInit(server: any): any {
     server.use((client, next) => {
-      // const encryptedUserID = client.handshake.auth.encryptedUserID;
-      // if (!encryptedUserID) {
-      //   throw new BadRequestException('jwt 가지고 오셈');
-      // }
-      // const userID = this.eventService.getUserID(encryptedUserID);
-      // const session = this.eventService.findSession(userID);
-      // if (!session) {
-      //   this.eventService.getUserName(userID);
-      //   this.eventService.saveSession(userID, session);
-      //   client.join(userID);
-      // }
-      // client.userID = userID;
+      const encryptedUserID = client.handshake.auth.encryptedUserID;
+      if (!encryptedUserID) {
+        throw new BadRequestException('jwt 가지고 오셈');
+      }
+      const userID = this.eventService.getUserID(encryptedUserID);
+      const session = this.eventService.findSession(userID);
+      if (!session) {
+        this.eventService.getUserName(userID);
+        this.eventService.saveSession(userID, session);
+        client.join(userID);
+      }
+      client.userID = userID;
       next();
     });
   }
@@ -53,45 +53,45 @@ export class EventGateway
   handleConnection(client: SocketC, ...args: any[]): any {
     const blockList = this.eventService.getBlockList(client.userID);
     client.emit('getBlockList', blockList);
-    client.emit('a', ['m', 't', 'a', 'k']);
     this.eventService.getMessageForUser(client);
   }
 
-  // handleDisconnect(client: SocketC): {
-  // const sockets = this.server.in(client.userID).allSockets();
-  // if (sockets.then((data) => data.size) == 0) {
-  //   client.broadcast.emit('userExit', client.userID);
-  //   const session: Session = {
-  //     userID: client.userID,
-  //     userName: client.userName,
-  //     connected: false,
-  //   };
-  //   this.eventService.saveSession(client.userID, session);
-  // }
-  // };
+  async handleDisconnect(client: SocketC, ...args: any[]): Promise<any> {
+    const sockets = this.server.in(client.userID).allSockets();
+    if ((await sockets.then((data) => data.size)) == 0) {
+      client.broadcast.emit('userExit', client.userID);
+      const session: Session = {
+        userID: client.userID,
+        userName: client.userName,
+        connected: false,
+      };
+      this.eventService.saveSession(client.userID, session);
+    }
+  }
 
-  // isUserAdmin(userId) {
-  //   return true;
-  // }
+  isUserAdmin(userId) {
+    return true;
+  }
 
   @SubscribeMessage('inChannel')
   inChannel(
-    @MessageBody('channelId') channelId: string,
-    @ConnectedSocket() client,
+    @MessageBody('channelId')
+    channelId: string,
+    @ConnectedSocket()
+    client,
   ) {
     this.eventService.enterChannel(client, channelId);
   }
 
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() client: Socket) {
+  outChannel(
+    @ConnectedSocket()
+    client: SocketC,
+  ) {
     this.eventService
       .getChannelFullName(client.rooms, /^room:user:/)
       .forEach((roomName) => client.leave(roomName));
-    this.server.emit('outChannel', { userId: client.id });
-  }
-
-  handleDisconnect(client: any): any {
-    console.log('disconnected');
+    this.server.emit('outChannel', client.userID);
   }
 
   // // @UseInterceptors(PersistenceInterceptor)

@@ -67,7 +67,7 @@ export class EventService {
     // notify existing users
     client.broadcast.emit('userEnter', {
       userID: client.userID,
-      username: client.userName,
+      userName: client.userName,
       connected: true,
     });
   }
