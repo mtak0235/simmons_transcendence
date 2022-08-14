@@ -1,4 +1,6 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule } from '@nestjs/swagger';
+import * as Yaml from 'yamljs';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 import * as passport from 'passport';
@@ -8,6 +10,8 @@ import { AppModule } from '@src/app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT || 3001;
+  const document = Yaml.load(__dirname + '/../swagger.yaml');
+  SwaggerModule.setup('api', app, document);
 
   passport.serializeUser((user, done) => {
     if (user) done(null, user);
@@ -18,6 +22,7 @@ async function bootstrap() {
     else done('error', false);
   });
 
+  app.setGlobalPrefix('v0');
   app.enableCors({ origin: '*', credentials: true });
   app.use(
     session({

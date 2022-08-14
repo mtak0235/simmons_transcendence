@@ -41,11 +41,14 @@ export default class Users {
   @OneToMany(() => Follows, (follows) => follows.users)
   follows: Follows[];
 
-  @OneToMany(() => Blocks, (blocks) => blocks.users)
+  @OneToMany(() => Follows, (blocks) => blocks.users)
   blocks: Blocks[];
 
-  @OneToMany(() => GameLogs, (gameLogs) => gameLogs.users)
-  gameLogs: GameLogs[];
+  @OneToMany(() => GameLogs, (gameLogs) => gameLogs.playerA)
+  gameLogPlayerA: GameLogs[];
+
+  @OneToMany(() => GameLogs, (gameLogs) => gameLogs.playerB)
+  gameLogPlayerB: GameLogs[];
 
   @OneToMany(
     () => UserAchievements,
