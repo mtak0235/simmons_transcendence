@@ -21,7 +21,7 @@ export default class GameLogs {
   @Column('integer')
   playerBId: number;
 
-  @Column('integer')
+  @Column('smallint')
   result: number;
 
   @CreateDateColumn()
@@ -30,7 +30,11 @@ export default class GameLogs {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Users, (users) => users.gameLogs, { nullable: false })
-  @JoinColumn()
-  users: Users;
+  @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })
+  @JoinColumn({ name: 'playerAId', referencedColumnName: 'id' })
+  playerA: Users;
+
+  @ManyToOne(() => Users, (users) => users.gameLogPlayerB, { nullable: false })
+  @JoinColumn({ name: 'playerBId', referencedColumnName: 'id' })
+  playerB: Users;
 }

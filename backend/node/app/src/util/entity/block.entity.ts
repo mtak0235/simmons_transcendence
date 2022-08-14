@@ -23,7 +23,7 @@ export default class Blocks {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Users, (users) => users.blocks, { nullable: false })
+  @ManyToOne(() => Users, (users) => users.follows)
   @JoinColumn()
   users: Users;
 }

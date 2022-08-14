@@ -1,11 +1,13 @@
 import { CacheModule, Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import * as redisStore from 'cache-manager-ioredis';
 import { envConfig, envValidation } from '@util/env.service';
 import { RedisService } from '@util/redis.service';
 import { EncryptionService } from '@util/encryption.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import entities from '@util/entity';
+import entities from '@util/entity/index';
 
 @Global()
 @Module({
