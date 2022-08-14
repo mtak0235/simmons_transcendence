@@ -30,10 +30,11 @@ export default class GameLogs {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Users, (users) => users.gameLogs, { nullable: false })
-  @JoinColumn([
-    { name: 'playerAId', referencedColumnName: 'id' },
-    { name: 'playerBId', referencedColumnName: 'id' },
-  ])
-  users: Users;
+  @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })
+  @JoinColumn({ name: 'playerAId', referencedColumnName: 'id' })
+  playerA: Users;
+
+  @ManyToOne(() => Users, (users) => users.gameLogPlayerB, { nullable: false })
+  @JoinColumn({ name: 'playerBId', referencedColumnName: 'id' })
+  playerB: Users;
 }
