@@ -5,6 +5,7 @@ import { envConfig, envValidation } from '@util/env.service';
 import { RedisService } from '@util/redis.service';
 import { EncryptionService } from '@util/encryption.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import entities from '@util/entity';
 
 @Global()
 @Module({
@@ -45,7 +46,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         logging: ['error'],
         logger: 'file',
         maxQueryExecutionTime: 2000,
-        entities: [],
+        entities: entities,
       }),
     }),
   ],

@@ -1,7 +1,10 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -9,13 +12,14 @@ import { Server, Socket } from 'socket.io';
 import { BadRequestException, Logger, UseInterceptors } from '@nestjs/common';
 import { EventInterceptor } from '@src/event/event.interceptor';
 import { EventService } from '@src/event/event.service';
+import { Session } from '@src/event/storage/session-store';
 
 export class SocketC extends Socket {
   userID: string;
   userName: string;
 }
 
-@WebSocketGateway()
+@WebSocketGateway(4000)
 export class EventGateway
   implements OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect
 {
@@ -30,59 +34,66 @@ export class EventGateway
   @UseInterceptors(EventInterceptor)
   afterInit(server: any): any {
     server.use((client, next) => {
-      const encryptedUserID = client.handshake.auth.encryptedUserID;
-      if (!encryptedUserID) {
-        throw new BadRequestException('jwt 가지고 오셈');
-      }
-      const userID = this.eventService.getUserID(encryptedUserID);
-      const session = this.eventService.findSession(userID);
-      if (!session) {
-        this.eventService.getUserName(userID);
-        this.eventService.saveSession(userID, session);
-        client.join(userID);
-      }
-      client.userID = userID;
+      // const encryptedUserID = client.handshake.auth.encryptedUserID;
+      // if (!encryptedUserID) {
+      //   throw new BadRequestException('jwt 가지고 오셈');
+      // }
+      // const userID = this.eventService.getUserID(encryptedUserID);
+      // const session = this.eventService.findSession(userID);
+      // if (!session) {
+      //   this.eventService.getUserName(userID);
+      //   this.eventService.saveSession(userID, session);
+      //   client.join(userID);
+      // }
+      // client.userID = userID;
       next();
     });
   }
 
   handleConnection(client: SocketC, ...args: any[]): any {
-    let blockList = this.eventService.getBlockList(userID);
+    const blockList = this.eventService.getBlockList(client.userID);
+    client.emit('getBlockList', blockList);
+    client.emit('a', ['m', 't', 'a', 'k']);
+    this.eventService.getMessageForUser(client);
   }
 
-  handleDisconnect(client: any): any {}
-
-  getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
-    for (const room of rooms) {
-      if (roomNamePrefix.test(room)) {
-        return room;
-      }
-    }
-    return '';
-  }
-
-  isUserAdmin(userId) {
-    return true;
-  }
-
-  // @SubscribeMessage('inChannel')
-  // inChannel(
-  //     @MessageBody('channelId') channelId: string,
-  //     @ConnectedSocket() client,
-  // ) {
-  //   console.log(client.userName);
-  //   client.join('room:user:' + channelId);
-  //   this.logger.log(client.rooms);
-  //   this.getChannelFullName(client.rooms, /^room:user:/);
-  //   this.server.emit('inChannel', { userId: client.id, channelId: channelId });
+  // handleDisconnect(client: SocketC): {
+  // const sockets = this.server.in(client.userID).allSockets();
+  // if (sockets.then((data) => data.size) == 0) {
+  //   client.broadcast.emit('userExit', client.userID);
+  //   const session: Session = {
+  //     userID: client.userID,
+  //     userName: client.userName,
+  //     connected: false,
+  //   };
+  //   this.eventService.saveSession(client.userID, session);
   // }
-  //
-  // @SubscribeMessage('outChannel')
-  // outChannel(@ConnectedSocket() client: Socket) {
-  //   client.leave(this.getChannelFullName(client.rooms, /^room:user:/));
-  //   this.server.emit('outChannel', { userId: client.id });
+  // };
+
+  // isUserAdmin(userId) {
+  //   return true;
   // }
-  //
+
+  @SubscribeMessage('inChannel')
+  inChannel(
+    @MessageBody('channelId') channelId: string,
+    @ConnectedSocket() client,
+  ) {
+    this.eventService.enterChannel(client, channelId);
+  }
+
+  @SubscribeMessage('outChannel')
+  outChannel(@ConnectedSocket() client: Socket) {
+    this.eventService
+      .getChannelFullName(client.rooms, /^room:user:/)
+      .forEach((roomName) => client.leave(roomName));
+    this.server.emit('outChannel', { userId: client.id });
+  }
+
+  handleDisconnect(client: any): any {
+    console.log('disconnected');
+  }
+
   // // @UseInterceptors(PersistenceInterceptor)
   // @SubscribeMessage('userExit')
   // userExit(@ConnectedSocket() client: Socket) {

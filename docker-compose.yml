@@ -12,6 +12,7 @@ services:
     command: yarn start:dev
     ports:
       - 3001:3001
+      - 4000:4000
   front_end:
     build:
       context: ./frontend/node

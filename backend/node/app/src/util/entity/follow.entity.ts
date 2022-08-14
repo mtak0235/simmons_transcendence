@@ -15,7 +15,7 @@ export default class Follows {
   sourceId: number;
 
   @PrimaryColumn()
-  target_id: number;
+  targetId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -24,9 +24,6 @@ export default class Follows {
   updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.follows, { nullable: false })
-  @JoinColumn([
-    { name: 'sourceId', referencedColumnName: 'id' },
-    { name: 'targetId', referencedColumnName: 'id' },
-  ])
+  @JoinColumn()
   users: Users;
 }

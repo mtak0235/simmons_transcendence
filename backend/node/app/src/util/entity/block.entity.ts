@@ -15,7 +15,7 @@ export default class Blocks {
   sourceId: number;
 
   @PrimaryColumn()
-  target_id: number;
+  targetId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -24,9 +24,6 @@ export default class Blocks {
   updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.blocks, { nullable: false })
-  @JoinColumn([
-    { name: 'sourceId', referencedColumnName: 'id' },
-    { name: 'targetId', referencedColumnName: 'id' },
-  ])
+  @JoinColumn()
   users: Users;
 }

@@ -1,10 +1,13 @@
 import { Message } from '@src/event/storage/message-store';
+import { Injectable } from '@nestjs/common';
 
 export interface Session {
+  userID: string;
   userName: string;
   connected: boolean;
-  message: Message;
+  message?: Message;
 }
+@Injectable()
 export class SessionStore {
   private sessions: Map<string, Session>;
 

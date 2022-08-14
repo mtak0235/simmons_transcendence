@@ -21,7 +21,7 @@ export default class GameLogs {
   @Column('integer')
   playerBId: number;
 
-  @Column('tinyint')
+  @Column('integer')
   result: number;
 
   @CreateDateColumn()
@@ -31,9 +31,6 @@ export default class GameLogs {
   updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.gameLogs, { nullable: false })
-  @JoinColumn([
-    { name: 'playerAId', referencedColumnName: 'id' },
-    { name: 'playerBId', referencedColumnName: 'id' },
-  ])
+  @JoinColumn()
   users: Users;
 }
