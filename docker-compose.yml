@@ -1,5 +1,7 @@
 services:
   api:
+    depends_on:
+      - "redis"
     build:
       context: ./backend/node
       # Only will build development stage from our dockerfile
@@ -26,9 +28,20 @@ services:
     command: npm start
     ports:
       - 80:3000
+  redis:
+    image: redis:7.0-alpine
+    command: redis-server --port 6379
+    container_name: redis_boot
+    hostname: redis_boot
+    labels:
+      - "name=redis"
+      - "mode=standalone"
+    ports:
+      - 6379:6379
   db:
     image: postgres:latest
     container_name: postgres
+    hostname: postgres
     restart: always
     ports:
       - "5432:5432"
@@ -36,4 +49,5 @@ services:
       POSTGRES_USER: "gilee"
       POSTGRES_PASSWORD: "1234"
     volumes:
+      - ./init_db:/docker-entrypoint-initdb.d
       - ./db/data:/var/lib/postgresql/data
