@@ -13,6 +13,7 @@ participant c as client
 participant ga as server
 participant ss as sessionStore
 participant cs as ChannelService
+participant rt as RoomTable
 
 
 c->>ga: auth.encryptedUserID
@@ -39,7 +40,17 @@ end
 --------------------------------
 - getBlockList
 ```
-['']
+['1234134', '54324532', '324523453']
+```
+- userEnter
+```
+{userID:'432425', userName:'mtak', connected:true}
+``` 
+- getPreLogs
+```
+[[{userID:'121', userName:'mtak', connected:true, message:[msg:'전화받으셈', from:'111', to:'121']}, {userID:'121', userName:'mtak', connected:true, message:[msg:'어디세요엠탁님', from:'111', to:'121']}], 
+[{userID:'121', userName:'mtak', connected:true, message:[msg:'늦게가욤', from:'222', to:'121']}, {userID:'121', userName:'mtak', connected:true, message:[msg:'집현전으로 가겠습니당', from:'222', to:'121']}], ...
+]
 ```
 ```mermaid
 sequenceDiagram
@@ -71,6 +82,10 @@ ga->>c: broadcast<<userEnter>> (user.{userID, userName, connected})
 ```
 
 # 소켓 연결 끊겼을 때
+- userExit
+```
+'121'
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -92,6 +107,14 @@ end
 ```
 
 # inChannel
+- userEnteredServer
+```
+{userID:'121', userName:'mtak'}
+```
+- getMessage
+```
+'mtak님이 입장하셨습니다'
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -120,6 +143,10 @@ cs->>ga: to(channelName)<<getMessage>>(`${userName}님이 ${channelName}에 입�
 ```
 
 # outChannel
+- outChannel
+```
+'121'
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -181,8 +208,13 @@ ga->>cs: friendChanged(userID, targetId, isFollowing(true))
 alt isFollowing = true
 cs->>r: saveFollow(userID, targetID);
 end
+ga->>c: to(userID, targetID)<<friendChanged>>(userID, targetId, isFollowing(false))
 ```
 # unfollow
+- friendChanged
+```
+{userID:'121', targetID:'111', isFollowing:false}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -196,13 +228,19 @@ participant r as Repository
 participant rt as RoomTable
 
 c->>ga: unfollow(targetId)
-ga->>c: friendChanged(userID, targetId, isFollowing(false))
-alt isFollowing = false
+ga->>cs: friendChanged(userID, targetId, isFollowing(false))
+alt isFollowing == false
 cs->>r: deleteFollow(userID, targetID)
 end
+ga->>c: to(userID, targetID)<<friendChanged>>(userID, targetId, isFollowing(false))
+c->>cs: save targetID or userID
 ```
 
 # sendDM
+- getDM
+```
+{userID:'121', userName:'mtak', msg:'hihi'}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -217,10 +255,15 @@ participant rt as RoomTable
 
 c->>ga: sendDM(msg, recipientID)
 ga->>c: to(recipientID)<<getDM>>({userID, userName, msg})
+c->>cs: save targetID or UserID
 ```
 
 # sendMSG
 - channel단위 msg 전송
+- getMSG
+```
+{userID:'121', userName:'mtak', msg:'hihi'}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -240,6 +283,10 @@ ga-->>c: to(channelName)<<getMSG>>({userID, userName, msg})
 ```
 
 # kickOut
+- expelled
+```
+'you are expelled from helloPython'
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -252,17 +299,21 @@ participant cs as ChannelService
 participant r as Repository
 participant rt as RoomTable
 
-c->>ga: kickOut(badGuyId)
-ga->>cs: kickOut(client, badGuyId)
+c->>ga: kickOut(badGuyID)
+ga->>cs: kickOut(client, badGuyID)
 cs->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
 cs->>cns: this.channelList[channelName]
 cns->>cs: ChannelInfoDto
 alt ChannelInfoDto.adminID == userID
-cs->>rt: to(badGuyId).leave(channelName)
-rt->>c: to(badGuyId)<<expelled>>(you are expelled from ${channelName})
+cs->>rt: to(badGuyID).leave(channelName)
+rt->>c: to(badGuyID)<<expelled>>(you are expelled from ${channelName})
 end
 ```
 # modifyGame
+- gameModified
+```
+{channelName:'helloPython', accessLayer:'public', score:'12', adminID:'121'}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -288,6 +339,10 @@ end
 # inviteUser
 - ChannelName은 room:user:[userID]
 - 초대 받은 사람은 강제소환됨.
+- getInvitation
+```
+{inviter:'121', msg:'you are invited to mtak'}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -308,7 +363,10 @@ cs->>c: to(invitedUserID)<<getInvitation>>({msg: 'you are invited to ${userName}
 ```
 
 # mute
-
+- mute
+```
+(아무것도 안줌)
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -333,6 +391,10 @@ end
 cs->>ga: to(userID)<<nuAuthorized>>('you aren't authorized.')
 ```
 # waitingGame
+- getWaitingList
+```
+{userID:'121', userName:'mtak'}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -405,11 +467,15 @@ participant rt as RoomTable
 c->>ga: endGame()#client가 participant면
 ga-->>c:endGame()
 ```
-# generateGame
+# gameGenerated
 - private(target에게 dm이 감), protected(pw있어야 함)
+- createChannel
+```
+
+```
 ```mermaid
 sequenceDiagram
-participant cs as clientStorage
+participant cls as clientStorage
 participant c as client
 participant ga as server
 participant r as rooms
