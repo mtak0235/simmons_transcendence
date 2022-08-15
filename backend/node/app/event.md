@@ -13,6 +13,7 @@ participant c as client
 participant ga as server
 participant ss as sessionStore
 participant cs as ChannelService
+participant rt as RoomTable
 
 
 c->>ga: auth.encryptedUserID
@@ -298,14 +299,14 @@ participant cs as ChannelService
 participant r as Repository
 participant rt as RoomTable
 
-c->>ga: kickOut(badGuyId)
-ga->>cs: kickOut(client, badGuyId)
+c->>ga: kickOut(badGuyID)
+ga->>cs: kickOut(client, badGuyID)
 cs->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
 cs->>cns: this.channelList[channelName]
 cns->>cs: ChannelInfoDto
 alt ChannelInfoDto.adminID == userID
-cs->>rt: to(badGuyId).leave(channelName)
-rt->>c: to(badGuyId)<<expelled>>(you are expelled from ${channelName})
+cs->>rt: to(badGuyID).leave(channelName)
+rt->>c: to(badGuyID)<<expelled>>(you are expelled from ${channelName})
 end
 ```
 # modifyGame

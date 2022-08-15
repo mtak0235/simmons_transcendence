@@ -2,7 +2,7 @@ import { Message } from '@src/event/storage/message-store';
 import { Injectable } from '@nestjs/common';
 
 export interface Session {
-  userID: string;
+  userID: number;
   userName: string;
   connected: boolean;
   message?: Message;
