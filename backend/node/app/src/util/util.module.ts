@@ -5,8 +5,6 @@ import * as redisStore from 'cache-manager-ioredis';
 import { envConfig, envValidation } from '@util/env.service';
 import { RedisService } from '@util/redis.service';
 import { EncryptionService } from '@util/encryption.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import entities from '@util/entity';
 import entities from '@util/entity/index';
 
 @Global()
