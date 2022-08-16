@@ -7,14 +7,14 @@ const Header: React.FC = () => {
 
   const links = pageController.pages.map((p) => (
     <li key={p.label}>
-      <OliNavLink to={p.to}>{p.label}</OliNavLink>
+      <TransNavLink to={p.to}>{p.label}</TransNavLink>
     </li>
   ));
 
   return (
     <header className={styles.header}>
       <Link to="/">
-        <div className={styles.logo}>Oli Corp</div>
+        <div className={styles.logo}>트랜센던스</div>
       </Link>
       <nav>
         <ul>{links}</ul>
@@ -23,12 +23,12 @@ const Header: React.FC = () => {
   );
 };
 
-type OliNavLinkProps = {
+type TransNavLinkProps = {
   children?: React.ReactNode;
   to: To;
 };
 
-const OliNavLink: React.FC<OliNavLinkProps> = (props) => {
+const TransNavLink: React.FC<TransNavLinkProps> = (props) => {
   return (
     <NavLink
       to={props.to}
