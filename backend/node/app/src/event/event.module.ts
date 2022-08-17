@@ -5,7 +5,6 @@ import { EventService } from '@src/event/event.service';
 import { MessageStore } from '@src/event/storage/message-store';
 import { SessionStore } from '@src/event/storage/session-store';
 import { ChannelListStore } from '@src/event/storage/channel-list-store';
-
 @Module({
   providers: [
     EventGateway,

@@ -69,11 +69,6 @@ export class EventGateway
       this.eventService.saveSession(client.userID.toString(), session);
     }
   }
-
-  isUserAdmin(userId) {
-    return true;
-  }
-
   @SubscribeMessage('inChannel')
   inChannel(
     @MessageBody('channelId')
@@ -171,9 +166,6 @@ export class EventGateway
   @SubscribeMessage('kickOut')
   kickOut(client: SocketC, badGuyID: number) {
     this.eventService.kickOut(client, badGuyID, this.server);
-    if (this.isUserAdmin(client.id)) {
-      return { event: 'unAuthorized' };
-    }
   }
 
   @SubscribeMessage('modifyGame')
@@ -201,9 +193,10 @@ export class EventGateway
   }
 
   @SubscribeMessage('generateGame')
-  createChatRoom(client: SocketC, channelInfoDto: ChannelInfoDto) {
+  generateGame(client: SocketC, channelInfoDto: ChannelInfoDto) {
     this.eventService.createChannel(client, channelInfoDto);
   }
+
   // @SubscribeMessage('waitingGame')
   // waitingGame(@ConnectedSocket() client: Socket) {
   //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
@@ -229,15 +222,7 @@ export class EventGateway
   // endGame(@ConnectedSocket() client: Socket) {
   //   return { event: 'endGame' };
   // }
-  //
-  // // @SubscribeMessage('generateGame')
-  // // generateGame(
-  // //   @MessageBody('channelName') channelName,
-  // //   @MessageBody('accessLayer') accessLayer,
-  // //   @MessageBody('pw') pw: number,
-  // // ) {
-  // //   this.server.emit('gameGenerated', { channelName, channelId, channelType });
-  // // }
+
   // @SubscribeMessage('client2Server')
   // handleMessage(client: any) {
   //   // this.server.emit('server2Client', data);
@@ -261,12 +246,4 @@ export class EventGateway
   //   // client.emit('mtak', { msg: 'hiii' });
   //   return { room: { roomId: '', roomName: '' }, nickname: 'mtak' };
   // }
-
-  // //채팅방 목록 가져오기
-  // @SubscribeMessage('getChatRoomList')
-  // getChatRoomList(client: Socket, payload: any) {
-  //   client.emit('getChatRoomList', this.userService.getChatRoomList());
-  // }
-  //
-  //채팅방 생성하기
 }

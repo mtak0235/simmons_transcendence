@@ -115,7 +115,7 @@ export class EventService {
   kickOut(client: SocketC, badGuyID: number, server: Server) {
     this.getChannelFullName(client.rooms, /^room:user:/).forEach(
       (channelName) => {
-        let channelInfoDto = this.channelListStore.findChannel(channelName);
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
         if (channelInfoDto.channel.adminID == client.userID) {
           server.in(badGuyID.toString()).socketsLeave(channelName);
           server
@@ -129,7 +129,7 @@ export class EventService {
   modifyGame(client: SocketC, channelInfo: ChannelInfoDto) {
     this.getChannelFullName(client.rooms, /^room:user:/).forEach(
       (channelName) => {
-        let channelInfoDto = this.channelListStore.findChannel(channelName);
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
         if (channelInfoDto.channel.adminID == client.userID) {
           if (channelInfo.password) {
             delete channelInfoDto.password;
@@ -144,8 +144,21 @@ export class EventService {
   }
 
   inviteUser(client: SocketC, invitedUserId: number, server: Server) {
-    let channelName = 'room:user:' + client.userID;
-    let channelDto = this.channelListStore.createChannel(
+    const channelName = 'room:user:' + client.userID;
+    const channelDto = this.extracted(channelName, client, invitedUserId);
+    server.in(invitedUserId.toString()).socketsJoin(channelName);
+    client.to(invitedUserId.toString()).emit('getInvitation', {
+      msg: `you are invited to ${client.userName}.`,
+      channelDto,
+    });
+  }
+
+  private extracted(
+    channelName: string,
+    client: SocketC,
+    invitedUserId: number,
+  ) {
+    const channelDto = this.channelListStore.createChannel(
       channelName,
       {
         accessLayer: ACCESS_LAYER.PRIVATE,
@@ -155,17 +168,13 @@ export class EventService {
       },
       invitedUserId.toString(),
     );
-    server.in(invitedUserId.toString()).socketsJoin(channelName);
-    client.to(invitedUserId.toString()).emit('getInvitation', {
-      msg: `you are invited to ${client.userName}.`,
-      channelDto,
-    });
+    return channelDto;
   }
 
   mute(client: SocketC, noisyGuyId: number) {
     this.getChannelFullName(client.rooms, /^room:user:/).forEach(
       (channelName) => {
-        let channelInfoDto = this.channelListStore.findChannel(channelName);
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
         if (channelInfoDto.channel.adminID == client.userID) {
           client.to(noisyGuyId.toString()).emit('muted');
         } else {
@@ -175,5 +184,10 @@ export class EventService {
     );
   }
 
-  createChannel(client: SocketC, channelInfoDto: ChannelInfoDto) {}
+  createChannel(client: SocketC, channelInfoDto: ChannelInfoDto) {
+    if (this.channelListStore.findChannel('room:user:' + client.userID)) {
+      throw new Error('duplicate Exception');
+    }
+    // this.channelListStore.createChannel();
+  }
 }
