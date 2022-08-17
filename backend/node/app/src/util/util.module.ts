@@ -6,7 +6,6 @@ import { envConfig, envValidation } from '@util/env.service';
 import { RedisService } from '@util/redis.service';
 import { EncryptionService } from '@util/encryption.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-//import entities from '@util/entity';
 import entities from '@util/entity/index';
 
 @Global()
@@ -44,7 +43,7 @@ import entities from '@util/entity/index';
         database: configService.get('dbConfig.name'),
         charset: 'utf8mb4_general_ci',
         timezone: '+09:00',
-        synchronize: true, // todo: production environ = false
+        synchronize: false, // todo: production environ = false
         logging: ['error'],
         logger: 'file',
         maxQueryExecutionTime: 2000,

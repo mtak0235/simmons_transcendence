@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { EventGateway } from '@src/event/event.gateway';
-import { EventInterceptor } from '@src/event/event.interceptor';
-import { EventService } from '@src/event/event.service';
-import { MessageStore } from '@src/event/storage/message-store';
-import { SessionStore } from '@src/event/storage/session-store';
-import { ChannelListStore } from '@src/event/storage/channel-list-store';
+import { EventGateway } from '@event/event.gateway';
+import { EventInterceptor } from '@event/event.interceptor';
+import { EventService } from '@event/event.service';
+import { MessageStore } from '@event/storage/message-store';
+import { SessionStore } from '@event/storage/session-store';
+import { ChannelListStore } from '@event/storage/channel-list-store';
 @Module({
   providers: [
     EventGateway,

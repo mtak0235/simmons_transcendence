@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { Session, SessionStore } from '@src/event/storage/session-store';
-import { MessageStore } from '@src/event/storage/message-store';
-import { SocketC } from '@src/event/event.gateway';
-import { ChannelListStore } from '@src/event/storage/channel-list-store';
+import { Session, SessionStore } from '@event/storage/session-store';
+import { MessageStore } from '@event/storage/message-store';
+import { SocketC } from '@event/event.gateway';
+import {
+  ACCESS_LAYER,
+  ChannelInfoDto,
+  ChannelListStore,
+} from '@event/storage/channel-list-store';
+import { Server } from 'socket.io';
 
 @Injectable()
 export class EventService {
@@ -107,11 +112,82 @@ export class EventService {
     this.messageStore.saveMessage(msg);
   }
 
-  kickOut(client: SocketC, badGuyID: string) {
-    const channelFullName = this.getChannelFullName(
-      client.rooms,
-      /^room:user:/,
+  kickOut(client: SocketC, badGuyID: number, server: Server) {
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
+        if (channelInfoDto.channel.adminID == client.userID) {
+          server.in(badGuyID.toString()).socketsLeave(channelName);
+          server
+            .in(badGuyID.toString())
+            .emit('expelled', `you are expelled from ${channelName}`);
+        }
+      },
     );
-    this.channelListStore.channels;
+  }
+
+  modifyGame(client: SocketC, channelInfo: ChannelInfoDto) {
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
+        if (channelInfoDto.channel.adminID == client.userID) {
+          if (channelInfo.password) {
+            delete channelInfoDto.password;
+            channelInfoDto.password = channelInfo.password;
+          }
+          delete channelInfoDto.channel;
+          channelInfoDto.channel = channelInfo.channel;
+          client.broadcast.emit('gameModified', channelInfoDto.channel);
+        }
+      },
+    );
+  }
+
+  inviteUser(client: SocketC, invitedUserId: number, server: Server) {
+    const channelName = 'room:user:' + client.userID;
+    const channelDto = this.extracted(channelName, client, invitedUserId);
+    server.in(invitedUserId.toString()).socketsJoin(channelName);
+    client.to(invitedUserId.toString()).emit('getInvitation', {
+      msg: `you are invited to ${client.userName}.`,
+      channelDto,
+    });
+  }
+
+  private extracted(
+    channelName: string,
+    client: SocketC,
+    invitedUserId: number,
+  ) {
+    const channelDto = this.channelListStore.createChannel(channelName, {
+      channel: {
+        accessLayer: ACCESS_LAYER.PRIVATE,
+        channelName,
+        score: 10,
+        adminID: client.userID,
+      },
+      password: undefined,
+    });
+    return channelDto;
+  }
+
+  mute(client: SocketC, noisyGuyId: number) {
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
+        if (channelInfoDto.channel.adminID == client.userID) {
+          client.to(noisyGuyId.toString()).emit('muted');
+        } else {
+          client.emit('unAuthorized', "you aren't authorized");
+        }
+      },
+    );
+  }
+
+  createChannel(client: SocketC, channelInfoDto: ChannelInfoDto) {
+    const channelName = 'room:user:' + client.userID;
+    if (this.channelListStore.findChannel(channelName)) {
+      throw new Error('duplicate Exception');
+    }
+    this.channelListStore.createChannel(channelName, channelInfoDto);
   }
 }

@@ -9,11 +9,16 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { BadRequestException, Logger, UseInterceptors } from '@nestjs/common';
-import { EventInterceptor } from '@src/event/event.interceptor';
-import { EventService } from '@src/event/event.service';
-import { Session } from '@src/event/storage/session-store';
-import { channel } from 'diagnostics_channel';
+import {
+  BadRequestException,
+  Inject,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
+import { EventInterceptor } from '@event/event.interceptor';
+import { EventService } from '@event/event.service';
+import { Session } from '@event/storage/session-store';
+import { ChannelInfoDto } from '@event/storage/channel-list-store';
 
 export class SocketC extends Socket {
   userID: number;
@@ -21,23 +26,20 @@ export class SocketC extends Socket {
 }
 
 @WebSocketGateway(4000)
-export class EventGateway
-  implements OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect
-{
+export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   @WebSocketServer()
   server: Server;
   private logger: Logger = new Logger('EventGateway');
 
-  // @Inject('hello')
-  // private eventInterceptor: EventInterceptor;
+  @Inject('eventInterceptor')
+  private eventInterceptor: EventInterceptor;
   constructor(private readonly eventService: EventService) {}
 
-  @UseInterceptors(EventInterceptor)
   afterInit(server: any): any {
     server.use((client, next) => {
       const encryptedUserID = client.handshake.auth.encryptedUserID;
       if (!encryptedUserID) {
-        throw new BadRequestException('jwt 가지고 오셈');
+        // throw new BadRequestException('jwt 가지고 오셈');
       }
       const userID = this.eventService.getUserID(encryptedUserID);
       const session = this.eventService.findSession(userID);
@@ -54,26 +56,21 @@ export class EventGateway
   handleConnection(client: SocketC, ...args: any[]): any {
     const blockList = this.eventService.getBlockList(client.userID);
     client.emit('getBlockList', blockList);
-    this.eventService.getMessageForUser(client);
+    // this.eventService.getMessageForUser(client);
   }
 
-  async handleDisconnect(client: SocketC, ...args: any[]): Promise<any> {
-    const sockets = this.server.in(client.userID.toString()).allSockets();
-    if ((await sockets.then((data) => data.size)) == 0) {
-      client.broadcast.emit('userExit', client.userID);
-      const session: Session = {
-        userID: client.userID,
-        userName: client.userName,
-        connected: false,
-      };
-      this.eventService.saveSession(client.userID.toString(), session);
-    }
-  }
-
-  isUserAdmin(userId) {
-    return true;
-  }
-
+  // async handleDisconnect(client: SocketC, ...args: any[]): Promise<any> {
+  //   const sockets = this.server.in(client.userID.toString()).allSockets();
+  //   if ((await sockets.then((data) => data.size)) == 0) {
+  //     client.broadcast.emit('userExit', client.userID);
+  //     const session: Session = {
+  //       userID: client.userID,
+  //       userName: client.userName,
+  //       connected: false,
+  //     };
+  //     this.eventService.saveSession(client.userID.toString(), session);
+  //   }
+  // }
   @SubscribeMessage('inChannel')
   inChannel(
     @MessageBody('channelId')
@@ -169,47 +166,39 @@ export class EventGateway
   }
 
   @SubscribeMessage('kickOut')
-  kickOut(
-    @MessageBody('badGuyID') badGuyID: string,
-    @ConnectedSocket() client: SocketC,
-  ) {
-    this.eventService.kickOut(client, badGuyID);
-    if (this.isUserAdmin(client.id)) {
-      return { event: 'unAuthorized' };
-    }
+  kickOut(client: SocketC, badGuyID: number) {
+    this.eventService.kickOut(client, badGuyID, this.server);
   }
 
-  // @SubscribeMessage('mute')
-  // mute(
-  //   @MessageBody('noisyGuyId') noisyGuyId: number,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   if (this.isUserAdmin(client.id)) {
-  //     return { event: 'unAuthorized' };
-  //   }
-  // }
-  //
-  // // @SubscribeMessage('inviteUser')
-  // // inviteUser(@MessageBody('invitedUserId') invitedUserId: number) {}
-  //
-  // @SubscribeMessage('modifyGame')
-  // modifyGame(@ConnectedSocket() client: Socket) {
-  //   if (this.isUserAdmin(client.id)) {
-  //     return { event: 'unAuthorized' };
-  //   }
-  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
-  //   // const { accessLayer, gameOption, channelId, newAdminId } =
-  //   //   // getChannelInfo(channelName);
-  //   // this.server.emit('gameModified', {
-  //   //   channelName,
-  //   //   isGameActive: true,
-  //   //   accessLayer,
-  //   //   gameOption,
-  //   //   channelId,
-  //   //   newAdminId,
-  //   // });
-  // }
-  //
+  @SubscribeMessage('modifyGame')
+  modifyGame(
+    @ConnectedSocket() client: SocketC,
+    @MessageBody() channelInfo: ChannelInfoDto,
+  ) {
+    this.eventService.modifyGame(client, channelInfo);
+  }
+
+  @SubscribeMessage('inviteUser')
+  inviteUser(
+    @MessageBody('invitedUserId') invitedUserId: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.inviteUser(client, invitedUserId, this.server);
+  }
+
+  @SubscribeMessage('mute')
+  mute(
+    @MessageBody('noisyGuyId') noisyGuyId: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.mute(client, noisyGuyId);
+  }
+
+  @SubscribeMessage('generateGame')
+  generateGame(client: SocketC, channelInfoDto: ChannelInfoDto) {
+    this.eventService.createChannel(client, channelInfoDto);
+  }
+
   // @SubscribeMessage('waitingGame')
   // waitingGame(@ConnectedSocket() client: Socket) {
   //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
@@ -235,15 +224,7 @@ export class EventGateway
   // endGame(@ConnectedSocket() client: Socket) {
   //   return { event: 'endGame' };
   // }
-  //
-  // // @SubscribeMessage('generateGame')
-  // // generateGame(
-  // //   @MessageBody('channelName') channelName,
-  // //   @MessageBody('accessLayer') accessLayer,
-  // //   @MessageBody('pw') pw: number,
-  // // ) {
-  // //   this.server.emit('gameGenerated', { channelName, channelId, channelType });
-  // // }
+
   // @SubscribeMessage('client2Server')
   // handleMessage(client: any) {
   //   // this.server.emit('server2Client', data);
@@ -266,59 +247,5 @@ export class EventGateway
   // handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
   //   // client.emit('mtak', { msg: 'hiii' });
   //   return { room: { roomId: '', roomName: '' }, nickname: 'mtak' };
-  // }
-  //
-  // //메시지가 전송되면 모든 유저에게 메시지 전송
-  // @SubscribeMessage('sendMessage')
-  // sendMessage(client: Socket, message: string): void {
-  //   client.rooms.forEach((roomId) =>
-  //     client.to(roomId).emit('getMessage', {
-  //       id: client.id,
-  //       nickname: client.data.nickname,
-  //       message,
-  //     }),
-  //   );
-  // }
-  //
-  // //닉네임 변경
-  // @SubscribeMessage('setNickname')
-  // setNickname(client: Socket, nickname: string): void {
-  //   const { roomId } = client.data;
-  //   client.to(roomId).emit('getMessage', {
-  //     id: null,
-  //     nickname: '안내',
-  //     message: `"${client.data.nickname}"님이 "${nickname}"으로 닉네임을 변경하셨습니다.`,
-  //   });
-  //   client.data.nickname = nickname;
-  // }
-  //
-  // //채팅방 목록 가져오기
-  // @SubscribeMessage('getChatRoomList')
-  // getChatRoomList(client: Socket, payload: any) {
-  //   client.emit('getChatRoomList', this.userService.getChatRoomList());
-  // }
-  //
-  // //채팅방 생성하기
-  // @SubscribeMessage('createChatRoom')
-  // createChatRoom(client: Socket, roomName: string) {
-  //   this.userService.createChatRoom(client, roomName);
-  //   return {
-  //     roomId: client.data.roomId,
-  //     roomName: this.userService.getChatRoom(client.data.roomId).roomName,
-  //   };
-  // }
-  //
-  // //채팅방 들어가기
-  // @SubscribeMessage('enterChatRoom')
-  // enterChatRoom(client: Socket, roomId: string) {
-  //   //이미 접속해있는 방 일 경우 재접속 차단
-  //   if (client.rooms.has(roomId)) {
-  //     return;
-  //   }
-  //   this.userService.enterChatRoom(client, roomId);
-  //   return {
-  //     roomId: roomId,
-  //     roomName: this.userService.getChatRoom(roomId).roomName,
-  //   };
   // }
 }
