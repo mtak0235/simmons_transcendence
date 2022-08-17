@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Session, SessionStore } from '@src/event/storage/session-store';
-import { MessageStore } from '@src/event/storage/message-store';
-import { SocketC } from '@src/event/event.gateway';
+import { Session, SessionStore } from '@event/storage/session-store';
+import { MessageStore } from '@event/storage/message-store';
+import { SocketC } from '@event/event.gateway';
 import {
   ACCESS_LAYER,
   ChannelInfoDto,
   ChannelListStore,
-} from '@src/event/storage/channel-list-store';
+} from '@event/storage/channel-list-store';
 import { Server } from 'socket.io';
 
 @Injectable()

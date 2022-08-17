@@ -15,10 +15,10 @@ import {
   Logger,
   UseInterceptors,
 } from '@nestjs/common';
-import { EventInterceptor } from '@src/event/event.interceptor';
-import { EventService } from '@src/event/event.service';
-import { Session } from '@src/event/storage/session-store';
-import { ChannelInfoDto } from '@src/event/storage/channel-list-store';
+import { EventInterceptor } from '@event/event.interceptor';
+import { EventService } from '@event/event.service';
+import { Session } from '@event/storage/session-store';
+import { ChannelInfoDto } from '@event/storage/channel-list-store';
 
 export class SocketC extends Socket {
   userID: number;
