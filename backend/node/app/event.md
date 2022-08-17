@@ -380,7 +380,7 @@ participant r as Repository
 participant rt as RoomTable
 
 c->>ga: <<mute>>(noisyGuyID)
-ga-->>c: mute(client, noisyGuyID)
+ga-->>cs: mute(client, noisyGuyID)
 cs->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
 cs->>cns: this.channelList[channelName]
 cns->>cs: ChannelInfoDto
