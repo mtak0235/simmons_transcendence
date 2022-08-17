@@ -1,4 +1,4 @@
-CREATE USER gilee PASSWORD '1234' SUPERUSER;
+--CREATE USER gilee PASSWORD '1234' SUPERUSER;
 
 CREATE DATABASE transcendence;
 
@@ -11,7 +11,7 @@ ALTER DATABASE transcendence OWNER TO gilee;
 -- Name: public; Type: SCHEMA; Schema: -; Owner: gilee
 --
 
-CREATE SCHEMA public;
+--CREATE SCHEMA public;
 
 
 ALTER SCHEMA public OWNER TO gilee;

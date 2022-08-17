@@ -1,3 +1,5 @@
+\connect transcendence
+
 INSERT INTO public.users (username,"displayName",email,"imagePath","twoFactor","createdAt","updatedAt") VALUES
 	 ('adm_pb','adm_pb','adm_pb@student.42seoul.kr','',false,'2022-08-15 17:07:20.418931','2022-08-15 17:07:20.418931'),
 	 ('m-hosup','m-hosup','m-hosup@student.42seoul.kr','',false,'2022-08-15 17:07:20.424008','2022-08-15 17:07:20.424008'),
