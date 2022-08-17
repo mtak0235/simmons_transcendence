@@ -28,8 +28,11 @@ export class ChannelListStore {
     return this.channels[channelName];
   }
 
-  createChannel(key: string, channelDto: ChannelDto, password: string) {
-    this.channels[key] = { password, channel: channelDto };
-    return channelDto;
+  createChannel(key: string, channelInfoDto: ChannelInfoDto) {
+    this.channels[key] = {
+      password: channelInfoDto.password,
+      channel: channelInfoDto.channel,
+    };
+    return channelInfoDto.channel;
   }
 }

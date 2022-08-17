@@ -9,7 +9,12 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { BadRequestException, Logger, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
 import { EventInterceptor } from '@src/event/event.interceptor';
 import { EventService } from '@src/event/event.service';
 import { Session } from '@src/event/storage/session-store';
@@ -26,11 +31,10 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   server: Server;
   private logger: Logger = new Logger('EventGateway');
 
-  // @Inject('hello')
-  // private eventInterceptor: EventInterceptor;
+  @Inject('eventInterceptor')
+  private eventInterceptor: EventInterceptor;
   constructor(private readonly eventService: EventService) {}
 
-  // @UseInterceptors(EventInterceptor)
   afterInit(server: any): any {
     server.use((client, next) => {
       const encryptedUserID = client.handshake.auth.encryptedUserID;
@@ -67,181 +71,181 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   //     this.eventService.saveSession(client.userID.toString(), session);
   //   }
   // }
-  // @SubscribeMessage('inChannel')
-  // inChannel(
-  //   @MessageBody('channelId')
-  //   channelId: string,
-  //   @ConnectedSocket()
-  //   client,
-  // ) {
-  //   this.eventService.enterChannel(client, channelId);
+  @SubscribeMessage('inChannel')
+  inChannel(
+    @MessageBody('channelId')
+    channelId: string,
+    @ConnectedSocket()
+    client,
+  ) {
+    this.eventService.enterChannel(client, channelId);
+  }
+
+  @SubscribeMessage('outChannel')
+  outChannel(
+    @ConnectedSocket()
+    client: SocketC,
+  ) {
+    this.eventService
+      .getChannelFullName(client.rooms, /^room:user:/)
+      .forEach((channelName) => {
+        client
+          .to(channelName)
+          .emit('getMessage', `${client.userName}님이 퇴장하셨습니다.`);
+        client.leave(channelName);
+      });
+    client.broadcast.emit('outChannel', client.userID);
+  }
+
+  @SubscribeMessage('block')
+  block(
+    @MessageBody('badGuyID') badGuyID: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.block(badGuyID, client.userID);
+  }
+
+  @SubscribeMessage('follow')
+  follow(
+    @MessageBody('targetID') targetID: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.friendChanged({
+      userID: client.userID,
+      targetID,
+      isFollowing: true,
+    });
+    this.server
+      .to(targetID.toString())
+      .to(client.userID.toString())
+      .emit('friendChanged', {
+        userID: client.userID,
+        targetID,
+        isFollowing: true,
+      });
+  }
+
+  @SubscribeMessage('unfollow')
+  unfollow(
+    @MessageBody('targetID') targetID: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.friendChanged({
+      userID: client.userID,
+      targetID,
+      isFollowing: false,
+    });
+    this.server.to(targetID.toString()).emit('friendChanged', {
+      userID: client.userID,
+      targetID,
+      isFollowing: false,
+    });
+  }
+
+  @SubscribeMessage('sendMSG')
+  sendMSG(@MessageBody('msg') msg: string, @ConnectedSocket() client: SocketC) {
+    client
+      .to(this.eventService.getChannelFullName(client.rooms, /^room:user:/))
+      .emit('getMSG', {
+        userID: client.userID,
+        userName: client.userName,
+        msg,
+      });
+  }
+
+  @SubscribeMessage('sendDM')
+  sendDM(
+    @MessageBody('recipientId') recipientTd: string,
+    @MessageBody('msg') msg: string,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.saveMessage(msg);
+    client
+      .to(this.eventService.getChannelFullName(client.rooms, /^room:user:/))
+      .emit('getDM', { userID: client.userID, userName: client.userName, msg });
+  }
+
+  @SubscribeMessage('kickOut')
+  kickOut(client: SocketC, badGuyID: number) {
+    this.eventService.kickOut(client, badGuyID, this.server);
+  }
+
+  @SubscribeMessage('modifyGame')
+  modifyGame(
+    @ConnectedSocket() client: SocketC,
+    @MessageBody() channelInfo: ChannelInfoDto,
+  ) {
+    this.eventService.modifyGame(client, channelInfo);
+  }
+
+  @SubscribeMessage('inviteUser')
+  inviteUser(
+    @MessageBody('invitedUserId') invitedUserId: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.inviteUser(client, invitedUserId, this.server);
+  }
+
+  @SubscribeMessage('mute')
+  mute(
+    @MessageBody('noisyGuyId') noisyGuyId: number,
+    @ConnectedSocket() client: SocketC,
+  ) {
+    this.eventService.mute(client, noisyGuyId);
+  }
+
+  @SubscribeMessage('generateGame')
+  generateGame(client: SocketC, channelInfoDto: ChannelInfoDto) {
+    this.eventService.createChannel(client, channelInfoDto);
+  }
+
+  // @SubscribeMessage('waitingGame')
+  // waitingGame(@ConnectedSocket() client: Socket) {
+  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
+  //   // const waiterList = getWaiter(channelName);
+  //   // if (waiterList.length >= 2) {
+  //   //   this.server.to(channelName).emit('determineParticipants', {
+  //   //     player: [waiterList[0], waiterList[1]],
+  //   //   });
+  //   // }
   // }
   //
-  // @SubscribeMessage('outChannel')
-  // outChannel(
-  //   @ConnectedSocket()
-  //   client: SocketC,
-  // ) {
-  //   this.eventService
-  //     .getChannelFullName(client.rooms, /^room:user:/)
-  //     .forEach((channelName) => {
-  //       client
-  //         .to(channelName)
-  //         .emit('getMessage', `${client.userName}님이 퇴장하셨습니다.`);
-  //       client.leave(channelName);
-  //     });
-  //   client.broadcast.emit('outChannel', client.userID);
+  // @SubscribeMessage('readyGame')
+  // readyGame(@ConnectedSocket() client: Socket) {
+  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
+  //   // if (isParticipantTwo(channelName)) {
+  //   //   this.server.in(channelName).emit('startGame');
+  //   //   return;
+  //   // }
+  //   client.to(channelName).emit('readyGame', client.id);
   // }
   //
-  // @SubscribeMessage('block')
-  // block(
-  //   @MessageBody('badGuyID') badGuyID: number,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.block(badGuyID, client.userID);
+  // @SubscribeMessage('endGame')
+  // endGame(@ConnectedSocket() client: Socket) {
+  //   return { event: 'endGame' };
+  // }
+
+  // @SubscribeMessage('client2Server')
+  // handleMessage(client: any) {
+  //   // this.server.emit('server2Client', data);
+  //   return { event: 'client2Server', data: 'Hello world!' };
   // }
   //
-  // @SubscribeMessage('follow')
-  // follow(
-  //   @MessageBody('targetID') targetID: number,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.friendChanged({
-  //     userID: client.userID,
-  //     targetID,
-  //     isFollowing: true,
-  //   });
-  //   this.server
-  //     .to(targetID.toString())
-  //     .to(client.userID.toString())
-  //     .emit('friendChanged', {
-  //       userID: client.userID,
-  //       targetID,
-  //       isFollowing: true,
-  //     });
+  // @SubscribeMessage('events')
+  // findAll(@MessageBody() data: any): Observable<WsResponse<number>> {
+  //   return from([1, 2, 3]).pipe(
+  //     map((item) => ({ event: 'events', data: item })),
+  //   );
   // }
   //
-  // @SubscribeMessage('unfollow')
-  // unfollow(
-  //   @MessageBody('targetID') targetID: number,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.friendChanged({
-  //     userID: client.userID,
-  //     targetID,
-  //     isFollowing: false,
-  //   });
-  //   this.server.to(targetID.toString()).emit('friendChanged', {
-  //     userID: client.userID,
-  //     targetID,
-  //     isFollowing: false,
-  //   });
+  // @SubscribeMessage('identity')
+  // async identity(@MessageBody() data: number): Promise<number> {
+  //   return data;
   // }
   //
-  // @SubscribeMessage('sendMSG')
-  // sendMSG(@MessageBody('msg') msg: string, @ConnectedSocket() client: SocketC) {
-  //   client
-  //     .to(this.eventService.getChannelFullName(client.rooms, /^room:user:/))
-  //     .emit('getMSG', {
-  //       userID: client.userID,
-  //       userName: client.userName,
-  //       msg,
-  //     });
+  // @SubscribeMessage('events2')
+  // handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
+  //   // client.emit('mtak', { msg: 'hiii' });
+  //   return { room: { roomId: '', roomName: '' }, nickname: 'mtak' };
   // }
-  //
-  // @SubscribeMessage('sendDM')
-  // sendDM(
-  //   @MessageBody('recipientId') recipientTd: string,
-  //   @MessageBody('msg') msg: string,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.saveMessage(msg);
-  //   client
-  //     .to(this.eventService.getChannelFullName(client.rooms, /^room:user:/))
-  //     .emit('getDM', { userID: client.userID, userName: client.userName, msg });
-  // }
-  //
-  // @SubscribeMessage('kickOut')
-  // kickOut(client: SocketC, badGuyID: number) {
-  //   this.eventService.kickOut(client, badGuyID, this.server);
-  // }
-  //
-  // @SubscribeMessage('modifyGame')
-  // modifyGame(
-  //   @ConnectedSocket() client: SocketC,
-  //   @MessageBody() channelInfo: ChannelInfoDto,
-  // ) {
-  //   this.eventService.modifyGame(client, channelInfo);
-  // }
-  //
-  // @SubscribeMessage('inviteUser')
-  // inviteUser(
-  //   @MessageBody('invitedUserId') invitedUserId: number,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.inviteUser(client, invitedUserId, this.server);
-  // }
-  //
-  // @SubscribeMessage('mute')
-  // mute(
-  //   @MessageBody('noisyGuyId') noisyGuyId: number,
-  //   @ConnectedSocket() client: SocketC,
-  // ) {
-  //   this.eventService.mute(client, noisyGuyId);
-  // }
-  //
-  // @SubscribeMessage('generateGame')
-  // generateGame(client: SocketC, channelInfoDto: ChannelInfoDto) {
-  //   this.eventService.createChannel(client, channelInfoDto);
-  // }
-  //
-  // // @SubscribeMessage('waitingGame')
-  // // waitingGame(@ConnectedSocket() client: Socket) {
-  // //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
-  // //   // const waiterList = getWaiter(channelName);
-  // //   // if (waiterList.length >= 2) {
-  // //   //   this.server.to(channelName).emit('determineParticipants', {
-  // //   //     player: [waiterList[0], waiterList[1]],
-  // //   //   });
-  // //   // }
-  // // }
-  // //
-  // // @SubscribeMessage('readyGame')
-  // // readyGame(@ConnectedSocket() client: Socket) {
-  // //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
-  // //   // if (isParticipantTwo(channelName)) {
-  // //   //   this.server.in(channelName).emit('startGame');
-  // //   //   return;
-  // //   // }
-  // //   client.to(channelName).emit('readyGame', client.id);
-  // // }
-  // //
-  // // @SubscribeMessage('endGame')
-  // // endGame(@ConnectedSocket() client: Socket) {
-  // //   return { event: 'endGame' };
-  // // }
-  //
-  // // @SubscribeMessage('client2Server')
-  // // handleMessage(client: any) {
-  // //   // this.server.emit('server2Client', data);
-  // //   return { event: 'client2Server', data: 'Hello world!' };
-  // // }
-  // //
-  // // @SubscribeMessage('events')
-  // // findAll(@MessageBody() data: any): Observable<WsResponse<number>> {
-  // //   return from([1, 2, 3]).pipe(
-  // //     map((item) => ({ event: 'events', data: item })),
-  // //   );
-  // // }
-  // //
-  // // @SubscribeMessage('identity')
-  // // async identity(@MessageBody() data: number): Promise<number> {
-  // //   return data;
-  // // }
-  // //
-  // // @SubscribeMessage('events2')
-  // // handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
-  // //   // client.emit('mtak', { msg: 'hiii' });
-  // //   return { room: { roomId: '', roomName: '' }, nickname: 'mtak' };
-  // // }
 }

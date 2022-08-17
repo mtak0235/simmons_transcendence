@@ -158,16 +158,15 @@ export class EventService {
     client: SocketC,
     invitedUserId: number,
   ) {
-    const channelDto = this.channelListStore.createChannel(
-      channelName,
-      {
+    const channelDto = this.channelListStore.createChannel(channelName, {
+      channel: {
         accessLayer: ACCESS_LAYER.PRIVATE,
         channelName,
         score: 10,
         adminID: client.userID,
       },
-      invitedUserId.toString(),
-    );
+      password: undefined,
+    });
     return channelDto;
   }
 
@@ -185,9 +184,10 @@ export class EventService {
   }
 
   createChannel(client: SocketC, channelInfoDto: ChannelInfoDto) {
-    if (this.channelListStore.findChannel('room:user:' + client.userID)) {
+    const channelName = 'room:user:' + client.userID;
+    if (this.channelListStore.findChannel(channelName)) {
       throw new Error('duplicate Exception');
     }
-    // this.channelListStore.createChannel();
+    this.channelListStore.createChannel(channelName, channelInfoDto);
   }
 }
