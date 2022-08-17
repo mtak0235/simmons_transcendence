@@ -23,7 +23,11 @@ export default class Follows {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Users, (users) => users.blocks)
-  @JoinColumn()
-  users: Users;
+  @ManyToOne(() => Users, (users) => users.followSourceUsers)
+  @JoinColumn({ name: 'sourceId', referencedColumnName: 'id' })
+  sourceUsers: Users;
+
+  @ManyToOne(() => Users, (users) => users.followTargetUsers)
+  @JoinColumn({ name: 'targetId', referencedColumnName: 'id' })
+  targetUsers: Users;
 }
