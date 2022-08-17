@@ -38,11 +38,17 @@ export default class Users {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Follows, (follows) => follows.users)
-  follows: Follows[];
+  @OneToMany(() => Follows, (follows) => follows.sourceUsers)
+  followSourceUsers: Follows[];
 
-  @OneToMany(() => Follows, (blocks) => blocks.users)
-  blocks: Blocks[];
+  @OneToMany(() => Follows, (follows) => follows.targetUsers)
+  followTargetUsers: Follows[];
+
+  @OneToMany(() => Blocks, (blocks) => blocks.sourceUsers)
+  blockSourceUsers: Blocks[];
+
+  @OneToMany(() => Blocks, (blocks) => blocks.targetUsers)
+  blockTargetUsers: Blocks[];
 
   @OneToMany(() => GameLogs, (gameLogs) => gameLogs.playerA)
   gameLogPlayerA: GameLogs[];
