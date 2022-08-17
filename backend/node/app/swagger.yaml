@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   description: "트센 API 명세"
-  version: "1.0.0"
+  version: "1.1.0"
   title: "ft_transcendance"
   termsOfService: "https://"
   contact:
@@ -76,7 +76,7 @@ paths:
       tags:
         - Auth
       summary: 로그인
-      description: <h1>42 OAuth를 이용한 로그인 42 API확인 후 재작성<h1/>
+      description: <h1>42 OAuth를 이용한 로그인<br>42 Login Page로 리다이렉션 될 거임<h1/>
       responses:
         301:
           description: 42 Login page redirection
@@ -92,7 +92,7 @@ paths:
       tags:
         - Auth
       summary: 로그인 콜백
-      description: <h1>42 OAuth redirect uri<h1/><br>로그인이 완료된 시점이니 세션에 사용자 저장이 될 거임
+      description: <h1>42 OAuth redirect uri<h1/><br>로그인이 완료된 시점이니 메모리에 사용자 정보가 저장 될 거임<br><br><h2>2단계 인증이 활성화 되어있는 경우 204 status와 인증코드가 해싱된 토큰이 반환되며, 사용자의 이메일로 인증 코드가 발송된다.</h2>
       parameters:
         - in: query
           name: code
@@ -101,12 +101,26 @@ paths:
             example: 42 OAuth 인가코드 들어갈거임
           required: true
       responses:
-        301:
-          description: <h2>성공, encrypted-name이 담긴 쿠키 반환<br><br>`/v0/socket/syn`으로 redirection 될거임</h2>
+        200:
+          description: <h2>성공, 사용자 정보가 담긴 Access, Refresh Token이 담긴 쿠키 반환</h2>
           headers:
-            encrypted-name:
+            access_token:
               schema:
-                $ref: "#/components/schemas/encrypted-name"
+                $ref: "#/components/schemas/access_token"
+            refresh_token:
+              schema:
+                $ref: "#/components/schemas/refresh_token"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        204:
+          description: <h2>로그인 성공, 2단계 인증 추가 필요</h2>
+          headers:
+            code:
+              schema:
+                type: "string"
+                example: 해싱된 이메일 인증코드가 담겨있음
           content:
             application/json:
               schema:
@@ -115,6 +129,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         401:
           $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -126,10 +142,11 @@ paths:
       description: <h1>서버 세션에서 클라이언트 정보 삭제됨</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
+
       responses:
         200:
           $ref: "#/components/responses/Ok"
@@ -148,7 +165,7 @@ paths:
       description: <h1>개별 인증번호 확인</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
@@ -581,7 +598,7 @@ components:
                     #   items:
                     #     type: "object"
                     #     properties:
-                    # 이부분 수정해야함
+                    # 이부분 수정해야함 모든 유저와 친구 목록 둘다 똑같은 엔티티로 들어감
 
               loginUser:
                 type: "object"
@@ -693,10 +710,17 @@ components:
       type: "string"
       example: "서버 session의 client식별자인 암호화 된 사용자 이름"
 
+    access_token:
+      type: "string"
+      example: "API 통신에 필요한 Access Token"
+
+    refresh_token:
+      type: "string"
+      example: "Access Token 재발급에 필요한 Refresh Token"
+
     Cookie:
       type: "string"
-      example: "encrypted-name=암호화 된 사용자 이름"
-
+      example: "Bearer \"이곳에 Access Token 입력\""
 
 
 
