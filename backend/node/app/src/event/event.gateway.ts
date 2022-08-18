@@ -2,22 +2,15 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
-  OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import {
-  BadRequestException,
-  Inject,
-  Logger,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { EventInterceptor } from '@src/event/event.interceptor';
 import { EventService } from '@src/event/event.service';
-import { Session } from '@src/event/storage/user.store';
 import { ChannelInfoDto } from '@src/event/storage/channelStore';
 
 export class SocketC extends Socket {
@@ -56,6 +49,7 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   handleConnection(client: SocketC, ...args: any[]): any {
     const blockList = this.eventService.getBlockList(client.userID);
     client.emit('getBlockList', blockList);
+    client;
     // this.eventService.getMessageForUser(client);
   }
 
