@@ -8,6 +8,7 @@ import {
   ChannelListStore,
 } from '@src/event/storage/channel-list-store';
 import { Server } from 'socket.io';
+import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class EventService {
@@ -65,7 +66,7 @@ export class EventService {
       stackedMsg.push({
         userID: session.userID,
         userName: session.userName,
-        connected: session.connected,
+        connected: session.status,
         messages: messagesPerUser.get(session.userID) || [],
       });
     });
@@ -145,20 +146,9 @@ export class EventService {
 
   inviteUser(client: SocketC, invitedUserId: number, server: Server) {
     const channelName = 'room:user:' + client.userID;
-    const channelDto = this.extracted(channelName, client, invitedUserId);
-    server.in(invitedUserId.toString()).socketsJoin(channelName);
-    client.to(invitedUserId.toString()).emit('getInvitation', {
-      msg: `you are invited to ${client.userName}.`,
-      channelDto,
-    });
-  }
-
-  private extracted(
-    channelName: string,
-    client: SocketC,
-    invitedUserId: number,
-  ) {
     const channelDto = this.channelListStore.createChannel(channelName, {
+      waiter: undefined,
+      matcher: undefined,
       channel: {
         accessLayer: ACCESS_LAYER.PRIVATE,
         channelName,
@@ -167,7 +157,11 @@ export class EventService {
       },
       password: undefined,
     });
-    return channelDto;
+    server.in(invitedUserId.toString()).socketsJoin(channelName);
+    client.to(invitedUserId.toString()).emit('getInvitation', {
+      msg: `you are invited to ${client.userName}.`,
+      channelDto,
+    });
   }
 
   mute(client: SocketC, noisyGuyId: number) {
@@ -189,5 +183,60 @@ export class EventService {
       throw new Error('duplicate Exception');
     }
     this.channelListStore.createChannel(channelName, channelInfoDto);
+    this.enterChannel(client, client.userID);
+    if (!client.rooms.has(channelName)) {
+      this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+        (roomName) => {
+          client.leave(roomName);
+        },
+      );
+      client.join(channelName);
+      if (channelInfoDto.channel.accessLayer != ACCESS_LAYER.PRIVATE) {
+        client.broadcast.emit('gameGenerated', channelInfoDto.channel);
+      }
+    }
+  }
+
+  saveGameResult(gameResult: { winner: number; loser: number; score: number }) {
+    //game result 저장
+  }
+
+  reserveGame(client: SocketC) {
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
+        channelInfoDto.waiter.push(client.userID);
+        if (channelInfoDto.waiter.length < 2) {
+          client.to(channelName).emit('waitingGame', { waiter: client.userID });
+          return;
+        }
+        for (let i = 0; i < 2; i++) {
+          channelInfoDto.matcher.set(channelInfoDto.waiter.shift(), false);
+        }
+        client.broadcast
+          .except(
+            Array.from(channelInfoDto.matcher.keys()).map((data) =>
+              data.toString(),
+            ),
+          )
+          .emit('matcherMade', channelInfoDto);
+      },
+    );
+  }
+
+  readyGame(client: SocketC, server: Server) {
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelInfoDto = this.channelListStore.findChannel(channelName);
+        if (
+          Array.from(channelInfoDto.matcher.values()).filter(
+            (isReady) => isReady == false,
+          ).length
+        ) {
+          client.in(channelName).emit('readyGame', client.userID);
+        }
+        client.in(channelName).emit('startGame');
+      },
+    );
   }
 }

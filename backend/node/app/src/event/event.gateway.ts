@@ -195,57 +195,42 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   }
 
   @SubscribeMessage('generateGame')
-  generateGame(client: SocketC, channelInfoDto: ChannelInfoDto) {
+  generateGame(
+    @ConnectedSocket() client: SocketC,
+    @MessageBody() channelInfoDto: ChannelInfoDto,
+  ) {
     this.eventService.createChannel(client, channelInfoDto);
   }
 
-  // @SubscribeMessage('waitingGame')
-  // waitingGame(@ConnectedSocket() client: Socket) {
-  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
-  //   // const waiterList = getWaiter(channelName);
-  //   // if (waiterList.length >= 2) {
-  //   //   this.server.to(channelName).emit('determineParticipants', {
-  //   //     player: [waiterList[0], waiterList[1]],
-  //   //   });
-  //   // }
-  // }
-  //
-  // @SubscribeMessage('readyGame')
-  // readyGame(@ConnectedSocket() client: Socket) {
-  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/);
-  //   // if (isParticipantTwo(channelName)) {
-  //   //   this.server.in(channelName).emit('startGame');
-  //   //   return;
-  //   // }
-  //   client.to(channelName).emit('readyGame', client.id);
-  // }
-  //
-  // @SubscribeMessage('endGame')
-  // endGame(@ConnectedSocket() client: Socket) {
-  //   return { event: 'endGame' };
-  // }
+  @SubscribeMessage('endGame')
+  endGame(
+    @ConnectedSocket() client: SocketC,
+    @MessageBody('score')
+    gameResult: { winner: number; loser: number; score: number },
+  ) {
+    this.eventService.saveGameResult(gameResult);
+    return { event: 'endGame', data: gameResult };
+  }
+
+  @SubscribeMessage('waitingGame')
+  waitingGame(@ConnectedSocket() client: SocketC) {
+    this.eventService.reserveGame(client);
+  }
+
+  @SubscribeMessage('readyGame')
+  readyGame(client: SocketC) {
+    this.eventService.readyGame(client, this.server);
+  }
 
   // @SubscribeMessage('client2Server')
   // handleMessage(client: any) {
   //   // this.server.emit('server2Client', data);
   //   return { event: 'client2Server', data: 'Hello world!' };
   // }
-  //
   // @SubscribeMessage('events')
   // findAll(@MessageBody() data: any): Observable<WsResponse<number>> {
   //   return from([1, 2, 3]).pipe(
   //     map((item) => ({ event: 'events', data: item })),
   //   );
-  // }
-  //
-  // @SubscribeMessage('identity')
-  // async identity(@MessageBody() data: number): Promise<number> {
-  //   return data;
-  // }
-  //
-  // @SubscribeMessage('events2')
-  // handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
-  //   // client.emit('mtak', { msg: 'hiii' });
-  //   return { room: { roomId: '', roomName: '' }, nickname: 'mtak' };
   // }
 }

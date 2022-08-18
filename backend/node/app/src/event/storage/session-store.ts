@@ -1,29 +1,37 @@
 import { Message } from '@src/event/storage/message-store';
 import { Injectable } from '@nestjs/common';
 
+export const STATUS_LAYER = {
+  inGame: 'inGame',
+  online: 'online',
+  offline: 'offline',
+} as const;
+
+export type STATUS_LAYER = typeof STATUS_LAYER[keyof typeof STATUS_LAYER];
 export interface Session {
   userID: number;
   userName: string;
-  connected: boolean;
+  status: STATUS_LAYER;
   message?: Message;
+  friends: Array<number>;
 }
 @Injectable()
 export class SessionStore {
-  private sessions: Map<string, Session>;
+  private users: Map<string, Session>;
 
   constructor() {
-    this.sessions = new Map();
+    this.users = new Map();
   }
 
   findSession(id) {
-    return this.sessions.get(id);
+    return this.users.get(id);
   }
 
   saveSession(id, session) {
-    this.sessions.set(id, session);
+    this.users.set(id, session);
   }
 
   findAllSessions() {
-    return [...this.sessions.values()];
+    return [...this.users.values()];
   }
 }

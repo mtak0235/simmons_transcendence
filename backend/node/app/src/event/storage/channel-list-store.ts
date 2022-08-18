@@ -18,6 +18,8 @@ export interface ChannelDto {
 export interface ChannelInfoDto {
   password?: string;
   channel: ChannelDto;
+  matcher: Map<number, boolean>;
+  waiter: Array<number>;
 }
 
 @Injectable()
@@ -30,6 +32,8 @@ export class ChannelListStore {
 
   createChannel(key: string, channelInfoDto: ChannelInfoDto) {
     this.channels[key] = {
+      matcher: undefined,
+      waiter: [],
       password: channelInfoDto.password,
       channel: channelInfoDto.channel,
     };

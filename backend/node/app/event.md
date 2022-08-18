@@ -498,8 +498,6 @@ loop
 cs->>rt: leave(삭제할 방 이름)
 end
 cs->>rt: join(channelName)
-alt targetID
-ga->>c: to(targetID)<<gameGenerated>>(ChannelInfoDto)
-end
+alt access_layer != private
 ga->>c: (broadcast)<<gameGenerated>>(ChannelDto)
 ```
