@@ -8,22 +8,37 @@ export const ACCESS_LAYER = {
 
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
-export interface ChannelDto {
+export interface ChannelDisplayableDto {
   accessLayer: ACCESS_LAYER;
   channelName: string;
   score: number;
   adminID: number;
 }
 
+export interface MutedUser {
+  expiredDate: number;
+  userID: number;
+}
+
+export interface Matcher {
+  userID: number;
+  isReady: boolean;
+  score: number;
+}
+
+// export interface Game {}
 export interface ChannelInfoDto {
-  password?: string;
-  channel: ChannelDto;
-  matcher: Map<number, boolean>;
+  password?: string; // todo: bcrypt
+  channel: ChannelDisplayableDto;
   waiter: Array<number>;
+  kickedOutUsers: Array<number>;
+  mutedUsers: Array<MutedUser>;
+  matcher: Array<Matcher>;
+  onGame: boolean;
 }
 
 @Injectable()
-export class ChannelListStore {
+export class ChannelStore {
   private channels: Record<string, ChannelInfoDto>;
 
   findChannel(channelName: string) {

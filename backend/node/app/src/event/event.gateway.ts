@@ -17,8 +17,8 @@ import {
 } from '@nestjs/common';
 import { EventInterceptor } from '@src/event/event.interceptor';
 import { EventService } from '@src/event/event.service';
-import { Session } from '@src/event/storage/session-store';
-import { ChannelInfoDto } from '@src/event/storage/channel-list-store';
+import { Session } from '@src/event/storage/user.store';
+import { ChannelInfoDto } from '@src/event/storage/channelStore';
 
 export class SocketC extends Socket {
   userID: number;

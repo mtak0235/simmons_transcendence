@@ -8,16 +8,17 @@ export const STATUS_LAYER = {
 } as const;
 
 export type STATUS_LAYER = typeof STATUS_LAYER[keyof typeof STATUS_LAYER];
-export interface Session {
+export interface User {
   userID: number;
   userName: string;
   status: STATUS_LAYER;
-  message?: Message;
+  // message?: Message;
   friends: Array<number>;
+  blocks: Array<number>;
 }
 @Injectable()
-export class SessionStore {
-  private users: Map<string, Session>;
+export class UserStore {
+  private users: Map<string, User>;
 
   constructor() {
     this.users = new Map();

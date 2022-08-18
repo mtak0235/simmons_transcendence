@@ -3,8 +3,8 @@ import { EventGateway } from '@src/event/event.gateway';
 import { EventInterceptor } from '@src/event/event.interceptor';
 import { EventService } from '@src/event/event.service';
 import { MessageStore } from '@src/event/storage/message-store';
-import { SessionStore } from '@src/event/storage/session-store';
-import { ChannelListStore } from '@src/event/storage/channel-list-store';
+import { UserStore } from '@src/event/storage/user.store';
+import { ChannelListStore } from '@src/event/storage/channelStore';
 @Module({
   providers: [
     EventGateway,
@@ -14,7 +14,7 @@ import { ChannelListStore } from '@src/event/storage/channel-list-store';
     },
     EventService,
     MessageStore,
-    SessionStore,
+    UserStore,
     ChannelListStore,
   ],
 })

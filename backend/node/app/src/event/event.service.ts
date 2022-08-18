@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Session, SessionStore } from '@src/event/storage/session-store';
+import { Session, UserStore } from '@src/event/storage/user.store';
 import { MessageStore } from '@src/event/storage/message-store';
 import { SocketC } from '@src/event/event.gateway';
 import {
   ACCESS_LAYER,
   ChannelInfoDto,
   ChannelListStore,
-} from '@src/event/storage/channel-list-store';
+} from '@src/event/storage/channelStore';
 import { Server } from 'socket.io';
-import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class EventService {
   constructor(
-    private sessionStore: SessionStore,
+    private sessionStore: UserStore,
     private messageStore: MessageStore,
     private channelListStore: ChannelListStore,
   ) {}
@@ -145,23 +144,16 @@ export class EventService {
   }
 
   inviteUser(client: SocketC, invitedUserId: number, server: Server) {
-    const channelName = 'room:user:' + client.userID;
-    const channelDto = this.channelListStore.createChannel(channelName, {
-      waiter: undefined,
-      matcher: undefined,
-      channel: {
-        accessLayer: ACCESS_LAYER.PRIVATE,
-        channelName,
-        score: 10,
-        adminID: client.userID,
+    this.getChannelFullName(client.rooms, /^room:user:/).forEach(
+      (channelName) => {
+        const channelDto = this.channelListStore.findChannel(channelName);
+        client.to(invitedUserId.toString()).emit('getInvitation', {
+          msg: `you are invited to ${client.userName}.`,
+          inviter: client.userID,
+          channelDto,
+        });
       },
-      password: undefined,
-    });
-    server.in(invitedUserId.toString()).socketsJoin(channelName);
-    client.to(invitedUserId.toString()).emit('getInvitation', {
-      msg: `you are invited to ${client.userName}.`,
-      channelDto,
-    });
+    );
   }
 
   mute(client: SocketC, noisyGuyId: number) {
@@ -215,8 +207,7 @@ export class EventService {
         }
         client.broadcast
           .except(
-            Array.from(channelInfoDto.matcher.keys()).map((data) =>
-              data.toString(),
+              matcher.map(data => data.userId.toString())
             ),
           )
           .emit('matcherMade', channelInfoDto);
