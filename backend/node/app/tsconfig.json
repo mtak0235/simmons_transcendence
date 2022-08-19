@@ -21,6 +21,8 @@
       "@src/*": ["./src/*"],
       "@auth/*": ["./src/auth/*"],
       "@util/*": ["./src/util/*"],
+      "@entity/*": ["./src/util/entity/*"],
+      "@repository/*": ["./src/util/repository/*"],
       "@event/*": ["./src/event/*"],
       "@user/*": ["./src/user/*"],
     }

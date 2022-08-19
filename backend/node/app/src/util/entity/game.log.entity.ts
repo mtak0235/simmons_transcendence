@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('game_logs')
 export default class GameLogs {

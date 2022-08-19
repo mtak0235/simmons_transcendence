@@ -8,8 +8,8 @@ import {
   Column,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
-import Achievements from '@util/entity/achievement.entity';
+import Users from '@entity/user.entity';
+import Achievements from '@entity/achievement.entity';
 
 @Entity('user_achievements')
 export default class UserAchievements {

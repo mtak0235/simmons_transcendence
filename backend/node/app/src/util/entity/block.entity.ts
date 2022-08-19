@@ -7,7 +7,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('blocks')
 export default class Blocks {
