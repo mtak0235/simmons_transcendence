@@ -8,11 +8,14 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, Logger } from '@nestjs/common';
-import { EventInterceptor } from '@src/event/event.interceptor';
-import { EventService } from '@src/event/event.service';
-import { ChannelInfoDto } from '@src/event/storage/channelStore';
+import { Inject, Logger, UnauthorizedException } from '@nestjs/common';
+import { EventInterceptor } from '@event/event.interceptor';
+import { EventService } from '@event/event.service';
+import { ChannelInfoDto } from '@event/storage/channelStore';
 
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+// import { WsExceptionsFilter } from '@event/event.filter';
 export class SocketC extends Socket {
   userID: number;
   userName: string;
@@ -26,27 +29,46 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
 
   @Inject('eventInterceptor')
   private eventInterceptor: EventInterceptor;
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
+  // @UseGuards(WsGuard)
   afterInit(server: any): any {
     server.use((client, next) => {
+      // console.log(client);
       const encryptedUserID = client.handshake.auth.encryptedUserID;
       if (!encryptedUserID) {
         // throw new BadRequestException('jwt 가지고 오셈');
       }
       const userID = this.eventService.getUserID(encryptedUserID);
-      const session = this.eventService.findSession(userID);
-      if (!session) {
-        this.eventService.getUserName(userID);
-        this.eventService.saveSession(userID, session);
-        client.join(userID);
-      }
+      // const session = this.eventService.findSession(userID);
+      // if (!session) {
+      //   this.eventService.getUserName(userID);
+      //   this.eventService.saveSession(userID, session);
+      //   client.join(userID);
+      // }
       client.userID = userID;
       next();
     });
   }
 
   handleConnection(client: SocketC, ...args: any[]): any {
+    try {
+      const accessToken: any = client.handshake.headers['access_token'];
+      const accessVerify = this.jwtService.verify(accessToken, {
+        secret: this.configService.get('authConfig.jwt'),
+      });
+
+      console.log(accessToken);
+      console.log(accessVerify);
+    } catch (err) {
+      client.emit('error', new UnauthorizedException());
+      client.disconnect();
+    }
+
     const blockList = this.eventService.getBlockList(client.userID);
     client.emit('getBlockList', blockList);
     client;

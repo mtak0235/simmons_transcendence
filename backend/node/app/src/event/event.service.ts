@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Session, UserStore } from '@src/event/storage/user.store';
-import { MessageStore } from '@src/event/storage/message-store';
-import { SocketC } from '@src/event/event.gateway';
+import { UserStore } from '@event/storage/user.store';
+// import { MessageStore } from '@event/storage/message-store';
+import { SocketC } from '@event/event.gateway';
 import {
   ACCESS_LAYER,
   ChannelInfoDto,
-  ChannelListStore,
-} from '@src/event/storage/channelStore';
+  ChannelStore,
+} from '@event/storage/channelStore';
 import { Server } from 'socket.io';
 
 @Injectable()
 export class EventService {
   constructor(
     private sessionStore: UserStore,
-    private messageStore: MessageStore,
-    private channelListStore: ChannelListStore,
+    // private messageStore: MessageStore,
+    private channelListStore: ChannelStore,
   ) {}
 
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
@@ -32,18 +32,18 @@ export class EventService {
     return encryptedUserID;
   }
 
-  findSession(userID: string): Session {
-    return this.sessionStore.findSession(userID);
-  }
+  // findSession(userID: string): Session {
+  //   return this.sessionStore.findSession(userID);
+  // }
 
   getUserName(userID: string): string {
     // db에서 userName 가져와야됨.
     return userID + 'NAME';
   }
 
-  saveSession(userID: string, session: Session) {
-    this.sessionStore.saveSession(userID, session);
-  }
+  // saveSession(userID: string, session: Session) {
+  //   this.sessionStore.saveSession(userID, session);
+  // }
 
   getBlockList(userID: any): Array<string> {
     return [];
@@ -52,15 +52,15 @@ export class EventService {
   getMessageForUser(client) {
     const messagesPerUser = new Map();
     const stackedMsg = [];
-    this.messageStore.findMessagesForUser(client.userID).forEach((message) => {
-      const { from, to } = message;
-      const otherUser = client.userID === from ? to : from;
-      if (messagesPerUser.has(otherUser)) {
-        messagesPerUser.get(otherUser).push(message);
-      } else {
-        messagesPerUser.set(otherUser, [message]);
-      }
-    });
+    // this.messageStore.findMessagesForUser(client.userID).forEach((message) => {
+    //   const { from, to } = message;
+    //   const otherUser = client.userID === from ? to : from;
+    //   if (messagesPerUser.has(otherUser)) {
+    //     messagesPerUser.get(otherUser).push(message);
+    //   } else {
+    //     messagesPerUser.set(otherUser, [message]);
+    //   }
+    // });
     this.sessionStore.findAllSessions().forEach((session) => {
       stackedMsg.push({
         userID: session.userID,
@@ -109,7 +109,7 @@ export class EventService {
   }
 
   saveMessage(msg: string) {
-    this.messageStore.saveMessage(msg);
+    // this.messageStore.saveMessage(msg);
   }
 
   kickOut(client: SocketC, badGuyID: number, server: Server) {
@@ -203,14 +203,14 @@ export class EventService {
           return;
         }
         for (let i = 0; i < 2; i++) {
-          channelInfoDto.matcher.set(channelInfoDto.waiter.shift(), false);
+          // channelInfoDto.matcher.set(channelInfoDto.waiter.shift(), false);
         }
-        client.broadcast
-          .except(
-              matcher.map(data => data.userId.toString())
-            ),
-          )
-          .emit('matcherMade', channelInfoDto);
+        // client.broadcast
+        //   .except(
+        //       matcher.map(data => data.userId.toString())
+        //     ),
+        //   )
+        //   .emit('matcherMade', channelInfoDto);
       },
     );
   }
@@ -221,7 +221,7 @@ export class EventService {
         const channelInfoDto = this.channelListStore.findChannel(channelName);
         if (
           Array.from(channelInfoDto.matcher.values()).filter(
-            (isReady) => isReady == false,
+            (matcher) => matcher.isReady === false,
           ).length
         ) {
           client.in(channelName).emit('readyGame', client.userID);

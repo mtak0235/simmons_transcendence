@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(req: Request, payload: any): Promise<UserType> {
     const now = Date.parse(Date()) / 1000;
 
-    if (req.url !== '/auth/token' && now > payload.exp)
+    if (req.url !== '/v0/auth/token' && now > payload.exp)
       throw new UnauthorizedException();
 
     const userId = (

@@ -47,10 +47,13 @@ export class ChannelStore {
 
   createChannel(key: string, channelInfoDto: ChannelInfoDto) {
     this.channels[key] = {
-      matcher: undefined,
-      waiter: [],
       password: channelInfoDto.password,
       channel: channelInfoDto.channel,
+      waiter: [],
+      kickedOutUsers: [],
+      mutedUsers: [],
+      matcher: [],
+      onGame: false,
     };
     return channelInfoDto.channel;
   }

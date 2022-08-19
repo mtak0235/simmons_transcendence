@@ -14,7 +14,9 @@ import entities from '@util/entity/index';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
-        process.env.NODE_ENV === 'development'
+        process.env.NODE_ENV === 'local'
+          ? '.env.local'
+          : process.env.NODE_ENV === 'development'
           ? '.env.dev'
           : process.env.NODE_ENV === 'production'
           ? '.env.prod'
@@ -43,7 +45,7 @@ import entities from '@util/entity/index';
         database: configService.get('dbConfig.name'),
         charset: 'utf8mb4_general_ci',
         timezone: '+09:00',
-        synchronize: false, // todo: production environ = false
+        synchronize: true, // todo: production environ = false
         logging: ['error'],
         logger: 'file',
         maxQueryExecutionTime: 2000,

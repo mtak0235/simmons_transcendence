@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
-import { EventGateway } from '@src/event/event.gateway';
-import { EventInterceptor } from '@src/event/event.interceptor';
-import { EventService } from '@src/event/event.service';
-import { MessageStore } from '@src/event/storage/message-store';
-import { UserStore } from '@src/event/storage/user.store';
-import { ChannelListStore } from '@src/event/storage/channelStore';
+import { EventGateway } from '@event/event.gateway';
+import { EventInterceptor } from '@event/event.interceptor';
+import { EventService } from '@event/event.service';
+// import { MessageStore } from '@event/storage/message-store';
+import { UserStore } from '@event/storage/user.store';
+import { ChannelStore } from '@event/storage/channelStore';
+import { JwtModule } from '@nestjs/jwt';
+
 @Module({
+  imports: [JwtModule],
   providers: [
     EventGateway,
     {
@@ -13,9 +16,9 @@ import { ChannelListStore } from '@src/event/storage/channelStore';
       useClass: EventInterceptor,
     },
     EventService,
-    MessageStore,
+    // MessageStore,
     UserStore,
-    ChannelListStore,
+    ChannelStore,
   ],
 })
 export class EventModule {}

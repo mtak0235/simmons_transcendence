@@ -1,4 +1,4 @@
-import { Message } from '@src/event/storage/message-store';
+import { Message } from '@event/storage/message-store';
 import { Injectable } from '@nestjs/common';
 
 export const STATUS_LAYER = {
