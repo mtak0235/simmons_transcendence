@@ -1,11 +1,7 @@
 # 모든 소켓 통신
-- auth.sessionId 서버 저장소를 뒤지든 랜덤으로 만들고, userId는 안받으면 에러.
-- 이 정보들 서버측에서 socket.*로 쓸 수 있게 값 넣어줌 
-#- sessionId: (public용)reconnection시 sessionId로 userId(다른 기기로 접속한 mtak들의 소켓이 userId가 이름인 방 안에 계심.) 찾음.(한번 왔던 놈인지 확인)
-- userId: (private용)db의 userId와 동일하며, 무슨 sessionId로 접속하더라도 동일한 자기 room(방이름이 "userId")에 접속할 수 있다. 고로
-- 여러 내가 sessionId로 동시 접속시 userId방에 내 소켓이 여러개일 수 있다. 
 - afterInit 
----
+- 서버 시작시 한번 실행됨.
+- server.use()에 module달려고 했는데 소켓 요청시 해당 모듈을 안지남. (왜지..?)
 
 ```mermaid
 sequenceDiagram
@@ -20,10 +16,9 @@ participant rt as RoomTable
 ```
 
 # 소켓 연결 직후
-- 영속성을 위해 세션을 저장해준다.
-- blockList clienthttp 화면랜더링에서 내려준다.
-- 메시지 수령자가 오프라인이면 애초에 보내는 사람이 메시지를 보낼 수 없게 한다. 
---------------------------------
+- socket에 userId 가지고 다님.
+- userId가 같은 소켓은 모두 'room:user:${userId}' room에 들어감.
+- status를 확인해서 offline아닌데 재접속인 경우는 본인인지 확신할 수 없는 소켓이 접속한 것이므로 에러 던짐.
 ## userEnter (listen)
 ```
 {userId:'432425', userName:'mtak', connected:true}
@@ -33,23 +28,24 @@ sequenceDiagram
 participant cls as clientStorage
 participant c as client
 participant ga as server
+participant cs as EventService
 participant ss as userStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
-participant rep as Repository
 participant rt as RoomTable
+participant rep as Repository
 
 c->>ga: <<connection>>
 ga->>ga: socket.userId = socket.handshake.auth.userId
 ga->>rt: socket.join('room:user:${userId}')
-ga->>us: getUserSource(userId)
+ga->>ss: getUserSource(userId)
 ss-->>ga: {userName, status}
 alt status != offline
 ga->>c: throw WSException("invalid access")
 else
-ga->>ss:setStatus(userId, online)
-ga->>c: broadcast<<userEnter>> ({userId, userName, status(online)})
+ga->>ga: socket.userName = userName
+ga->>ss:setStatus(userId, "online")
+ga->>c: broadcast<<userEnter>> ({userId, userName, status("online")})
 end
 ```
 
@@ -74,7 +70,8 @@ ga->>rt: server.to('room:user:${userId}').allSockets() : Promise<Socket>
 rt->>ga: matchingSockets
 alt matchingSockets.size == 0
 alt status가 inGame이면 
-ga->>c: <<gameOver>>()
+ga->>ga: endGame()
+ga->>ga: outChannel()
 else
 ga->>c: broadcast<<userExit>> (userId)
 end
@@ -102,17 +99,24 @@ participant r as rooms
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
 participant rt as RoomTable
+participant cs as EventService
 
 c->>ga: <<inChannel>>(channelName, ?pw)
 ga->>cs: enterChannel(client, channelName, ?pw)
 cs->>rt: join(channelName)
+cs->>ss: updateUserSource(userId, status("inGame"))
+ss->>ss: getUserSource(userId):{userName, status}
+ss->>ss: status = status
 ga->>c: broadcast<<inChannel>>{userId, userName, status, channelId}
-ga->>c: to(userId)<<getChannelInfo>>{ChannelDto}
+ga->>c: to(userId)<<getChannelInfo>>{channelName,  accessLayer, score, adminID}
 ```
 
 # outChannel
+- 이벤트 던지는 상황
+- 정상적으로 나가기 버튼을 눌렀을 때
+- 새로고침이나 뒤로가기로 나갔을 땐(커넥션 끊겼을 땐?)
+- connection, disconnection이벤트에서 status 관라
 ## outChannel (listen)
 ```
 {userId:412}
@@ -126,19 +130,22 @@ participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
+participant r as Repository
 
 c->>ga: <<outChannel>>
 ga->>cs: exitChannel(client,string[])
 cs->>rt: leave(channelName)
-sc->>c: broadcast<<outChannel>>(userId)
+cs->>ss: updateUserSource(userId, status("online"))
+ss->>ss: getUserSource(userId):{userName, status}
+ss->>ss: status = status
+sc->>c: broadcast<<outChannel>>({userId, userName})
 ```
 
 # block
 - 상대의 DM을 안받는다. => 모든 DM은 pass된다. 대신 초기 connection에서 DB를 뒤져 blocklist를 local storage로 내려준다. client는 일단 DM을 받고 localStorage를 뒤져서 있으면 뿌려주고 없으면 무시한다.
 - unfollow처리한다.
-- local
+- local에서 friends, blocks 데이터 내려줘야됨.
 
 ```mermaid
 sequenceDiagram
@@ -149,19 +156,21 @@ participant ss as userStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
-c->>cls: save{(targetId)}
-c->>c: removeFollow()
+participant r as Repository
+
+c->>cls: saveBlocker{(targetId)}
 c->>ga: <<block>>(targetId)
-ga->>cs: block(srcIDtargetId)
+ga->>cs: block(srcId,targetId)
+cs->>ss: getUserSource(userId):{blocks:[]}
+cs->>cs: blocks.append(targetId)
 cs->>r: saveBlock(srcId,targetId)
-ga->>ga: unfollow(targetId)
+ga->>ga: unfollow(targetId, )
 ```
 # follow
 ## friendChanged (listen)
 ```
-{userId: 431, targetId:4123, isFollowing:true}
+{userId: 431, targetId:4123, isFriend:true}
 ```
 ```mermaid
 sequenceDiagram
@@ -175,12 +184,15 @@ participant cs as EventService
 participant r as Repository
 participant rt as RoomTable
 
-c->>ga: follow(targetId)
-ga->>cs: friendChanged(userId, targetId, isFollowing(true))
-alt isFollowing = true
-cs->>r: saveFollow(userId, targetId);
+c->>cls: saveFriend(targetId)
+c->>ga: <<follow>>(targetId)
+ga->>cs: friendChanged(userId, targetId, isFollow(true))
+alt isFollow == true
+cs->>ss: getUserSource(userId):{friends:[]}
+cs->>cs: friends.append(targetId)
+cs->>r: saveFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollowing(true))
+ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(true))
 ```
 # unfollow
 ```mermaid
@@ -195,13 +207,15 @@ participant cs as EventService
 participant r as Repository
 participant rt as RoomTable
 
-c->>ga: unfollow(targetId)
-ga->>cs: friendChanged(userId, targetId, isFollowing(false))
-alt isFollowing == false
+c->>cls: deleteFriend(targetId)
+c->>ga: <<unfollow>>(targetId)
+ga->>cs: friendChanged(userId, targetId, isFollow(false))
+alt isFollow == false
+cs->>ss: getUserSource(userId):{friends:[]}
+cs->>cs: friends.delete(targetId)
 cs->>r: deleteFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollowing(false))
-c->>cs: save targetId or userId
+ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(false))
 ```
 
 # sendDM
@@ -218,12 +232,11 @@ participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
+participant r as Repository
 
-c->>ga: sendDM(msg, recipientId)
-ga->>c: to(recipientId)<<getDM>>({userId, userName, msg})
-c->>cs: save targetId or UserId
+c->>ga: sendDM(msg, targetId)
+ga->>c: to(targetId)<<getDM>>({userId, userName, msg})
 ```
 
 # sendMSG
@@ -241,12 +254,12 @@ participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
+participant r as Repository
 
 c->>ga: sendMSG(msg)
-ga->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
-cs->> ga: string[]
+ga->>cs: getChannelFullName(client.rooms, /^room:user:/):string[].getOne()
+cs->> ga: string
 ga-->>c: to(channelName)<<getMSG>>({userId, userName, msg})
 ```
 
@@ -264,17 +277,17 @@ participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
+participant r as Repository
 
-c->>ga: kickOut(badGuyId)
-ga->>cs: kickOut(client, badGuyId)
-cs->>cs: getChannelFullName(client.rooms, /^room:user:/):string[]
+c->>ga: kickOut(targetId)
+ga->>cs: kickOut(client, targetId)
+cs->>cs: getChannelFullName(client.rooms, /^room:user:/).findOne()
 cs->>cns: this.channelList[channelName]
 cns->>cs: ChannelInfoDto
 alt ChannelInfoDto.adminId == userId
-cs->>rt: to(badGuyId).leave(channelName)
-rt->>c: to(badGuyId)<<expelled>>(you are expelled from ${channelName})
+cs->>rt: to(targetId).leave(channelName)
+rt->>c: to(targetId)<<expelled>>(you are expelled from ${channelName})
 end
 ```
 # modifyGame
@@ -291,8 +304,8 @@ participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
-participant r as Repository
 participant rt as RoomTable
+participant r as Repository
 
 c->>ga: <<modifyGame>> (ChannelInfoDto{pw, score, adminId, accessLayer})
 ga->>cs: modifyGame(client, ChannelInfoDto)
