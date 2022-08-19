@@ -4,7 +4,7 @@
 #- sessionId: (public용)reconnection시 sessionId로 userId(다른 기기로 접속한 mtak들의 소켓이 userId가 이름인 방 안에 계심.) 찾음.(한번 왔던 놈인지 확인)
 - userId: (private용)db의 userId와 동일하며, 무슨 sessionId로 접속하더라도 동일한 자기 room(방이름이 "userId")에 접속할 수 있다. 고로
 - 여러 내가 sessionId로 동시 접속시 userId방에 내 소켓이 여러개일 수 있다. 
-## afterInit 
+- afterInit 
 ---
 
 ```mermaid
@@ -24,20 +24,10 @@ participant rt as RoomTable
 - blockList clienthttp 화면랜더링에서 내려준다.
 - 메시지 수령자가 오프라인이면 애초에 보내는 사람이 메시지를 보낼 수 없게 한다. 
 --------------------------------
-- getBlockList
-```
-['1234134', '54324532', '324523453']
-```
-- userEnter
+## userEnter (listen)
 ```
 {userId:'432425', userName:'mtak', connected:true}
 ``` 
-- getPreLogs
-```
-[[{userId:'121', userName:'mtak', connected:true, message:[msg:'전화받으셈', from:'111', to:'121']}, {userId:'121', userName:'mtak', connected:true, message:[msg:'어디세요엠탁님', from:'111', to:'121']}], 
-[{userId:'121', userName:'mtak', connected:true, message:[msg:'늦게가욤', from:'222', to:'121']}, {userId:'121', userName:'mtak', connected:true, message:[msg:'집현전으로 가겠습니당', from:'222', to:'121']}], ...
-]
-```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -64,9 +54,9 @@ end
 ```
 
 # 소켓 연결 끊겼을 때
-- userExit
+## userExit (listen)
 ```
-'121'
+{userId: 121}
 ```
 ```mermaid
 sequenceDiagram
@@ -85,7 +75,6 @@ rt->>ga: matchingSockets
 alt matchingSockets.size == 0
 alt status가 inGame이면 
 ga->>c: <<gameOver>>()
-# endGame 호출
 else
 ga->>c: broadcast<<userExit>> (userId)
 end
@@ -95,13 +84,14 @@ end
 
 # inChannel
 - channelName pattern; room:channel:channelID
-- 
+## inChannel (listen)
 ```
-{userId:'121', userName:'mtak'}
+{userId:'121', userName:'mtak', status:"inGame", channelId:"diavlo"}
 ```
-- getMessage
+## getChannelInfo (listen)
 ```
-'mtak님이 입장하셨습니다'
+{channelName:"diavlo",  accessLayer: "private", 
+  score: 13, adminID: 543}
 ```
 ```mermaid
 sequenceDiagram
@@ -123,9 +113,9 @@ ga->>c: to(userId)<<getChannelInfo>>{ChannelDto}
 ```
 
 # outChannel
-- outChannel
+## outChannel (listen)
 ```
-'121'
+{userId:412}
 ```
 ```mermaid
 sequenceDiagram
@@ -149,6 +139,7 @@ sc->>c: broadcast<<outChannel>>(userId)
 - 상대의 DM을 안받는다. => 모든 DM은 pass된다. 대신 초기 connection에서 DB를 뒤져 blocklist를 local storage로 내려준다. client는 일단 DM을 받고 localStorage를 뒤져서 있으면 뿌려주고 없으면 무시한다.
 - unfollow처리한다.
 - local
+
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -168,6 +159,10 @@ cs->>r: saveBlock(srcId,targetId)
 ga->>ga: unfollow(targetId)
 ```
 # follow
+## friendChanged (listen)
+```
+{userId: 431, targetId:4123, isFollowing:true}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -185,13 +180,9 @@ ga->>cs: friendChanged(userId, targetId, isFollowing(true))
 alt isFollowing = true
 cs->>r: saveFollow(userId, targetId);
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollowing(false))
+ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollowing(true))
 ```
 # unfollow
-- friendChanged
-```
-{userId:'121', targetId:'111', isFollowing:false}
-```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -214,7 +205,7 @@ c->>cs: save targetId or userId
 ```
 
 # sendDM
-- getDM
+## getDM (listen)
 ```
 {userId:'121', userName:'mtak', msg:'hihi'}
 ```
@@ -237,7 +228,7 @@ c->>cs: save targetId or UserId
 
 # sendMSG
 - channel단위 msg 전송
-- getMSG
+## getMSG (listen)
 ```
 {userId:'121', userName:'mtak', msg:'hihi'}
 ```
@@ -260,7 +251,7 @@ ga-->>c: to(channelName)<<getMSG>>({userId, userName, msg})
 ```
 
 # kickOut
-- expelled
+## expelled (listen)
 ```
 'you are expelled from helloPython'
 ```
@@ -287,7 +278,7 @@ rt->>c: to(badGuyId)<<expelled>>(you are expelled from ${channelName})
 end
 ```
 # modifyGame
-- gameModified
+## gameModified (listen)
 ```
 {channelName:'helloPython', accessLayer:'public', score:'12', adminId:'121'}
 ```
@@ -316,9 +307,9 @@ end
 # inviteUser
 - ChannelName은 room:user:[userId]
 - 게임중인 놈은 초대할 수 없음.  
-- getInvitation
+## getInvitation (listen)
 ```
-{inviter:'121', msg:'you are invited to mtak'}
+{inviter:'121'}
 ```
 ```mermaid
 sequenceDiagram
@@ -341,9 +332,6 @@ cs->>c: to(invitedUserId)<<getInvitation>>({msg: 'you are invited to ${userName}
 
 # mute
 - mute
-```
-(아무것도 안줌)
-```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -368,7 +356,7 @@ end
 cs->>ga: to(userId)<<nuAuthorized>>('you aren't authorized.')
 ```
 # waitingGame
-- getWaitingList
+## getWaitingList (listen)
 ```
 {userId:'121', userName:'mtak'}
 ```
@@ -434,6 +422,11 @@ ga-->>c: (channel)readyGame(userId)
 - 대기열 유저 matcher 등록
 - 등록된 유저 대기열 삭제
 - channel에 게임 종료 emit{matcher, waiter}
+  
+## gameOver (listen)
+```
+{matcher:[1234, 45315], waiter:[5234, 34542, 3425342]}
+```
 ```mermaid
 sequenceDiagram
 participant cls as clientStorage
@@ -447,13 +440,14 @@ participant r as Repository
 participant rt as RoomTable
 
 c->>ga: endGame()#client가 participant면
-ga-->>c:endGame()
+ga-->>c:to(channelName)<<gameOver>> {matcher:[], waiter:[]}
 ```
 # gameGenerated
 - private(target에게 초대 메시지 알림 감), protected(pw있어야 함)
-- createChannel
+## createChannel (listen)
 ```
-
+{channelName:"diavlo",  accessLayer: "private", 
+  score: 13, adminID: 543}
 ```
 ```mermaid
 sequenceDiagram
@@ -482,4 +476,5 @@ end
 cs->>rt: join(channelName)
 alt access_layer != private
 ga->>c: (broadcast)<<gameGenerated>>(ChannelDto)
+end
 ```
