@@ -9,11 +9,11 @@ export default class UserRepository extends Repository<Users> {
     super(Users, dataSource.createEntityManager());
   }
 
-  async findUserForUsername(username: string) {
+  async findUser(column: string, value: any, operator = '=') {
     const query = this.createQueryBuilder('users').where(
-      'users.username = :username',
+      `users.${column} ${operator} :value`,
       {
-        username: username,
+        value: value,
       },
     );
     return await query.getOne();
