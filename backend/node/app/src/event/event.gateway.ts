@@ -2,7 +2,6 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -13,16 +12,17 @@ import { EventInterceptor } from '@event/event.interceptor';
 import { EventService } from '@event/event.service';
 import { ChannelInfoDto } from '@event/storage/channelStore';
 
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-// import { WsExceptionsFilter } from '@event/event.filter';
+import { MainEventService } from '@event/service/main.event.service';
+import { UserEventService } from '@event/service/user.event.service';
+import { ChannelEventService } from '@event/service/channel.event.service';
+
 export class SocketC extends Socket {
   userID: number;
   userName: string;
 }
 
 @WebSocketGateway(4000)
-export class EventGateway implements OnGatewayConnection, OnGatewayInit {
+export class EventGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
   private logger: Logger = new Logger('EventGateway');
@@ -31,47 +31,26 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   private eventInterceptor: EventInterceptor;
   constructor(
     private readonly eventService: EventService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly mainEventService: MainEventService,
+    private readonly userEventService: UserEventService,
+    private readonly channelEventService: ChannelEventService,
   ) {}
 
-  // @UseGuards(WsGuard)
-  afterInit(server: any): any {
-    server.use((client, next) => {
-      // console.log(client);
-      const encryptedUserID = client.handshake.auth.encryptedUserID;
-      if (!encryptedUserID) {
-        // throw new BadRequestException('jwt 가지고 오셈');
-      }
-      const userID = this.eventService.getUserID(encryptedUserID);
-      // const session = this.eventService.findSession(userID);
-      // if (!session) {
-      //   this.eventService.getUserName(userID);
-      //   this.eventService.saveSession(userID, session);
-      //   client.join(userID);
-      // }
-      client.userID = userID;
-      next();
-    });
-  }
-
-  handleConnection(client: SocketC, ...args: any[]): any {
+  async handleConnection(client: SocketC, ...args: any[]): Promise<void> {
     try {
-      const accessToken: any = client.handshake.headers['access_token'];
-      const accessVerify = this.jwtService.verify(accessToken, {
-        secret: this.configService.get('authConfig.jwt'),
-      });
-
-      console.log(accessToken);
-      console.log(accessVerify);
+      const userId = await this.mainEventService.verifyUser(
+        client.handshake.headers['access_token'],
+      );
+      console.log(userId);
     } catch (err) {
+      console.log(err);
       client.emit('error', new UnauthorizedException());
       client.disconnect();
     }
 
-    const blockList = this.eventService.getBlockList(client.userID);
-    client.emit('getBlockList', blockList);
-    client;
+    // const blockList = this.eventService.getBlockList(client.userID);
+    // client.emit('getBlockList', blockList);
+    // client;
     // this.eventService.getMessageForUser(client);
   }
 
@@ -184,6 +163,7 @@ export class EventGateway implements OnGatewayConnection, OnGatewayInit {
   @SubscribeMessage('kickOut')
   kickOut(client: SocketC, badGuyID: number) {
     this.eventService.kickOut(client, badGuyID, this.server);
+    this.outChannel(client);
   }
 
   @SubscribeMessage('modifyGame')
