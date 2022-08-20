@@ -20,17 +20,20 @@ export interface MutedUser {
   userID: number;
 }
 
-export interface Matcher {
-  userID: number;
+export interface Matcher extends Waiter {
   isReady: boolean;
   score: number;
 }
 
+export interface Waiter {
+  userId: number;
+  userName: string;
+}
 // export interface Game {}
 export interface ChannelInfoDto {
   password?: string; // todo: bcrypt
   channel: ChannelDisplayableDto;
-  waiter: Array<number>;
+  waiter: Array<Waiter>;
   kickedOutUsers: Array<number>;
   mutedUsers: Array<MutedUser>;
   matcher: Array<Matcher>;
