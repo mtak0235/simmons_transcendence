@@ -64,7 +64,7 @@ export class AuthController {
     if (process.env.NODE_ENV !== 'local')
       throw new InternalServerErrorException();
 
-    const encryptId = await this.encryptionService.encrypt(String(1));
+    const encryptId = await this.encryptionService.encrypt(String(2269));
     const accessToken = this.jwtService.sign(
       { userId: encryptId },
       { expiresIn: '365d' },

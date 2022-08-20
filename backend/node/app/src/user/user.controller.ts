@@ -18,6 +18,6 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async findOneUser(@Param('userId') userId: string, @Req() req) {
     if (parseInt(userId, 10) !== req.user.id) throw new UnauthorizedException();
-    return await this.userService.findOne(req.user.id);
+    return await this.userService.findUserById(req.user.id);
   }
 }

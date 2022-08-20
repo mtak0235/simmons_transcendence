@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import Users from '@entity/user.entity';
+import UserRepository from '@repository/user.repository';
 
 export interface UserType {
   id: number;
@@ -23,7 +29,17 @@ export class UserService {
     },
   ];
 
-  async findOne(userId: string | number): Promise<UserType | null> {
+  constructor(private readonly userRepository: UserRepository) {}
+
+  async findUserByUsername(username: string): Promise<Users | null> {
+    const user = await this.userRepository.findUser('username', username);
+
+    if (!user) throw new ForbiddenException();
+
+    return user;
+  }
+
+  async findUserById(userId: string | number): Promise<UserType | null> {
     if (typeof userId === 'string') userId = parseInt(userId, 10);
 
     const user = this.users.find((user) => user.id === userId);

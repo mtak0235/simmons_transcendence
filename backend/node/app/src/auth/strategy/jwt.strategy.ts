@@ -1,4 +1,4 @@
-import { ExtractJwt, Strategy, VerifiedCallback } from 'passport-jwt';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -31,6 +31,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       await this.encryptionService.decrypt(payload.id)
     ).toString();
 
-    return await this.userService.findOne(1); // todo: update: parseInt(userId, 10)
+    return await this.userService.findUserById(userId);
   }
 }
