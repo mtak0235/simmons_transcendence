@@ -27,9 +27,16 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (req.url !== '/v0/auth/token' && now > payload.exp)
       throw new UnauthorizedException();
 
-    const userId = (
-      await this.encryptionService.decrypt(payload.id)
-    ).toString();
+    // todo: delete: 개발용 코드
+    if (payload.type === 'dev')
+      return await this.userService.findUserById(2269);
+
+    const userId = parseInt(
+      (await this.encryptionService.decrypt(payload.id)).toString(),
+      10,
+    );
+
+    if (isNaN(userId)) throw new UnauthorizedException();
 
     return await this.userService.findUserById(userId);
   }

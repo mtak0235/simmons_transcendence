@@ -17,7 +17,6 @@ import { TokenInterceptor } from '@auth/auth.interceptor';
 // todo: delete: 테스트용 imports
 import { JwtService } from '@nestjs/jwt';
 import { EncryptionService } from '@util/encryption.service';
-import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 
 @Controller('auth')
@@ -25,8 +24,7 @@ export class AuthController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly encryptionService: EncryptionService,
-    private readonly configService: ConfigService,
-  ) {} // todo: delete: 테스트용 Constructor
+  ) {} // todo: delete: 개발용 Constructor
 
   @Get('login')
   @UseGuards(FtAuthGuard)
@@ -66,7 +64,7 @@ export class AuthController {
 
     const encryptId = await this.encryptionService.encrypt(String(2269));
     const accessToken = this.jwtService.sign(
-      { userId: encryptId },
+      { id: encryptId, type: 'dev' },
       { expiresIn: '365d' },
     );
     const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });
