@@ -1,6 +1,7 @@
-import { Card, Col, Divider, Layout, Radio, Row } from "antd";
-import Column from "antd/lib/table/Column";
+import { Col, Layout, Radio, Row } from "antd";
 import styled from "styled-components";
+import useGameLogs from "../../1_application/game/useGame";
+
 const { Sider } = Layout;
 
 const StyledSider = styled(Sider)`
@@ -11,10 +12,12 @@ const StyledSider = styled(Sider)`
 `;
 
 const TSRow = styled(Row)`
-  justify-content: center;
+  type: flex;
+  align-items: center;
 `;
-const TSColumn = styled(Column)`
-  justify-content: center;
+const TSColumn = styled(Col)`
+  height: 100vh;
+  background: red;
 `;
 
 const MainSider = styled(Sider)`
@@ -23,42 +26,28 @@ const MainSider = styled(Sider)`
   background: white;
 `;
 const Box = styled.div`
-  background-color: red;
+  background-color: blue;
   height: 200px;
   width: 200px;
-  font-size: 66px;
+  font-size: 12px;
   cursor: pointer;
 `;
 
-const DemoBox: React.FC<{ children: React.ReactNode; value: number }> = (
-  props
-) => <p className={`height-${props.value}`}>{props.children}</p>;
-
 function Game() {
+  const gameLogs = useGameLogs();
   return (
     <Layout>
       <MainSider width={"70vw"}>
-        <Divider orientation="left">Align Middle</Divider>
-        <Row justify="space-around" align="middle">
-          <Col span={4}>
-            <DemoBox value={100}>col-4</DemoBox>
-          </Col>
-          <Col span={4}>
-            <DemoBox value={50}>col-4</DemoBox>
-          </Col>
-          <Col span={4}>
-            <DemoBox value={120}>col-4</DemoBox>
-          </Col>
-          <Col span={4}>
-            <DemoBox value={80}>col-4</DemoBox>
-          </Col>
+        <Row
+          typeof="flex"
+          style={{ alignItems: "center", height: "100vh" }}
+          justify="center"
+          gutter={10}
+        >
+          <Box>{gameLogs.playerA}</Box>
+          <Row style={{ width: "20px" }}></Row>
+          <Box>{gameLogs.playerB}</Box>
         </Row>
-        {/* <TSRow align="middle">
-                <TSColumn>
-                    <Box>
-                    </Box>
-                </TSColumn>
-            </TSRow> */}
       </MainSider>
       <StyledSider width={"30vw"}>
         <TSRow>

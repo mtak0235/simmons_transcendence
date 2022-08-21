@@ -1,4 +1,4 @@
-import styled from "styled-components"
+import styled from "styled-components";
 import { NavLink } from "react-router-dom";
 import useDashboard from "../../1_application/dashboard/useDashboard";
 
@@ -28,17 +28,14 @@ const Main: React.FC = () => {
 
   const mains = dashboard.map((g) => (
     <NavLink to={"/"}>
-      <Box>
-        {g}
-      </Box>
+      <Box>{g}</Box>
     </NavLink>
-  ))
-  return <>
-  <Row>
-    
-    {/* {mains}  */}
-  </Row>
-  </>;
+  ));
+  return (
+    <>
+      <Row>{/* {mains}  */}</Row>
+    </>
+  );
 };
 
 export default Main;
