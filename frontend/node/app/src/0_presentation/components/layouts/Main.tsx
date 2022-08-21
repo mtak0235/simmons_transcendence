@@ -9,9 +9,14 @@ const StyledSider = styled(Sider)`
   right: 0;
 `
 
-function MainLayoutComponent() {
+type MainLayoutComponentProps = {
+    children?: React.ReactNode;
+};
+
+const MainLayoutComponent: React.FC<MainLayoutComponentProps> = (props) => {
   return (
       <StyledSider width={'30vw'}>
+          {props.children}
       </StyledSider>
   );
 }
