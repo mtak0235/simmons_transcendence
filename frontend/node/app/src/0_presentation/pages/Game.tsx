@@ -1,10 +1,8 @@
 import styled from "styled-components"
+import { NavLink } from "react-router-dom";
+import useDashboard from "../../1_application/dashboard/useDashboard";
 
-const Col = styled.div`
-    display: flex
-`
-
-const GameRow = styled.div`
+const Row = styled.div`
   display: grid;
   gap: 5px;
   grid-template-columns: repeat(6, 1fr);
@@ -25,21 +23,21 @@ const SideBar = styled.div`
   padding: 0.25rem;
 `;
 
-const Game: React.FunctionComponent = () => (
-	<>
-	<Col>
-			<GameRow>
-				<Box></Box>
-				<Box></Box>
-				<Box></Box>
-				<Box></Box>
-				<Box></Box>
-				<Box></Box>
-				<Box></Box>
-			</GameRow>
-	</Col>
-    <SideBar></SideBar>
-  </>
-);
+const Game: React.FC = () => {
+  const dashboard = useDashboard();
+
+  const games = dashboard.map((g) => (
+    <NavLink to={"/"}>
+      <Box>
+        {g}
+      </Box>
+    </NavLink>
+  ))
+  return <>
+  <Row>
+    {games} 
+  </Row>
+  </>;
+};
 
 export default Game;
