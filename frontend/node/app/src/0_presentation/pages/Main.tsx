@@ -1,13 +1,19 @@
 import styled from "styled-components"
 import { NavLink } from "react-router-dom";
 import useDashboard from "../../1_application/dashboard/useDashboard";
+import MainLayoutComponent from "../components/layouts/Main";
 
 const Row = styled.div`
   display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  grid-template-Columns: repeat(6, 1fr);
   position: absolute;
   width: 100%;
+  background: blue;
+`;
+
+const Column = styled.div`
+
 `;
 
 const Box = styled.div`
@@ -17,27 +23,24 @@ const Box = styled.div`
   cursor: pointer;
 `;
 
-const SideBar = styled.div`
-  background: #9aaab7;
-  grid-area: sidebar;
-  padding: 0.25rem;
-`;
-
-const Game: React.FC = () => {
+const Main: React.FC = () => {
   const dashboard = useDashboard();
 
-  const games = dashboard.map((g) => (
+  const games = dashboard.map((game) => (
     <NavLink to={"/"}>
       <Box>
-        {g}
+        {game}
       </Box>
     </NavLink>
   ))
   return <>
-  <Row>
+  {/* <Row> */}
+    <MainLayoutComponent></MainLayoutComponent>
+    {/* <Column>
     {games} 
-  </Row>
+    </Column> */}
+  {/* </Row> */}
   </>;
 };
 
-export default Game;
+export default Main;
