@@ -9,13 +9,13 @@ export default class UserRepository extends Repository<Users> {
     super(Users, dataSource.createEntityManager());
   }
 
-  async findUser(column: string, value: any, operator = '=') {
+  findUser(column: string, value: any, operator = '='): Promise<Users | null> {
     const query = this.createQueryBuilder('users').where(
       `users.${column} ${operator} :value`,
       {
         value: value,
       },
     );
-    return await query.getOne();
+    return query.getOne();
   }
 }
