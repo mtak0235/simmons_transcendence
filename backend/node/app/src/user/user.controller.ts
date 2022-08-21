@@ -2,9 +2,12 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
+  Patch,
   Req,
-  UnauthorizedException,
+  Res,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 
 import { UserService } from '@user/user.service';
@@ -16,8 +19,21 @@ export class UserController {
 
   @Get(':userId')
   @UseGuards(JwtAuthGuard)
-  async findOneUser(@Param('userId') userId: string, @Req() req) {
-    if (parseInt(userId, 10) !== req.user.id) throw new UnauthorizedException();
-    return await this.userService.findUserById(req.user.id);
+  async findOneUser(
+    @Param('userId', ParseIntPipe, ValidationPipe) userId,
+    number,
+    @Req() req,
+    @Res() res,
+  ) {
+    if (userId === req.user.id) res.status(200).json(req.user);
+    else return await this.userService.findUserById(userId);
+  }
+
+  @Patch('two-factor')
+  @UseGuards(JwtAuthGuard)
+  async switchTwoFactor(@Req() req, @Res() res) {
+    res.status(200).json({
+      twoFactor: await this.userService.switchTwoFactor(req.user),
+    });
   }
 }
