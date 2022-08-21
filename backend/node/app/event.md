@@ -13,7 +13,7 @@ participant cls as clientStorage
 participant c as client
 participant ga as server
 participant ss as userStore
-participant cs as EventService
+participant cs as SocketService
 participant rt as RoomTable
 
 
@@ -46,7 +46,7 @@ participant ga as server
 participant ss as userStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant rep as Repository
 participant rt as RoomTable
 
@@ -76,7 +76,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant rt as RoomTable
 
 c->>ga: <<disconnection>>
@@ -112,7 +112,7 @@ participant r as rooms
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant rt as RoomTable
 
 c->>ga: <<inChannel>>(channelName, ?pw)
@@ -135,7 +135,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -157,7 +157,7 @@ participant ga as server
 participant ss as userStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 c->>cls: save{(targetId)}
@@ -176,7 +176,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -200,7 +200,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -226,7 +226,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -249,7 +249,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -272,7 +272,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -299,7 +299,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -328,7 +328,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -352,7 +352,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -380,7 +380,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -402,7 +402,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -418,7 +418,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -442,7 +442,7 @@ participant ga as server
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant r as Repository
 participant rt as RoomTable
 
@@ -464,7 +464,7 @@ participant r as rooms
 participant ss as sessionStore
 participant ms as MessageStore
 participant cns as ChannelList
-participant cs as EventService
+participant cs as SocketService
 participant rt as RoomTable
 
 c->>ga: <<generateGame>>(ChannelInfoDto{channelName, accessLayer, pw, score, targetId})
