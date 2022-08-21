@@ -19,12 +19,12 @@
     "baseUrl": "./",
     "paths": {
       "@src/*": ["./src/*"],
+      "@socket/*": ["./src/socket/*"],
       "@auth/*": ["./src/auth/*"],
+      "@user/*": ["./src/user/*"],
       "@util/*": ["./src/util/*"],
       "@entity/*": ["./src/util/entity/*"],
       "@repository/*": ["./src/util/repository/*"],
-      "@event/*": ["./src/event/*"],
-      "@user/*": ["./src/user/*"],
     }
   }
 }
