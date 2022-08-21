@@ -11,10 +11,8 @@ const StyledSider = styled(Sider)`
 
 function MainLayoutComponent() {
   return (
-    <Layout>
       <StyledSider width={'30vw'}>
       </StyledSider>
-    </Layout>
   );
 }
 
