@@ -1,7 +1,6 @@
 import {
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -24,9 +23,6 @@ export default class UserAchievements {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.userAchievements, {
     nullable: false,

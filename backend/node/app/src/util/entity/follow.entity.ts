@@ -2,7 +2,6 @@ import {
   Entity,
   PrimaryColumn,
   CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
@@ -19,9 +18,6 @@ export default class Follows {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.followSourceUsers)
   @JoinColumn({ name: 'sourceId', referencedColumnName: 'id' })

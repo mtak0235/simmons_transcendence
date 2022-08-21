@@ -1,7 +1,6 @@
 import {
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
@@ -26,9 +25,6 @@ export default class GameLogs {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })
   @JoinColumn({ name: 'playerAId', referencedColumnName: 'id' })
