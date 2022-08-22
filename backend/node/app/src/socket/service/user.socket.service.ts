@@ -7,8 +7,7 @@ import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
 import { Client } from '@socket/socket.gateway';
-import { WsException } from '@nestjs/websockets';
-import Blocks from "@entity/block.entity";
+import { BlockBuilder } from '@entity/block.entity';
 
 @Injectable()
 export class UserSocketService {
@@ -47,14 +46,14 @@ export class UserSocketService {
     this.userStore.update(user, { status: status });
   }
 
-  block(client: Client, targetId: number) {
+  async block(client: Client, targetId: number) {
     if (this.userStore.isBlocking(client.user, targetId)) {
       this.userStore.addBlock(client.user, targetId);
-      const block: Blocks = {
-        sourceId: client.user.userId,
-        targetId: targetId
-      }
-      this.blockRepository.save(block);
+      const blocks = new BlockBuilder()
+        .sourceId(client.user.userId)
+        .targetId(targetId)
+        .build();
+      await this.blockRepository.save(blocks);
     }
     if (this.userStore.isFollowing(client.user, targetId)) {
       this.friendChanged(client, targetId, false);
