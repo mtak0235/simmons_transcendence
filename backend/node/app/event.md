@@ -162,7 +162,7 @@ sequenceDiagram
 participant cls as clientStorage
 participant c as client
 participant ga as server
-participant ss as userStore
+participant us as userStore
 participant ms as MessageStore
 participant cns as ChannelList
 participant cs as EventService
@@ -171,11 +171,9 @@ participant r as Repository
 
 c->>cls: saveBlocker{(targetId)}
 c->>ga: <<block>>(targetId)
-ga->>cs: block(srcId,targetId)
-cs->>ss: getUserSource(userId):{blocks:[]}
-cs->>cs: blocks.append(targetId)
-cs->>r: saveBlock(srcId,targetId)
-ga->>ga: unfollow(targetId, )
+ga->>cs: block(UserDto,targetId)
+cs->>us: addBlock(UserDto, targetId)
+cs->>us: unfollow(targetId, )
 ```
 # follow
 ## friendChanged (listen)
@@ -202,7 +200,7 @@ cs->>ss: getUserSource(userId):{friends:[]}
 cs->>cs: friends.append(targetId)
 cs->>r: saveFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(true))
+ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(true))
 ```
 # unfollow
 ```mermaid
@@ -225,7 +223,7 @@ cs->>ss: getUserSource(userId):{friends:[]}
 cs->>cs: friends.delete(targetId)
 cs->>r: deleteFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(false))
+ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(false))
 ```
 
 # sendDM

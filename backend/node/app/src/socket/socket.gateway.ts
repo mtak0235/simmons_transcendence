@@ -56,7 +56,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       client.user = mainPageDto.me;
-
+      //userId 방 join한 상태에서 다른 코드 테스트용
+      client.join(`room:user:${client.user.userId}`);
       client.emit('connected', mainPageDto);
       client.broadcast.emit('connectUser', {
         userId: client.user.userId,
@@ -91,7 +92,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.userSocketStore.update(client.user, {
       follows: [parseInt(targetId, 10)],
     });
-    console.log(client.user);
   }
 
   /* ============================================= */
@@ -163,17 +163,32 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ============================================= */
 
   @SubscribeMessage('blockUser')
-  blockUser(@ConnectedSocket() client: Client) {
+  blockUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.block(client, targetId);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('followUser')
-  followUser(@ConnectedSocket() client: Client) {
+  followUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.friendChanged(client, targetId, true);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('unfollowUser')
-  unfollowUser(@ConnectedSocket() client: Client) {
+  unfollowUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.friendChanged(client, targetId, false);
+    this.logger.log(client.user);
   }
 }

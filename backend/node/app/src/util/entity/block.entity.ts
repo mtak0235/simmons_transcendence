@@ -27,3 +27,4 @@ export default class Blocks {
   @JoinColumn({ name: 'targetId', referencedColumnName: 'id' })
   targetUsers: Users;
 }
+
