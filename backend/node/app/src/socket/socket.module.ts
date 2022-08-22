@@ -9,7 +9,6 @@ import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
-import { SocketException } from '@socket/socket.exception';
 
 @Module({
   imports: [JwtModule],
