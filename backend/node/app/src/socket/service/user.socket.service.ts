@@ -49,7 +49,7 @@ export class UserSocketService {
   }
 
   async block(client: Client, targetId: number) {
-    if (this.userStore.isBlocking(client.user, targetId)) {
+    if (this.userStore.isBlocking(client.user, targetId) == false) {
       this.userStore.addBlock(client.user, targetId);
       const blocks = new BlockBuilder()
         .sourceId(client.user.userId)
