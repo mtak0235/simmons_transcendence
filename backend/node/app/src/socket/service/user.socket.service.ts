@@ -29,6 +29,8 @@ export class UserSocketService {
       status: 'online',
       follows: follows.map((value) => value.targetId),
       blocks: blocks.map((value) => value.targetId),
+
+      // blocks: blocks.map((value) => value.targetId),
     };
 
     this.userStore.save(user);

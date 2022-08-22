@@ -29,9 +29,11 @@ export default class Blocks {
   @JoinColumn({ name: 'targetId', referencedColumnName: 'id' })
   targetUsers: Users;
 
-  constructor(blockBuilder: BlockBuilder) {
-    this.targetId = blockBuilder._targetId;
-    this.sourceId = blockBuilder._sourceId;
+  static builder(blockBuilder: BlockBuilder) {
+    const blocks = new Blocks();
+    blocks.targetId = blockBuilder._targetId;
+    blocks.sourceId = blockBuilder._sourceId;
+    return blocks;
   }
 }
 
@@ -47,6 +49,6 @@ export class BlockBuilder {
     return this;
   }
   build() {
-    return new Blocks(this);
+    return Blocks.builder(this);
   }
 }
