@@ -1,12 +1,13 @@
 import { CacheModule, Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-//import { TypeOrmModule } from '@nestjs/typeorm';
 import * as redisStore from 'cache-manager-ioredis';
+
 import { envConfig, envValidation } from '@util/env.service';
 import { RedisService } from '@util/redis.service';
 import { EncryptionService } from '@util/encryption.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import entities from '@util/entity/index';
+import entities from '@entity/index';
+import repositories from '@util/repository';
 
 @Global()
 @Module({
@@ -14,7 +15,9 @@ import entities from '@util/entity/index';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
-        process.env.NODE_ENV === 'development'
+        process.env.NODE_ENV === 'local'
+          ? '.env.local'
+          : process.env.NODE_ENV === 'development'
           ? '.env.dev'
           : process.env.NODE_ENV === 'production'
           ? '.env.prod'
@@ -43,15 +46,15 @@ import entities from '@util/entity/index';
         database: configService.get('dbConfig.name'),
         charset: 'utf8mb4_general_ci',
         timezone: '+09:00',
-        synchronize: false, // todo: production environ = false
+        synchronize: true, // todo: production environ = false
         logging: ['error'],
         logger: 'file',
         maxQueryExecutionTime: 2000,
-        entities: entities,
+        entities: [...entities],
       }),
     }),
   ],
-  providers: [RedisService, EncryptionService],
-  exports: [ConfigModule, RedisService, EncryptionService],
+  providers: [RedisService, EncryptionService, ...repositories],
+  exports: [ConfigModule, RedisService, EncryptionService, ...repositories],
 })
 export class UtilModule {}

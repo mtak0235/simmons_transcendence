@@ -7,7 +7,7 @@ import {
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class EventInterceptor implements NestInterceptor {
+export class SocketInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle();
   }

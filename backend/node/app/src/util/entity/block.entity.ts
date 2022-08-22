@@ -2,12 +2,11 @@ import {
   Entity,
   PrimaryColumn,
   CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('blocks')
 export default class Blocks {
@@ -19,9 +18,6 @@ export default class Blocks {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.blockSourceUsers)
   @JoinColumn({ name: 'sourceId', referencedColumnName: 'id' })

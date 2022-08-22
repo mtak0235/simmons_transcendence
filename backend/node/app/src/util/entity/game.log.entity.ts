@@ -1,14 +1,13 @@
 import {
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('game_logs')
 export default class GameLogs {
@@ -26,9 +25,6 @@ export default class GameLogs {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })
   @JoinColumn({ name: 'playerAId', referencedColumnName: 'id' })

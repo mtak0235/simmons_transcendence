@@ -7,10 +7,10 @@ import {
   OneToMany,
 } from 'typeorm';
 
-import Follows from '@util/entity/follow.entity';
-import Blocks from '@util/entity/block.entity';
-import GameLogs from '@util/entity/game.log.entity';
-import UserAchievements from '@util/entity/user.achievement.entity';
+import Follows from '@entity/follow.entity';
+import Blocks from '@entity/block.entity';
+import GameLogs from '@entity/game.log.entity';
+import UserAchievements from '@entity/user.achievement.entity';
 
 @Entity('users')
 export default class Users {

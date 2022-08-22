@@ -7,7 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 
-import UserAchievements from '@util/entity/user.achievement.entity';
+import UserAchievements from '@entity/user.achievement.entity';
 
 @Entity('achievements')
 export default class Achievements {
