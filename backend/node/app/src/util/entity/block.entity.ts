@@ -30,8 +30,8 @@ export default class Blocks {
   targetUsers: Users;
 
   constructor(blockBuilder: BlockBuilder) {
-    this.targetId(blockBuilder._targetId);
-    this.sourceId(blockBuilder._sourceId);
+    this.targetId = blockBuilder._targetId;
+    this.sourceId = blockBuilder._sourceId;
   }
 }
 
