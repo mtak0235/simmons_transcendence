@@ -11,10 +11,10 @@ import Users from '@entity/user.entity';
 @Entity('blocks')
 export default class Blocks {
   @PrimaryColumn()
-  sourceId: (value: number) => this;
+  sourceId: number;
 
   @PrimaryColumn()
-  targetId: (value: number) => this;
+  targetId: number;
 
   @CreateDateColumn()
   createdAt: Date;
