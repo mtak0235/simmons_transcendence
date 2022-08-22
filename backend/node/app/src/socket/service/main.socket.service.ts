@@ -58,7 +58,7 @@ export class MainSocketService {
     if (!mainPageDto.me) {
       mainPageDto.me = await this.userSocketService.connect(userInfo);
     } else {
-      if (mainPageDto.me.status === 'online')
+      if (mainPageDto.me.status !== 'offline')
         if (process.env.NODE_ENV !== 'local')
           // todo: delete: 개발용 if문, 삭제 필요
           throw new SocketException('Forbidden');

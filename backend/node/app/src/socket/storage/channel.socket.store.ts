@@ -20,15 +20,16 @@ export class ChannelSocketStore {
 
   findAllInfo(): ChannelInfoDto[] {
     this.channels.set('room:channel:1', {
-      channelIdx: this.channelIdx,
-      password: '123123',
       channelInfo: {
-        channelId: 'room:channel:1',
+        channelIdx: this.channelIdx,
+        channelRoomId: 'room:channel:1',
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
         adminId: 2269,
       },
+      password: '123123',
+      users: [],
       waiter: [],
       kickedOutUsers: [],
       mutedUsers: [],
@@ -50,15 +51,16 @@ export class ChannelSocketStore {
       : undefined;
 
     const channel: ChannelDto = {
-      channelIdx: this.channelIdx,
-      password: password,
       channelInfo: {
-        channelId: channelKey,
+        channelIdx: this.channelIdx,
+        channelRoomId: channelKey,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,
         adminId: channelCreateDto.adminId,
       },
+      password: password,
+      users: [],
       waiter: [],
       kickedOutUsers: [],
       mutedUsers: [],
