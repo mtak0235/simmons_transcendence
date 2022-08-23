@@ -6,7 +6,7 @@ export const STATUS_LAYER = {
 
 export type STATUS_LAYER = typeof STATUS_LAYER[keyof typeof STATUS_LAYER];
 
-export interface UserDto {
+export class UserDto {
   userId: number;
   username: string;
   status: STATUS_LAYER;
@@ -14,7 +14,7 @@ export interface UserDto {
   blocks: Array<number>;
 }
 
-export interface UserInfoDto {
+export class UserInfoDto {
   userId: number;
   username: string;
   status: STATUS_LAYER;

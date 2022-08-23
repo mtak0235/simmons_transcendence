@@ -32,12 +32,13 @@ export class UserSocketService {
       this.userSocketStore.save(user);
 
       return user;
-    } else {
+    } else if (userInfo instanceof UserDto) {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
 
       userInfo.follows = follows.map((value) => value.targetId);
+      this.switchStatus(userInfo, 'online');
 
       return userInfo;
     }
