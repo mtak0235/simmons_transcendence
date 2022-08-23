@@ -24,4 +24,8 @@ export default class BLockRepository extends Repository<Blocks> {
     );
     return query.getMany();
   }
+
+  async createBlock(sourceId: number, targetId: number) {
+    await this.save({ targetId, sourceId });
+  }
 }

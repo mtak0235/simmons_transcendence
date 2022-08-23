@@ -40,10 +40,28 @@ export default class UserAchievements {
   @JoinColumn({ name: 'achievementId', referencedColumnName: 'id' })
   achievements: Achievements;
 
-  // static builder() {
-  //   let userAchievement = new UserAchievement();
-  //   userAchievement.userId =
-  // }
+  static builder(userAchievementBuilder: UserAchievementBuilder) {
+    const userAchievement = new UserAchievements();
+    userAchievement.userId = userAchievementBuilder._userId;
+    userAchievement.achievementId = userAchievementBuilder._achievementId;
+    return userAchievement;
+  }
 }
 
-// export class
+export class UserAchievementBuilder {
+  public _userId: number;
+  public _achievementId: number;
+  userId(value: number) {
+    this._userId = value;
+    return this;
+  }
+
+  achievementId(value: number) {
+    this._achievementId = value;
+    return this;
+  }
+
+  build() {
+    return UserAchievements.builder(this);
+  }
+}
