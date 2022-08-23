@@ -8,8 +8,17 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseFilters, UseInterceptors } from '@nestjs/common';
-import { ChannelDto } from '@socket/dto/channel.socket.dto';
+import {
+  UseFilters,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  ChannelCreateDto,
+  ChannelDto,
+  ChannelUpdateDto,
+} from '@socket/dto/channel.socket.dto';
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
@@ -20,14 +29,23 @@ import {
   SocketExceptionFilter,
 } from '@socket/socket.exception';
 import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
+import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
+import { Handshake } from 'socket.io/dist/socket';
+
+export interface CustomHandshake extends Handshake {
+  test: string;
+}
 
 export class Client extends Socket {
+  readonly handshake: CustomHandshake;
+
   user: UserDto;
   channel: ChannelDto;
 }
 
 @WebSocketGateway(4000)
 @UseFilters(SocketExceptionFilter)
+@UsePipes(new ValidationPipe())
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -52,8 +70,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.user = mainPageDto.me;
 
       client.join(`room:user:${client.user.userId}`);
-      client.emit('connected', mainPageDto);
-      client.broadcast.emit('connectUser', {
+      client.emit('user:connected', mainPageDto);
+      client.broadcast.emit('user:connectedUser', {
+        // todo: user 또는 main 둘중 하나 생각해 봐야함
         userId: client.user.userId,
         username: client.user.username,
         status: client.user.status,
@@ -70,7 +89,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.user) {
       this.userSocketService.switchStatus(client.user, 'offline');
 
-      client.broadcast.emit('disconnectUser', {
+      client.broadcast.emit('user:disconnectUser', {
+        // todo: user 또는 main 둘중 하나 생각해 봐야함
         userId: client.user.userId,
         status: client.user.status,
       });
@@ -78,6 +98,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // todo: delete: 개발용 코드
+  @UseInterceptors(new SocketBodyCheckInterceptor('test', 'world'))
   @SubscribeMessage('test')
   testUpdate(
     @ConnectedSocket() client: Client,
@@ -86,7 +107,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.userSocketStore.update(client.user, {
       follows: [parseInt(targetId, 10)],
     });
-    console.log(client.user);
   }
 
   /* ============================================= */
@@ -94,20 +114,28 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ============================================= */
 
   @UseInterceptors(HasChannelInterceptor)
+  @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('createChannel')
-  async createChannel(@ConnectedSocket() client: Client, payload: any) {
-    // console.log(client);
-    console.log(payload);
-    // console.log(channelCreateDto);
-    // client.channel = await this.channelSocketService.createChannel(
-    //   channelCreateDto,
-    // );
+  async createChannel(
+    @ConnectedSocket() client: Client,
+    @MessageBody('channel') channel: ChannelCreateDto,
+  ) {
+    client.channel = await this.channelSocketService.createChannel(
+      client.user.userId,
+      channel,
+    );
+
+    client.join(client.channel.channelInfo.channelKey);
+    client.emit('channel:createChannel', client.channel);
+    client.broadcast.emit('main:createdNewChannel', client.channel.channelInfo);
   }
 
+  @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
-  modifyGame(@ConnectedSocket() client: Client) {
-    // todo: development
-  }
+  modifyGame(
+    @ConnectedSocket() client: Client,
+    @MessageBody('channel') channel: ChannelUpdateDto,
+  ) {}
 
   @SubscribeMessage('inChannel')
   inChannel(@ConnectedSocket() client: Client) {
