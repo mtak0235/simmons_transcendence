@@ -186,26 +186,38 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
+    this.channelSocketService.waitingGame(socket);
   }
 
   @SubscribeMessage('readyGame')
   readyGame(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
+    this.channelSocketService.readyGame(socket, this.server);
   }
 
   @SubscribeMessage('endGame')
   endGame(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
+    this.channelSocketService.endGame(socket, this.server);
   }
 
   @SubscribeMessage('sendMSG')
-  sendMSG(@ConnectedSocket() socket: SocketInstance) {
+  sendMSG(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('msg') msg: string,
+  ) {
     // todo: development
+    this.channelSocketService.sendMSG(socket, msg);
   }
 
   @SubscribeMessage('sendDM')
-  sendDM(@ConnectedSocket() socket: SocketInstance) {
+  sendDM(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('targetId') targetId: string,
+    @MessageBody('msg') msg: string,
+  ) {
     // todo: development
+    this.channelSocketService.sendDM(socket, targetId, msg);
   }
 
   /* ============================================= */
@@ -218,8 +230,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.block(socket, targetId);
-    this.logger.log(socket.user);
+    return this.userSocketService.block(socket, targetId);
   }
 
   @SubscribeMessage('followUser')
@@ -228,8 +239,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.friendChanged(socket, targetId, true);
-    this.logger.log(socket.user);
+    return this.userSocketService.friendChanged(socket, targetId, true);
   }
 
   @SubscribeMessage('unfollowUser')
@@ -238,7 +248,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.friendChanged(socket, targetId, false);
-    this.logger.log(socket.user);
+    return this.userSocketService.friendChanged(socket, targetId, false);
   }
 }

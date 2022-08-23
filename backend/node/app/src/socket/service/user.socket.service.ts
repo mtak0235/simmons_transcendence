@@ -19,9 +19,12 @@ export class UserSocketService {
   ) {}
 
   async connect(userInfo: Users | UserDto): Promise<UserDto> {
+    console.log(1);
     if (userInfo instanceof Users) {
+      console.log(2);
       const follows = await this.followRepository.findFolloweeList(userInfo.id);
       const blocks = await this.blockRepository.findBlockList(userInfo.id);
+      console.log(3);
 
       const user: UserDto = {
         userId: userInfo.id,
@@ -30,17 +33,21 @@ export class UserSocketService {
         follows: follows.map((value) => value.targetId),
         blocks: blocks.map((value) => value.targetUsers.id),
       };
+      console.log(4);
 
       this.userSocketStore.save(user);
+      console.log(5);
 
       return user;
     } else if (userInfo instanceof UserDto) {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
+      console.log(6);
 
       userInfo.follows = follows.map((value) => value.targetId);
       this.switchStatus(userInfo, 'online');
+      console.log(7);
 
       return userInfo;
     }
@@ -50,28 +57,40 @@ export class UserSocketService {
     this.userSocketStore.update(user, { status: status });
   }
 
-  block(client: SocketInstance, targetId: number) {
+  async block(client: SocketInstance, targetId: number) {
     if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
       this.userSocketStore.addBlock(client.user, targetId);
-      this.blockRepository.createBlock(client.user.userId, targetId);
+      await this.blockRepository.save({ userId: client.user.userId, targetId });
     }
     if (this.userSocketStore.isFollowing(client.user, targetId)) {
-      this.friendChanged(client, targetId, false);
+      await this.friendChanged(client, targetId, false);
     }
   }
 
-  friendChanged(
+  async friendChanged(
     client: SocketInstance,
     targetId: number,
     isFollowing: boolean,
   ) {
     if (isFollowing == true) {
       this.userSocketStore.addFollow(client.user, targetId);
+      await this.followRepository.save({
+        sourceId: client.user.userId,
+        targetId,
+      });
       if (this.userSocketStore.isBlocking(client.user, targetId)) {
         this.userSocketStore.deleteBlock(client.user, targetId);
+        await this.blockRepository.delete({
+          sourceId: client.user.userId,
+          targetId,
+        });
       }
     } else if (this.userSocketStore.isFollowing(client.user, targetId)) {
       this.userSocketStore.deleteFollow(client.user, targetId);
+      await this.followRepository.delete({
+        sourceId: client.user.userId,
+        targetId,
+      });
     } else {
       // unfollow but tried unfollow
       return;

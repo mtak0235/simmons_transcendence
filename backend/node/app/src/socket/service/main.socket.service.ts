@@ -51,22 +51,20 @@ export class MainSocketService {
       follows: [],
       blocks: [],
     }); // todo: delete: 개발용 코드
-
     const mainPageDto: MainPageDto = {
       me: this.userSocketStore.find(userInfo.id),
       users: this.userSocketStore.findAllInfo(userInfo.id),
       channels: this.channelSocketStore.findAllInfo(),
     };
-
-    if (mainPageDto.me && mainPageDto.me.status !== 'offline')
-      if (process.env.NODE_ENV !== 'local')
+    if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
+      if (process.env.NODE_ENV !== 'local') {
         // todo: delete: 개발용 if문, 삭제 필요
         throw new SocketException('Forbidden');
-
+      }
+    }
     mainPageDto.me = await this.userSocketService.connect(
       !mainPageDto.me ? userInfo : mainPageDto.me,
     );
-
     return mainPageDto;
   }
 }
