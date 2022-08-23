@@ -7,21 +7,33 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import {Server, Socket} from 'socket.io';
-import {Logger, UseFilters, UseInterceptors, UsePipes, ValidationPipe,} from '@nestjs/common';
-import {ChannelCreateDto, ChannelDto, ChannelUpdateDto,} from '@socket/dto/channel.socket.dto';
-import {MainSocketService} from '@socket/service/main.socket.service';
-import {UserSocketService} from '@socket/service/user.socket.service';
-import {ChannelSocketService} from '@socket/service/channel.socket.service';
-import {UserSocketStore} from '@socket/storage/user.socket.store';
-import {UserDto} from '@socket/dto/user.socket.dto';
-import {SocketException, SocketExceptionFilter,} from '@socket/socket.exception';
-import {HasChannelInterceptor} from '@socket/interceptor/channel.socket.interceptor';
-import {SocketBodyCheckInterceptor} from '@socket/interceptor/index.socket.interceptor';
-import {Handshake} from 'socket.io/dist/socket';
-import {Namespace} from 'socket.io/dist/namespace';
-import {DefaultEventsMap, EventsMap} from 'socket.io/dist/typed-events';
-import {Client} from 'socket.io/dist/client';
+import { Handshake } from 'socket.io/dist/socket';
+import { DefaultEventsMap, EventsMap } from 'socket.io/dist/typed-events';
+import { UserDto } from '@socket/dto/user.socket.dto';
+import {
+  ChannelCreateDto,
+  ChannelDto,
+  ChannelUpdateDto,
+} from '@socket/dto/channel.socket.dto';
+import { Namespace, Server, Socket } from 'socket.io';
+import { Client } from 'socket.io/dist/client';
+import {
+  Logger,
+  UseFilters,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  SocketException,
+  SocketExceptionFilter,
+} from '@socket/socket.exception';
+import { MainSocketService } from '@socket/service/main.socket.service';
+import { UserSocketService } from '@socket/service/user.socket.service';
+import { ChannelSocketService } from '@socket/service/channel.socket.service';
+import { UserSocketStore } from '@socket/storage/user.socket.store';
+import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
+import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 
 export interface CustomHandshake extends Handshake {
   test: string;
@@ -142,7 +154,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   modifyGame(
     @ConnectedSocket() socket: SocketInstance,
     @MessageBody('channel') channel: ChannelUpdateDto,
-  ) {}
+  ) {
+    // todo: development
+  }
 
   @SubscribeMessage('inChannel')
   inChannel(@ConnectedSocket() socket: SocketInstance) {
