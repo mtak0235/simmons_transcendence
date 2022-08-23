@@ -7,17 +7,9 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Handshake } from 'socket.io/dist/socket';
-import { DefaultEventsMap, EventsMap } from 'socket.io/dist/typed-events';
-import { UserDto } from '@socket/dto/user.socket.dto';
+import { Server, Socket } from 'socket.io';
 import {
-  ChannelCreateDto,
-  ChannelDto,
-  ChannelUpdateDto,
-} from '@socket/dto/channel.socket.dto';
-import { Namespace, Server, Socket } from 'socket.io';
-import { Client } from 'socket.io/dist/client';
-import {
+  Inject,
   Logger,
   UseFilters,
   UseInterceptors,
@@ -25,45 +17,32 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import {
-  SocketException,
-  SocketExceptionFilter,
-} from '@socket/socket.exception';
+  ChannelCreateDto,
+  ChannelDto,
+  ChannelUpdateDto,
+} from '@socket/dto/channel.socket.dto';
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { UserSocketStore } from '@socket/storage/user.socket.store';
-import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
-<<<<<<< HEAD
-import { Handshake } from 'socket.io/dist/socket';
-import { Namespace } from 'socket.io/dist/namespace';
-import { DefaultEventsMap, EventsMap } from 'socket.io/dist/typed-events';
-import { Client } from 'socket.io/dist/client';
-=======
+import { UserDto } from '@socket/dto/user.socket.dto';
+import {
+  SocketException,
+  SocketExceptionFilter,
+} from '@socket/socket.exception';
 import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
->>>>>>> ebf23d191b6c7770c209394ad402dc87728f2b48
+import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
+import { Handshake } from 'socket.io/dist/socket';
 
 export interface CustomHandshake extends Handshake {
   test: string;
 }
 
-export class SocketInstance<
-  ListenEvents extends EventsMap = DefaultEventsMap,
-  EmitEvents extends EventsMap = ListenEvents,
-  ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any,
-> extends Socket {
+export class Client extends Socket {
   readonly handshake: CustomHandshake;
 
   user: UserDto;
   channel: ChannelDto;
-
-  constructor(
-    nsp: Namespace<ListenEvents, EmitEvents, ServerSideEvents>,
-    client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
-    auth: object,
-  ) {
-    super(nsp, client, auth);
-  }
 }
 
 @WebSocketGateway(4000)
@@ -87,38 +66,38 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*            #1 Handling Connection             */
   /* ============================================= */
 
-  async handleConnection(socket: SocketInstance) {
+  async handleConnection(client: Client) {
     try {
       const userInfo = await this.mainSocketService.verifyUser(
-        socket.handshake.headers['access_token'],
+        client.handshake.headers['access_token'],
       );
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
-      socket.user = mainPageDto.me;
+      client.user = mainPageDto.me;
 
-      socket.join(`room:user:${socket.user.userId}`);
-      socket.emit('user:connected', mainPageDto);
-      socket.broadcast.emit('user:connectedUser', {
+      client.join(`room:user:${client.user.userId}`);
+      client.emit('user:connected', mainPageDto);
+      client.broadcast.emit('user:connectedUser', {
         // todo: user 또는 main 둘중 하나 생각해 봐야함
-        userId: socket.user.userId,
-        username: socket.user.username,
-        status: socket.user.status,
+        userId: client.user.userId,
+        username: client.user.username,
+        status: client.user.status,
       });
     } catch (err) {
-      if (err instanceof SocketException) socket.emit('error', err);
-      else socket.emit('error', { error: 'server', message: 'unKnown' });
+      if (err instanceof SocketException) client.emit('error', err);
+      else client.emit('error', { error: 'server', message: 'unKnown' });
 
-      socket.disconnect();
+      client.disconnect();
     }
   }
 
-  async handleDisconnect(socket: SocketInstance): Promise<any> {
-    if (socket.user) {
-      this.userSocketService.switchStatus(socket.user, 'offline');
+  async handleDisconnect(client: Client): Promise<any> {
+    if (client.user) {
+      this.userSocketService.switchStatus(client.user, 'offline');
 
-      socket.broadcast.emit('user:disconnectUser', {
+      client.broadcast.emit('user:disconnectUser', {
         // todo: user 또는 main 둘중 하나 생각해 봐야함
-        userId: socket.user.userId,
-        status: socket.user.status,
+        userId: client.user.userId,
+        status: client.user.status,
       });
     }
   }
@@ -127,10 +106,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new SocketBodyCheckInterceptor('test', 'world'))
   @SubscribeMessage('test')
   testUpdate(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody() targetId: string,
   ) {
-    this.userSocketStore.update(socket.user, {
+    this.userSocketStore.update(client.user, {
       follows: [parseInt(targetId, 10)],
     });
   }
@@ -143,75 +122,73 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('createChannel')
   async createChannel(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody('channel') channel: ChannelCreateDto,
   ) {
-    socket.channel = await this.channelSocketService.createChannel(
-      socket.user.userId,
+    client.channel = await this.channelSocketService.createChannel(
+      client.user.userId,
       channel,
     );
 
-    socket.join(socket.channel.channelInfo.channelKey);
-    socket.emit('channel:createChannel', socket.channel);
-    socket.broadcast.emit('main:createdNewChannel', socket.channel.channelInfo);
+    client.join(client.channel.channelInfo.channelKey);
+    client.emit('channel:createChannel', client.channel);
+    client.broadcast.emit('main:createdNewChannel', client.channel.channelInfo);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
   modifyGame(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody('channel') channel: ChannelUpdateDto,
-  ) {
-    // todo: development
-  }
+  ) {}
 
   @SubscribeMessage('inChannel')
-  inChannel(@ConnectedSocket() socket: SocketInstance) {
+  inChannel(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() socket: SocketInstance) {
+  outChannel(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('inviteUser')
-  inviteUser(@ConnectedSocket() socket: SocketInstance) {
+  inviteUser(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('kickOutUser')
-  kickOutUser(@ConnectedSocket() socket: SocketInstance) {
+  kickOutUser(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('muteUser')
-  muteUser(@ConnectedSocket() socket: SocketInstance) {
+  muteUser(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('waitingGame')
-  waitingGame(@ConnectedSocket() socket: SocketInstance) {
+  waitingGame(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('readyGame')
-  readyGame(@ConnectedSocket() socket: SocketInstance) {
+  readyGame(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('endGame')
-  endGame(@ConnectedSocket() socket: SocketInstance) {
+  endGame(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('sendMSG')
-  sendMSG(@ConnectedSocket() socket: SocketInstance) {
+  sendMSG(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
   @SubscribeMessage('sendDM')
-  sendDM(@ConnectedSocket() socket: SocketInstance) {
+  sendDM(@ConnectedSocket() client: Client) {
     // todo: development
   }
 
@@ -221,31 +198,31 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('blockUser')
   blockUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.block(socket, targetId);
-    this.logger.log(socket.user);
+    this.userSocketService.block(client, targetId);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('followUser')
   followUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.friendChanged(socket, targetId, true);
-    this.logger.log(socket.user);
+    this.userSocketService.friendChanged(client, targetId, true);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('unfollowUser')
   unfollowUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: Client,
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    this.userSocketService.friendChanged(socket, targetId, false);
-    this.logger.log(socket.user);
+    this.userSocketService.friendChanged(client, targetId, false);
+    this.logger.log(client.user);
   }
 }
