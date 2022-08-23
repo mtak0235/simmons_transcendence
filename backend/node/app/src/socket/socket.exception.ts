@@ -4,8 +4,7 @@ import { Client } from '@socket/socket.gateway';
 
 interface ErrorDto {
   status: number;
-  response: string | object;
-  message?: string;
+  message: string;
   stack?: string | object;
 }
 
@@ -25,14 +24,13 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
     if (exception instanceof HttpException) {
       error = {
         status: exception.getStatus(),
-        response: exception.getResponse(),
         message: exception.message,
       };
     } else {
       // todo: 이 경우 로깅 해야함
       error = {
         status: 500,
-        response: 'Internal Server Error',
+        message: 'Internal Server Error',
         stack: exception.stack,
       };
     }
