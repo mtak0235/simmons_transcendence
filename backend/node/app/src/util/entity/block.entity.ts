@@ -19,15 +19,11 @@ export default class Blocks {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Users, (users) => users.blockSourceUsers, {
-    cascade: true,
-  })
+  @ManyToOne(() => Users, (users) => users.blockSourceUsers)
   @JoinColumn({ name: 'sourceId', referencedColumnName: 'id' })
   sourceUsers: Users;
 
-  @ManyToOne(() => Users, (users) => users.blockTargetUsers, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Users, (users) => users.blockTargetUsers)
   @JoinColumn({ name: 'targetId', referencedColumnName: 'id' })
   targetUsers: Users;
 

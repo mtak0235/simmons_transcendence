@@ -13,63 +13,66 @@ import { BlockBuilder } from '@entity/block.entity';
 export class UserSocketService {
   private logger: Logger = new Logger('SocketGateway');
   constructor(
-    private readonly userStore: UserSocketStore,
+    private readonly userSocketStore: UserSocketStore,
     private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly blockRepository: BLockRepository,
   ) {}
 
-  async connect(userInfo: Users): Promise<UserDto> {
-    const follows = await this.followRepository.findFolloweeList(userInfo.id);
-    const blocks = await this.blockRepository.findBlockList(userInfo.id);
+  async connect(userInfo: Users | UserDto): Promise<UserDto> {
+    if (userInfo instanceof Users) {
+      const follows = await this.followRepository.findFolloweeList(userInfo.id);
+      const blocks = await this.blockRepository.findBlockList(userInfo.id);
 
-    const user: UserDto = {
-      userId: userInfo.id,
-      username: userInfo.username,
-      status: 'online',
-      follows: follows.map((value) => value.targetId),
-      blocks: blocks.map((value) => value.targetId),
+      const user: UserDto = {
+        userId: userInfo.id,
+        username: userInfo.username,
+        status: 'online',
+        follows: follows.map((value) => value.targetId),
+        blocks: blocks.map((value) => value.targetId),
+      };
 
-      // blocks: blocks.map((value) => value.targetId),
-    };
+      this.userSocketStore.save(user);
 
-    this.userStore.save(user);
+      return user;
+    } else if (userInfo instanceof UserDto) {
+      const follows = await this.followRepository.findFolloweeList(
+        userInfo.userId,
+      );
 
-    return user;
-  }
+      userInfo.follows = follows.map((value) => value.targetId);
+      this.switchStatus(userInfo, 'online');
 
-  async reconnect(user: UserDto): Promise<void> {
-    const follows = await this.followRepository.findFolloweeList(user.userId);
-
-    user.follows = follows.map((value) => value.targetId);
+      return userInfo;
+    }
   }
 
   switchStatus(user: UserDto, status: STATUS_LAYER) {
-    this.userStore.update(user, { status: status });
+    this.userSocketStore.update(user, { status: status });
   }
 
   async block(client: Client, targetId: number) {
-    if (this.userStore.isBlocking(client.user, targetId) == false) {
-      this.userStore.addBlock(client.user, targetId);
+    if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
+      this.userSocketStore.addBlock(client.user, targetId);
       const blocks = new BlockBuilder()
         .sourceId(client.user.userId)
         .targetId(targetId)
         .build();
       await this.blockRepository.save(blocks);
     }
-    if (this.userStore.isFollowing(client.user, targetId)) {
+    if (this.userSocketStore.isFollowing(client.user, targetId)) {
       this.friendChanged(client, targetId, false);
     }
   }
 
   friendChanged(client: Client, targetId: number, isFollowing: boolean) {
     if (isFollowing == true) {
-      this.userStore.addFollow(client.user, targetId);
-      if (this.userStore.isBlocking(client.user, targetId)) {
-        this.userStore.deleteBlock(client.user, targetId);
+      this.userSocketStore.addFollow(client.user, targetId);
+      if (this.userSocketStore.isBlocking(client.user, targetId)) {
+        this.userSocketStore.deleteBlock(client.user, targetId);
       }
-    } else if (this.userStore.isFollowing(client.user, targetId)) {
-      this.userStore.deleteFollow(client.user, targetId);
+    } else if (this.userSocketStore.isFollowing(client.user, targetId)) {
+      this.userSocketStore.deleteFollow(client.user, targetId);
     } else {
       // unfollow but tried unfollow
       return;

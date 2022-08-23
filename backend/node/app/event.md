@@ -1,111 +1,203 @@
-# 모든 소켓 통신
-- afterInit 
-- 서버 시작시 한번 실행됨.
-- server.use()에 module달려고 했는데 소켓 요청시 해당 모듈을 안지남. (왜지..?)
+<style type='text/css'>
+  [class*="red"] { color: red; }
+  [class*="green"] {color: green; }
+  [class*="yellow"] {color: yellow; }
+  
+</style>
 
-```mermaid
-sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
-participant cs as EventService
-participant rt as RoomTable
+<!-- <h3 class="red">Request</h3>
 
+```json
+
+Headers
+{
+}
 
 ```
 
-# 소켓 연결 직후
-- socket에 userId 가지고 다님.
-- userId가 같은 소켓은 모두 'room:channel:${userId}' room에 들어감.
+<h3 class="red">Request</h3>
+
+```ts
+socket.emit('', data);
+``` -->
+
+# Socket Events
+
+## handleConnection
+
+- socket에 userDto 가지고 다님
 - status를 확인해서 offline아닌데 재접속인 경우는 본인인지 확신할 수 없는 소켓이 접속한 것이므로 에러 던짐.
-## userEnter (listen)
+- status는 ['online', 'offline', 'inGame'] 3개로만 구분 됨
+
+<h3 class="red">Request</h3>
+
+```json
+// Headers
+{
+  "access_token": "발급 받은 Access Token"
+}
 ```
-{userId:'432425', userName:'mtak', connected:true}
-``` 
+
+<h3 class="green">Response</h3>
+
+```ts
+socket.emit('connected', data);
+
+data {
+  me: {
+    userId: 1,
+    username: 'seonkim',
+    status: 'online',
+    follows: [2, 3],
+    blocks: []
+  },
+  users: [
+    {
+      userId: 2,
+      username: 'gilee',
+      status: 'online',
+    },
+    {
+      userId: 3,
+      username: 'taeskim',
+      status: 'inGame',
+    },
+    ...
+  ],
+  channels: [
+    {
+      channelIdx: 1,
+      channelRoomId: 'room:channel:1',
+      adminId: 3,
+      channelName: 'taeskim과 신나는 게임 한판',
+      accessLayer: 'public',
+      score: 11
+    },
+    ...
+  ]
+}
+
+socket.broadcast.emit('connectUser', data);
+
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online'
+}
+```
+
+<br>
+
+<h3 class="yellow">Exception</h3>
+
+- [Exception-1](#exception-1) JWT 인증 실패 (만료, 비정상 토큰 등)
+- [Exception-2](#exception-2) 이미 접속중인데 추가로 접속하는 경우 (보안 강화 목적)
+
+<br>
+
+### Sequence Diagram
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant cs as EventService
-participant ss as userStore
-participant ms as MessageStore
-participant cns as ChannelList
+participant c as Client
+participant f as Filter
+participant ga as Server
+participant ms as MainService
+participant us as UserService
+participant ss as UserStore
 participant rt as RoomTable
-participant rep as Repository
 
 c->>ga: <<connection>>
-ga->>ga: socket.userId = socket.handshake.auth.userId
-ga->>rt: socket.join('room:channel:${userId}')
-ga->>ss: getUserSource(userId)
-ss-->>ga: {userName, status}
-alt status != offline
-ga->>c: throw WSException("invalid access")
-else
-ga->>ga: socket.userName = userName
-ga->>ss:setStatus(userId, "online")
-ga->>c: broadcast<<userEnter>> ({userId, userName, status("online")})
-end
+ga->>ms: verifyUser(token, secret);
+ms->>ms: Exception-1
+ms-->>ga: UserEntity
+ga->>ms: setClient(UserEntity);
+ms->>ms: Exception-2
+ms->>us: connect(UserEntity | UserDto);
+us->>ss: save(UserDto);
+us-->>ga: MainPageDto
+ga->>rt: socket.join('room:user:${userId}')
+ga-->>c: socket.emit('connected', data);
+ga-->>c: socket.broadcast.emit('connectUser', data);
 ```
 
-# 소켓 연결 끊겼을 때
-## userExit (listen)
+<br>
+
+## handleDisconnect
+
+<br>
+
+<h3 class="green">Response</h3>
+
+```ts
+socket.broadcast.emit('disconnectUser', data);
+
+data: {
+  userId: 1,
+  status: 'offline'
+}
 ```
-{userId: 121}
-```
+
+<br>
+
+### Sequence Diagram
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
-participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant c as Client
+participant ga as Server
+participant us as UserService
+participant ss as UserStore
 participant rt as RoomTable
 
 c->>ga: <<disconnection>>
-ga->>rt: server.to('room:channel:${userId}').allSockets() : Promise<Socket>
-rt->>ga: matchingSockets
-alt matchingSockets.size == 0
-alt status가 inGame이면 
-ga->>ga: endGame()
-ga->>ga: outChannel()
-else
-ga->>c: broadcast<<userExit>> (userId)
+alt statue === inGame
+alt user === matcher
+ga->>ga: this.endGame()
 end
-ga->>ss: saveUserSource({userId:{userName, status(offline)})
+ga->>ga: this.outChannel()
 end
+ga->>us: switchStatus(UserDto, 'STATUS_LAYER')
+us->>ss: save()
+ga->>us: leaveRoomTable(RoomDto)
+us->>rt: Exit all room
+ga-->>c: socket.broadcast.emit('disconnectuser', data)
 ```
 
+<br>
+
 # inChannel
+
 - channelName pattern; room:channel:channelID
+
 ## inChannel (listen)
+
 ```
 {userId:'121', userName:'mtak', status:"inGame", channelId:"diavlo"}
 ```
+
 ## getChannelInfo (listen)
+
 ```
-{channelName:"diavlo",  accessLayer: "private", 
+{channelName:"diavlo",  accessLayer: "private",
   score: 13, adminID: 543}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
+participant c as Client
+participant ga as Server
 participant r as rooms
-participant ss as userStore
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
+participant cns as ChannelService
 participant rt as RoomTable
-participant cs as EventService
+participant us as UserService
 
 c->>ga: <<inChannel>>(channelName, ?pw)
-ga->>cs: enterChannel(client, channelName, ?pw)
-cs->>rt: join(channelName)
-cs->>ss: updateUserSource(userId, status("inGame"))
+ga->>us: enterChannel(client, channelName, ?pw)
+us->>rt: join(channelName)
+us->>ss: updateUserSource(userId, status("inGame"))
 ss->>ss: getUserSource(userId):{userName, status}
 ss->>ss: status = status
 ga->>c: broadcast<<inChannel>>{userId, userName, status, channelId}
@@ -113,203 +205,224 @@ ga->>c: to(userId)<<getChannelInfo>>{channelName,  accessLayer, score, adminID}
 ```
 
 # outChannel
+
 - 이벤트 던지는 상황
 - 정상적으로 나가기 버튼을 눌렀을 때
 - 새로고침이나 뒤로가기로 나갔을 땐(커넥션 끊겼을 땐?)
 - connection, disconnection이벤트에서 status 관라
+
 ## outChannel (listen)
+
 ```
 {userId:412}
 ```
+
 ## outWaitList (listen)
+
 ```
 {userId:1234}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: <<outChannel>>
-ga->>cs: exitChannel(client,string[])
-cs->>rt: leave(channelName)
-cs->>ss: getUserSource(userId):{userName, status}
-cs->>cs: status = online
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/):string[].getOne()
-cs->>cs: this.channelList[channelName]:{waiter, matcher}
+ga->>us: exitChannel(client,string[])
+us->>rt: leave(channelName)
+us->>ss: getUserSource(userId):{userName, status}
+us->>us: status = online
+us->>us: getChannelFullName(client.rooms, /^room:channel:/):string[].getOne()
+us->>us: this.channelList[channelName]:{waiter, matcher}
 alt userId in matcher
-cs->>cs: endGame(channelName)
+us->>us: endGame(channelName)
 else userId in waiter
-cs->>c: to(channelName)<<outWaitList>>(userId)
+us->>c: to(channelName)<<outWaitList>>(userId)
 end
 sc->>c: broadcast<<outChannel>>({userId, userName})
 ```
 
 # block
+
 - 상대의 DM을 안받는다. => 모든 DM은 pass된다. 대신 초기 connection에서 DB를 뒤져 blocklist를 local storage로 내려준다. client는 일단 DM을 받고 localStorage를 뒤져서 있으면 뿌려주고 없으면 무시한다.
 - unfollow처리한다.
 - local에서 friends, blocks 데이터 내려줘야됨.
 
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant us as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
-c->>cls: saveBlocker{(targetId)}
 c->>ga: <<block>>(targetId)
+ga->>us: block(sourceId,targetId)
+us->>ss: getUserSource(userId):{blocks:[]}
+us->>us: blocks.append(targetId)
+us->>r: saveBlock(sourceId,targetId)
+ga->>ga: unfollow(targetId, )
 ga->>cs: block(UserDto,targetId)
 cs->>us: addBlock(UserDto, targetId)
 cs->>us: unfollow(targetId, )
 ```
+
 # follow
+
 ## friendChanged (listen)
+
 ```
 {userId: 431, targetId:4123, isFriend:true}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
-c->>cls: saveFriend(targetId)
 c->>ga: <<follow>>(targetId)
-ga->>cs: friendChanged(userId, targetId, isFollow(true))
+ga->>us: friendChanged(userId, targetId, isFollow(true))
 alt isFollow == true
-cs->>ss: getUserSource(userId):{friends:[]}
-cs->>cs: friends.append(targetId)
-cs->>r: saveFollow(userId, targetId)
+us->>ss: getUserSource(userId):{friends:[]}
+us->>us: friends.append(targetId)
+us->>r: saveFollow(userId, targetId)
 end
 ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(true))
 ```
+
 # unfollow
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
-c->>cls: deleteFriend(targetId)
 c->>ga: <<unfollow>>(targetId)
-ga->>cs: friendChanged(userId, targetId, isFollow(false))
+ga->>us: friendChanged(userId, targetId, isFollow(false))
 alt isFollow == false
-cs->>ss: getUserSource(userId):{friends:[]}
-cs->>cs: friends.delete(targetId)
-cs->>r: deleteFollow(userId, targetId)
+us->>ss: getUserSource(userId):{friends:[]}
+us->>us: friends.delete(targetId)
+us->>r: deleteFollow(userId, targetId)
 end
 ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(false))
 ```
 
 # sendDM
+
 ## getDM (listen)
+
 ```
 {userId:'121', userName:'mtak', msg:'hihi'}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: sendDM(msg, targetId)
-ga->>cs: sendDM(targetId, client, msg)
-cs->>cns: getUserSource(targetId) :{blocks:[]}
+ga->>us: sendDM(targetId, client, msg)
+us->>cns: getUserSource(targetId) :{blocks:[]}
 alt userId not in blocks[]
-cs->>c: to(targetId)<<getDM>>({userId, userName, msg})
+us->>c: to(targetId)<<getDM>>({userId, userName, msg})
 end
 ```
 
 # sendMSG
+
 - channel단위 msg 전송
+
 ## getMSG (listen)
+
 ```
 {userId:'121', userName:'mtak', msg:'hihi'}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: sendMSG(msg)
-ga->>cs: sendMSG(msg, client)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/):string[].getOne()
-cs->>cs: this.channelList[channelName]:{mutedUsers:[]}
-alt userId not in mutedUsers[] 
-cs->>c: to(channelName)<<getMSG>>({userId, userName, msg})
+ga->>us: sendMSG(msg, client)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/):string[].getOne()
+us->>us: this.channelList[channelName]:{mutedUsers:[]}
+alt userId not in mutedUsers[]
+us->>c: to(channelName)<<getMSG>>({userId, userName, msg})
 else  mutedUsers[userId] > time()
-cs->>cns: deleteMutedUser(userId)
-cs->>c: to(channelName)<<getMSG>>({userId, userName, msg})
+us->>cns: deleteMutedUser(userId)
+us->>c: to(channelName)<<getMSG>>({userId, userName, msg})
 end
 ```
 
 # kickOut
+
 ## expelled (listen)
+
 ```
 'you are expelled from helloPython'
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: kickOut(targetId)
-ga->>cs: kickOut(client, targetId)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/).findOne()
-cs->>cns: this.channelList[channelName]
-cns->>cs: ChannelInfoDto
+ga->>us: kickOut(client, targetId)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/).findOne()
+us->>cns: this.channelList[channelName]
+cns->>us: ChannelInfoDto
 alt ChannelInfoDto.adminId == userId
-cs->>rt: to(targetId).leave(channelName)
+us->>rt: to(targetId).leave(channelName)
 rt->>c: to(targetId)<<expelled>>(you are expelled from ${channelName})
 end
 ```
+
 # modifyGame
+
 - ChannelInfoDto
+
 ```
 export interface ChannelDisplayableDto {
   accessLayer: ACCESS_LAYER;
@@ -340,178 +453,189 @@ export interface ChannelInfoDto {
   onGame: boolean;
 }
 ```
+
 ## gameModified (listen)
+
 ```
 {channelName:'helloPython', accessLayer:'public', score:'12', adminId:'121'}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: <<modifyGame>> (ChannelInfoDto)
-ga->>cs: modifyGame(client, ChannelInfoDto)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/).getOne() :string
-cs->>cns: this.channelList[channelName]
-cns->>cs: ChannelInfoDto
+ga->>us: modifyGame(client, ChannelInfoDto)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/).getOne() :string
+us->>cns: this.channelList[channelName]
+cns->>us: ChannelInfoDto
 alt ChannelInfoDto.adminId == adminId
-cs->>cns: this.channelList[channelName] = ChannelInfoDto
+us->>cns: this.channelList[channelName] = ChannelInfoDto
 cs-->>c: broadcast<<gameModified>>(ChannelDisplayableDto)
 end
 ```
+
 # inviteUser
-- 게임중인 놈은 초대할 수 없음.  
-- 현재 내가 있는 채널로 초대한다. 
+
+- 게임중인 놈은 초대할 수 없음.
+- 현재 내가 있는 채널로 초대한다.
 - 차단당했으면 초대 메일 안감.
+
 ## getInvitation (listen)
+
 ```
 {inviter:'121'}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: inviteUser(targetId)
-ga->>cs: inviteUser(client, targetId)
-cs->>c: to(targetId)<<getInvitation>>(channelDisplayableDto, userId)
+ga->>us: inviteUser(client, targetId)
+us->>c: to(targetId)<<getInvitation>>(channelDisplayableDto, userId)
 ```
 
 # mute
+
 - 방장만mute를 시킬 수 있다
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: <<mute>>(targetId)
-ga-->>cs: mute(client, targetId)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/):string[]
-cs->>cns: this.channelList[channelName]
-cns->>cs: ChannelInfoDto
+ga-->>us: mute(client, targetId)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/):string[]
+us->>cns: this.channelList[channelName]
+cns->>us: ChannelInfoDto
 alt ChannelInfoDto.adminId == userId
-cs->>cns: ChannelInfoDto.mutedUsers.append(targetId)
+us->>cns: ChannelInfoDto.mutedUsers.append(targetId)
 end
-cs->>ga: thow WSException("unAuthorized")
+us->>ga: thow WSException("unAuthorized")
 ```
 
 # waitingGame
 
 ## getWaitingList (listen)
+
 ```
 {userId:'121', userName:'mtak'}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant r as Repository
 participant rt as RoomTable
 
 c->>ga: waitingGame()
-ga->>cs: waitingGame(client)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
-cs->>cs: this.channelList[channelName] {waiter, matcher,score, onGame}
-cs->>cs: ChannelInfoDto.waiter.enqueue({userId, userName})
+ga->>us: waitingGame(client)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
+us->>us: this.channelList[channelName] {waiter, matcher,score, onGame}
+us->>us: ChannelInfoDto.waiter.enqueue({userId, userName})
 alt waiter.length >= 2
-cs->>cs: matcher.append(waiter[:2])
-cs->>cs: waiter.remove(2)
+us->>us: matcher.append(waiter[:2])
+us->>us: waiter.remove(2)
 end
-cs->>c: to(channelName)<<getWaitingList>>(ChannelInfoDto.waiter)
+us->>c: to(channelName)<<getWaitingList>>(ChannelInfoDto.waiter)
 ```
+
 # readyGame
-- first server는 첫번째  waiter이다. 
+
+- first server는 첫번째 waiter이다.
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant r as Repository
 participant rt as RoomTable
 
 c->>ga: readyGame()
-ga->>cs: readyGame(client)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
-cs->>cs: this.channelList[channelName]{waiter, matcher,score, onGame}
+ga->>us: readyGame(client)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
+us->>us: this.channelList[channelName]{waiter, matcher,score, onGame}
 alt matcher.filter(data => isReady == true)
-cs->>cs: onGame= true
-cs->>c: to(channelName)<<startGame>>(waiter, matcher, score)
+us->>us: onGame= true
+us->>c: to(channelName)<<startGame>>(waiter, matcher, score)
 else
-cs->>cs: isReady = true
+us->>us: isReady = true
 ga-->>c: (channel)readyGame(userId)
 end
 ```
 
-
 # generateChannel
+
 - private(target에게 초대 메시지 알림 감), protected(pw있어야 함)
+
 ## createChannel (listen)
+
 ```
-{channelName:"diavlo",  accessLayer: "private", 
+{channelName:"diavlo",  accessLayer: "private",
   score: 13, adminID: 543}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
+participant c as Client
+participant ga as Server
 participant r as rooms
-participant ss as userStore
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 
 c->>ga: <<generateChannel>>(ChannelInfoDto{channelName, accessLayer, pw, score})
-ga->>cs: createChannel(client{userId}, ChannelInfoDto) : {channelDto, targetId}
-cs->>cns: channelList["room:channel:" + channelName]
-cns->>cs: RoomDto
+ga->>us: createChannel(client{userId}, ChannelInfoDto) : {channelDto, targetId}
+us->>cns: channelList["room:channel:" + channelName]
+cns->>us: RoomDto
 alt !NULL:
-cs->> ga: exception('duplicate channelName');
+us->> ga: exception('duplicate channelName');
 end
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/):string[]
+us->>us: getChannelFullName(client.rooms, /^room:channel:/):string[]
 loop
-cs->>rt: leave(삭제할 방 이름)
+us->>rt: leave(삭제할 방 이름)
 end
-cs->>rt: join("room:channel:" + channelName)
+us->>rt: join("room:channel:" + channelName)
 alt access_layer != private
 ga->>c: broadcast<<channelGenerated>>(ChannelDto)
 end
 ```
 
-
-
 # endGame
+
 - 게임 기록 db에 등록
 - matcher 제거
 - 대기열 유저 matcher 등록
@@ -519,31 +643,32 @@ end
 - channel에 게임 종료 emit{matcher, waiter}
 
 ## gameOver (listen)
+
 ```
 {matcher:[1234, 45315], waiter:[5234, 34542, 3425342]}
 ```
+
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: endGame()
-ga->>cs: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
-ga->>cs: endGame(channelName)
-cs->>cs: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
-cs->>cs: this.channelList[channelName]{matcher,onGame}
-cs->>cs: onGame = false
-cs->>r: saveGame({waiter,result(integer 8bit)})
+ga->>us: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
+ga->>us: endGame(channelName)
+us->>us: getChannelFullName(client.rooms, /^room:channel:/).getOne():string
+us->>us: this.channelList[channelName]{matcher,onGame}
+us->>us: onGame = false
+us->>r: saveGame({waiter,result(integer 8bit)})
 alt waiter.length >= 2
-cs->>cs: matcher.append(waiter[:2])
-cs->>cs: waiter.remove(2)
+us->>us: matcher.append(waiter[:2])
+us->>us: waiter.remove(2)
 end
 cs-->>c:to(channelName)<<gameOver>> {matcher:[], waiter:[]}
 ```
@@ -552,15 +677,48 @@ cs-->>c:to(channelName)<<gameOver>> {matcher:[], waiter:[]}
 
 ```mermaid
 sequenceDiagram
-participant cls as clientStorage
-participant c as client
-participant ga as server
-participant ss as userStore
+participant c as Client
+participant ga as Server
+participant ss as UserStore
 participant ms as MessageStore
-participant cns as ChannelList
-participant cs as EventService
+participant cns as ChannelService
+participant us as UserService
 participant rt as RoomTable
 participant r as Repository
 
 c->>ga: <<ping>>(client, position)
+```
+
+# Exceptions
+
+## Exception-1
+
+> JWT 인증 실패
+
+```mermaid
+sequenceDiagram
+participant c as Client
+participant f as Filter
+participant ms as MainService
+
+ms-->>f: throw Error('UnAuthorized')
+f-->>c: socket.emit('error', err);
+f->>f: socket.disconnect();
+```
+
+<br>
+
+## Exception-2
+
+> HttpException과 동일함
+
+```mermaid
+sequenceDiagram
+participant c as Client
+participant f as Filter
+participant ms as MainService
+
+ms-->>f: throw Error('UnAuthorized')
+f-->>c: socket.emit('error', err);
+f->>f: socket.disconnect();
 ```
