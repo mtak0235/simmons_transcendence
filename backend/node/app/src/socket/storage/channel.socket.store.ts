@@ -46,9 +46,11 @@ export class ChannelSocketStore {
     this.channelIdx++;
 
     const channelKey = `room:channel:${this.channelIdx}`;
-    const password = channelCreateDto.password
-      ? await this.encryptionService.hash(channelCreateDto.password)
-      : undefined;
+    console.log(channelCreateDto.password === undefined);
+    // const password = channelCreateDto.password
+    //   ? await this.encryptionService.hash(channelCreateDto.password)
+    //   : undefined;
+    const password = '';
 
     const channel: ChannelDto = {
       channelInfo: {
