@@ -14,15 +14,15 @@ export class ChannelSocketStore {
 
   constructor(private readonly encryptionService: EncryptionService) {}
 
-  find(channelName: string): ChannelDto {
-    return this.channels.get(channelName);
+  find(channelKey: string): ChannelDto {
+    return this.channels.get(channelKey);
   }
 
   findAllInfo(): ChannelInfoDto[] {
-    this.channels.set('room:channel:1', {
+    this.channels.set('room:channel:0', {
       channelInfo: {
         channelIdx: this.channelIdx,
-        channelRoomId: 'room:channel:1',
+        channelKey: 'room:channel:1',
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
@@ -46,16 +46,15 @@ export class ChannelSocketStore {
     this.channelIdx++;
 
     const channelKey = `room:channel:${this.channelIdx}`;
-    console.log(channelCreateDto.password === undefined);
-    // const password = channelCreateDto.password
-    //   ? await this.encryptionService.hash(channelCreateDto.password)
-    //   : undefined;
-    const password = '';
+
+    const password = channelCreateDto.password
+      ? await this.encryptionService.hash(channelCreateDto.password)
+      : undefined;
 
     const channel: ChannelDto = {
       channelInfo: {
         channelIdx: this.channelIdx,
-        channelRoomId: channelKey,
+        channelKey: channelKey,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,
@@ -70,8 +69,14 @@ export class ChannelSocketStore {
       onGame: false,
     };
 
-    this.channels[channelKey] = channel;
+    this.channels.set(channelKey, channel);
 
     return channel;
+  }
+
+  addUser(channelKey: string, userId: number) {
+    const channel = this.find(channelKey);
+
+    channel.users.push(userId);
   }
 }
