@@ -6,7 +6,7 @@ import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
-import { SocketInstance } from '@socket/socket.gateway';
+import { Client } from '@socket/socket.gateway';
 import { BlockBuilder } from '@entity/block.entity';
 
 @Injectable()
@@ -51,7 +51,7 @@ export class UserSocketService {
     this.userSocketStore.update(user, { status: status });
   }
 
-  async block(client: SocketInstance, targetId: number) {
+  async block(client: Client, targetId: number) {
     if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
       this.userSocketStore.addBlock(client.user, targetId);
       const blocks = new BlockBuilder()
@@ -65,11 +65,7 @@ export class UserSocketService {
     }
   }
 
-  friendChanged(
-    client: SocketInstance,
-    targetId: number,
-    isFollowing: boolean,
-  ) {
+  friendChanged(client: Client, targetId: number, isFollowing: boolean) {
     if (isFollowing == true) {
       this.userSocketStore.addFollow(client.user, targetId);
       if (this.userSocketStore.isBlocking(client.user, targetId)) {
