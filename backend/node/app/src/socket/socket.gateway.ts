@@ -8,9 +8,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, Logger, UseFilters } from '@nestjs/common';
-import { SocketInterceptor } from '@socket/socket.interceptor';
-// import { SocketService } from '@socket/socket.service';
+import { Logger, UseFilters, UseInterceptors } from '@nestjs/common';
+import { ChannelDto } from '@socket/dto/channel.socket.dto';
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
@@ -20,9 +19,11 @@ import {
   SocketException,
   SocketExceptionFilter,
 } from '@socket/socket.exception';
+import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 
 export class Client extends Socket {
   user: UserDto;
+  channel: ChannelDto;
 }
 
 @WebSocketGateway(4000)
@@ -30,13 +31,6 @@ export class Client extends Socket {
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-
-  // todo: delete: 어디에 사용해야할 지 아직 모르겠음
-  private logger: Logger = new Logger('SocketGateway');
-
-  // todo: delete: 어디에 사용해야할 지 아직 모르겠음
-  @Inject('socketInterceptor')
-  private eventInterceptor: SocketInterceptor;
 
   constructor(
     private readonly mainSocketService: MainSocketService,
@@ -57,6 +51,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       client.user = mainPageDto.me;
 
+      client.join(`room:user:${client.user.userId}`);
       client.emit('connected', mainPageDto);
       client.broadcast.emit('connectUser', {
         userId: client.user.userId,
@@ -83,7 +78,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // todo: delete: 개발용 코드
-  @SubscribeMessage('testUpdate')
+  @SubscribeMessage('test')
   testUpdate(
     @ConnectedSocket() client: Client,
     @MessageBody() targetId: string,
@@ -98,9 +93,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*              #2 Channel Gateway               */
   /* ============================================= */
 
+  @UseInterceptors(HasChannelInterceptor)
   @SubscribeMessage('createChannel')
-  createChannel(@ConnectedSocket() client: Client) {
-    // todo: development
+  async createChannel(@ConnectedSocket() client: Client, payload: any) {
+    // console.log(client);
+    console.log(payload);
+    // console.log(channelCreateDto);
+    // client.channel = await this.channelSocketService.createChannel(
+    //   channelCreateDto,
+    // );
   }
 
   @SubscribeMessage('modifyChannel')
