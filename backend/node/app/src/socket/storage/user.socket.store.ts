@@ -20,7 +20,7 @@ export class UserSocketStore {
 
   findAllInfo(userId: number): UserInfoDto[] {
     return [...this.users.values()].map((user: UserDto): UserInfoDto => {
-      if (userId !== user.userId)
+      if (userId !== user.userId && user.status !== 'offline')
         return {
           userId: user.userId,
           username: user.username,

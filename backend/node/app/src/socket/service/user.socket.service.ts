@@ -10,36 +10,40 @@ import BLockRepository from '@repository/block.repository';
 @Injectable()
 export class UserSocketService {
   constructor(
-    private readonly userStore: UserSocketStore,
+    private readonly userSocketStore: UserSocketStore,
     private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly blockRepository: BLockRepository,
   ) {}
 
-  async connect(userInfo: Users): Promise<UserDto> {
-    const follows = await this.followRepository.findFolloweeList(userInfo.id);
-    const blocks = await this.blockRepository.findBlockList(userInfo.id);
+  async connect(userInfo: Users | UserDto): Promise<UserDto> {
+    if (userInfo instanceof Users) {
+      const follows = await this.followRepository.findFolloweeList(userInfo.id);
+      const blocks = await this.blockRepository.findBlockList(userInfo.id);
 
-    const user: UserDto = {
-      userId: userInfo.id,
-      username: userInfo.username,
-      status: 'online',
-      follows: follows.map((value) => value.targetId),
-      blocks: blocks.map((value) => value.targetId),
-    };
+      const user: UserDto = {
+        userId: userInfo.id,
+        username: userInfo.username,
+        status: 'online',
+        follows: follows.map((value) => value.targetId),
+        blocks: blocks.map((value) => value.targetId),
+      };
 
-    this.userStore.save(user);
+      this.userSocketStore.save(user);
 
-    return user;
-  }
+      return user;
+    } else {
+      const follows = await this.followRepository.findFolloweeList(
+        userInfo.userId,
+      );
 
-  async reconnect(user: UserDto): Promise<void> {
-    const follows = await this.followRepository.findFolloweeList(user.userId);
+      userInfo.follows = follows.map((value) => value.targetId);
 
-    user.follows = follows.map((value) => value.targetId);
+      return userInfo;
+    }
   }
 
   switchStatus(user: UserDto, status: STATUS_LAYER) {
-    this.userStore.update(user, { status: status });
+    this.userSocketStore.update(user, { status: status });
   }
 }
