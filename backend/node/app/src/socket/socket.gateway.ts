@@ -9,6 +9,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
+  Inject,
+  Logger,
   UseFilters,
   UseInterceptors,
   UsePipes,
@@ -49,6 +51,9 @@ export class Client extends Socket {
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  // todo: delete: 어디에 사용해야할 지 아직 모르겠음
+  private logger: Logger = new Logger('SocketGateway');
 
   constructor(
     private readonly mainSocketService: MainSocketService,
@@ -192,17 +197,32 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ============================================= */
 
   @SubscribeMessage('blockUser')
-  blockUser(@ConnectedSocket() client: Client) {
+  blockUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.block(client, targetId);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('followUser')
-  followUser(@ConnectedSocket() client: Client) {
+  followUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.friendChanged(client, targetId, true);
+    this.logger.log(client.user);
   }
 
   @SubscribeMessage('unfollowUser')
-  unfollowUser(@ConnectedSocket() client: Client) {
+  unfollowUser(
+    @ConnectedSocket() client: Client,
+    @MessageBody('targetId') targetId: number,
+  ) {
     // todo: development
+    this.userSocketService.friendChanged(client, targetId, false);
+    this.logger.log(client.user);
   }
 }

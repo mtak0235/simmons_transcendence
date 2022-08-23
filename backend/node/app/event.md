@@ -267,11 +267,14 @@ participant rt as RoomTable
 participant r as Repository
 
 c->>ga: <<block>>(targetId)
-ga->>us: block(srcId,targetId)
+ga->>us: block(sourceId,targetId)
 us->>ss: getUserSource(userId):{blocks:[]}
 us->>us: blocks.append(targetId)
-us->>r: saveBlock(srcId,targetId)
+us->>r: saveBlock(sourceId,targetId)
 ga->>ga: unfollow(targetId, )
+ga->>cs: block(UserDto,targetId)
+cs->>us: addBlock(UserDto, targetId)
+cs->>us: unfollow(targetId, )
 ```
 
 # follow
@@ -300,7 +303,7 @@ us->>ss: getUserSource(userId):{friends:[]}
 us->>us: friends.append(targetId)
 us->>r: saveFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(true))
+ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(true))
 ```
 
 # unfollow
@@ -323,7 +326,7 @@ us->>ss: getUserSource(userId):{friends:[]}
 us->>us: friends.delete(targetId)
 us->>r: deleteFollow(userId, targetId)
 end
-ga->>c: to(userId, targetId)<<friendChanged>>(userId, targetId, isFollow(false))
+ga->>c: to(userId)<<friendChanged>>(userId, targetId, isFollow(false))
 ```
 
 # sendDM

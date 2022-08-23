@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
@@ -6,9 +6,12 @@ import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
+import { Client } from '@socket/socket.gateway';
+import { BlockBuilder } from '@entity/block.entity';
 
 @Injectable()
 export class UserSocketService {
+  private logger: Logger = new Logger('SocketGateway');
   constructor(
     private readonly userSocketStore: UserSocketStore,
     private readonly userRepository: UserRepository,
@@ -46,5 +49,40 @@ export class UserSocketService {
 
   switchStatus(user: UserDto, status: STATUS_LAYER) {
     this.userSocketStore.update(user, { status: status });
+  }
+
+  async block(client: Client, targetId: number) {
+    if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
+      this.userSocketStore.addBlock(client.user, targetId);
+      const blocks = new BlockBuilder()
+        .sourceId(client.user.userId)
+        .targetId(targetId)
+        .build();
+      await this.blockRepository.save(blocks);
+    }
+    if (this.userSocketStore.isFollowing(client.user, targetId)) {
+      this.friendChanged(client, targetId, false);
+    }
+  }
+
+  friendChanged(client: Client, targetId: number, isFollowing: boolean) {
+    if (isFollowing == true) {
+      this.userSocketStore.addFollow(client.user, targetId);
+      if (this.userSocketStore.isBlocking(client.user, targetId)) {
+        this.userSocketStore.deleteBlock(client.user, targetId);
+      }
+    } else if (this.userSocketStore.isFollowing(client.user, targetId)) {
+      this.userSocketStore.deleteFollow(client.user, targetId);
+    } else {
+      // unfollow but tried unfollow
+      return;
+    }
+    client
+      .to('room:user:' + client.user.userId.toString())
+      .emit('friendChanged', {
+        userId: client.user.userId,
+        targetId,
+        isFollowing,
+      });
   }
 }
