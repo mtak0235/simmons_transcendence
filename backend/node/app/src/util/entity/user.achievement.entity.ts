@@ -39,4 +39,11 @@ export default class UserAchievements {
   )
   @JoinColumn({ name: 'achievementId', referencedColumnName: 'id' })
   achievements: Achievements;
+
+  // static builder() {
+  //   let userAchievement = new UserAchievement();
+  //   userAchievement.userId =
+  // }
 }
+
+// export class

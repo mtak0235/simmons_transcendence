@@ -1,6 +1,6 @@
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { ArgumentsHost, Catch, HttpException } from '@nestjs/common';
-import { Client } from '@socket/socket.gateway';
+import { SocketInstance } from '@socket/socket.gateway';
 
 interface ErrorDto {
   status: number;
@@ -18,7 +18,7 @@ export class SocketException extends WsException {
 @Catch()
 export class SocketExceptionFilter extends BaseWsExceptionFilter {
   catch(exception: HttpException | any, host: ArgumentsHost) {
-    const client: Client = host.switchToWs().getClient();
+    const client: SocketInstance = host.switchToWs().getClient();
     let error: ErrorDto;
 
     if (exception instanceof HttpException) {
