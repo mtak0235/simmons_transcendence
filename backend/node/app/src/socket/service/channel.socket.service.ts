@@ -67,15 +67,15 @@ export class ChannelSocketService {
     const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
       0,
     );
-    const channelDto = this.channelSocketStore.find(channelName);
-    // if (Array.from(channelDto.matcher.values()).filter()
-    //     Array.from(channelDto.matcher.values()).filter(
-    //         (isReady) => isReady == false,
-    //     ).length
-    // ) {
-    //   client.in(channelName).emit('readyGame', client.user.userId);
-    // }
-    // client.in(channelName).emit('startGame');
+    const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
+    if (channelDto.matcher.filter((value) => value.isReady == false).length) {
+      server.in(channelName).emit('readyGame', client.user.userId);
+    }
+    server.in(channelName).emit('startGame', {
+      waiter: channelDto.waiter,
+      matcher: channelDto.matcher,
+      score: channelDto.channelInfo.score,
+    });
   }
 
   waitingGame(client: SocketInstance) {

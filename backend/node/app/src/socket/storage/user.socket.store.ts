@@ -55,11 +55,13 @@ export class UserSocketStore {
   }
 
   isFollowing(user: UserDto, targetId: number) {
-    return !!user.follows.filter((val) => val == targetId);
+    const numbers = user.follows.filter((val) => val == targetId);
+    return Boolean(numbers.length);
   }
 
-  isBlocking(user: UserDto, targetId: number) {
-    return !!user.blocks.filter((val) => val == targetId);
+  isBlocking(user: UserDto, targetId: number): boolean {
+    const numbers = user.blocks.filter((val) => val == targetId);
+    return Boolean(numbers.length);
   }
 
   deleteBlock(user: UserDto, targetId: number) {

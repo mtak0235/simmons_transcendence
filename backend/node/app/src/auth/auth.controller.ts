@@ -6,6 +6,7 @@ import {
   Res,
   Post,
   UseInterceptors,
+  Param,
 } from '@nestjs/common';
 import { Response } from 'express';
 
@@ -74,14 +75,14 @@ export class AuthController {
 
     res.status(200).json({});
   }
-  @Get('test2') // todo: delete: 개발용 토큰 발급 API Controller
-  async testGenerator2(@Res() res) {
+  @Get('test/:id') // todo: delete: 개발용 토큰 발급 API Controller
+  async testGenerator2(@Res() res, @Param('id') id: number) {
     if (process.env.NODE_ENV !== 'local')
       throw new InternalServerErrorException();
 
-    const encryptId = await this.encryptionService.encrypt(String(1002));
+    const encryptId = await this.encryptionService.encrypt(String(id));
     const accessToken = this.jwtService.sign(
-      { id: encryptId, type: 'dev' },
+      { id: id, type: 'dev' },
       { expiresIn: '365d' },
     );
     const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });

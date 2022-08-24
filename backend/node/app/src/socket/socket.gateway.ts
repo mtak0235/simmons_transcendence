@@ -35,28 +35,33 @@ import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
 import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 
-export interface CustomHandshake extends Handshake {
-  test: string;
-}
+// export interface CustomHandshake extends Handshake {
+//   test: string;
+// }
+//
+// export class SocketInstance<
+//   ListenEvents extends EventsMap = DefaultEventsMap,
+//   EmitEvents extends EventsMap = ListenEvents,
+//   ServerSideEvents extends EventsMap = DefaultEventsMap,
+//   SocketData = any,
+// > extends Socket {
+//   readonly handshake: CustomHandshake;
+//
+//   user: UserDto;
+//   channel: ChannelDto;
+//
+//   constructor(
+//     nsp: Namespace<ListenEvents, EmitEvents, ServerSideEvents>,
+//     client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
+//     auth: object,
+//   ) {
+//     super(nsp, client, auth);
+//   }
+// }
 
-export class SocketInstance<
-  ListenEvents extends EventsMap = DefaultEventsMap,
-  EmitEvents extends EventsMap = ListenEvents,
-  ServerSideEvents extends EventsMap = DefaultEventsMap,
-  SocketData = any,
-> extends Socket {
-  readonly handshake: CustomHandshake;
-
+export class SocketInstance extends Socket {
   user: UserDto;
   channel: ChannelDto;
-
-  constructor(
-    nsp: Namespace<ListenEvents, EmitEvents, ServerSideEvents>,
-    client: Client<ListenEvents, EmitEvents, ServerSideEvents>,
-    auth: object,
-  ) {
-    super(nsp, client, auth);
-  }
 }
 
 @WebSocketGateway(4000)
@@ -66,7 +71,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  // todo: delete: 어디에 사용해야할 지 아직 모르겠음
+  // todo: delete: 어디에 사용해야할 지 아직 모르겠음 =>  디버깅용
   private logger: Logger = new Logger('SocketGateway');
 
   constructor(
@@ -85,9 +90,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const userInfo = await this.mainSocketService.verifyUser(
         socket.handshake.headers['access_token'],
       );
+      console.log(userInfo);
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       socket.user = mainPageDto.me;
 
+      this.logger.debug('rooms on connection', socket.rooms);
       socket.join(`room:user:${socket.user.userId}`);
       socket.emit('user:connected', mainPageDto);
       socket.broadcast.emit('user:connectedUser', {
@@ -230,7 +237,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.block(socket, targetId);
+    return this.userSocketService.block(socket, targetId, this.server);
   }
 
   @SubscribeMessage('followUser')
@@ -239,7 +246,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.friendChanged(socket, targetId, true);
+    return this.userSocketService.friendChanged(
+      socket,
+      targetId,
+      true,
+      this.server,
+    );
   }
 
   @SubscribeMessage('unfollowUser')
@@ -248,6 +260,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.friendChanged(socket, targetId, false);
+    return this.userSocketService.friendChanged(
+      socket,
+      targetId,
+      false,
+      this.server,
+    );
   }
 }

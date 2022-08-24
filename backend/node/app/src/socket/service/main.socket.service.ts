@@ -28,15 +28,15 @@ export class MainSocketService {
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get('authConfig.jwt'),
       });
-
       // todo: delete: 개발용 코드
-      if (payload.type === 'dev')
-        return await this.userRepository.findUser('id', 2269);
+      // if (payload.type === 'dev')
+      //   return await this.userRepository.findUser('id', 2269);
 
       const userId = parseInt(
         (await this.encryptionService.decrypt(payload.id)).toString(),
         10,
       );
+      console.log(userId);
       return await this.userRepository.findUser('id', userId);
     } catch (err) {
       throw new UnauthorizedException();

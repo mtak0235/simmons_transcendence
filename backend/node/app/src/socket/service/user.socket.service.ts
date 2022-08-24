@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
@@ -7,6 +7,8 @@ import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
 import { SocketInstance } from '@socket/socket.gateway';
+import Blocks from '@entity/block.entity';
+import { Server } from 'socket.io';
 
 @Injectable()
 export class UserSocketService {
@@ -19,35 +21,28 @@ export class UserSocketService {
   ) {}
 
   async connect(userInfo: Users | UserDto): Promise<UserDto> {
-    console.log(1);
     if (userInfo instanceof Users) {
-      console.log(2);
       const follows = await this.followRepository.findFolloweeList(userInfo.id);
       const blocks = await this.blockRepository.findBlockList(userInfo.id);
-      console.log(3);
 
       const user: UserDto = {
         userId: userInfo.id,
         username: userInfo.username,
         status: 'online',
         follows: follows.map((value) => value.targetId),
-        blocks: blocks.map((value) => value.targetUsers.id),
+        blocks: blocks.map((value) => value.targetId),
       };
-      console.log(4);
 
       this.userSocketStore.save(user);
-      console.log(5);
 
       return user;
     } else if (userInfo instanceof UserDto) {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
-      console.log(6);
 
       userInfo.follows = follows.map((value) => value.targetId);
       this.switchStatus(userInfo, 'online');
-      console.log(7);
 
       return userInfo;
     }
@@ -57,13 +52,21 @@ export class UserSocketService {
     this.userSocketStore.update(user, { status: status });
   }
 
-  async block(client: SocketInstance, targetId: number) {
+  async block(client: SocketInstance, targetId: number, server: Server) {
+    console.log();
     if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
       this.userSocketStore.addBlock(client.user, targetId);
-      await this.blockRepository.save({ userId: client.user.userId, targetId });
+      const blocks: Blocks = this.blockRepository.create({
+        sourceId: client.user.userId,
+        targetId,
+      });
+      await this.blockRepository.save(blocks);
     }
+
+    this.logger.debug('block', client.user);
+    this.logger.debug('rooms', client.rooms);
     if (this.userSocketStore.isFollowing(client.user, targetId)) {
-      await this.friendChanged(client, targetId, false);
+      await this.friendChanged(client, targetId, false, server);
     }
   }
 
@@ -71,15 +74,19 @@ export class UserSocketService {
     client: SocketInstance,
     targetId: number,
     isFollowing: boolean,
+    server: Server,
   ) {
     if (isFollowing == true) {
       this.userSocketStore.addFollow(client.user, targetId);
-      await this.followRepository.save({
+      const follows = this.followRepository.create({
         sourceId: client.user.userId,
         targetId,
       });
+      // this.logger.debug('follow', client.user);
+      await this.followRepository.save(follows);
       if (this.userSocketStore.isBlocking(client.user, targetId)) {
         this.userSocketStore.deleteBlock(client.user, targetId);
+        // this.logger.debug('cancel block for follow', client.user);
         await this.blockRepository.delete({
           sourceId: client.user.userId,
           targetId,
@@ -87,15 +94,16 @@ export class UserSocketService {
       }
     } else if (this.userSocketStore.isFollowing(client.user, targetId)) {
       this.userSocketStore.deleteFollow(client.user, targetId);
+      // this.logger.debug('unfollow for blocking', client.user);
       await this.followRepository.delete({
         sourceId: client.user.userId,
         targetId,
       });
     } else {
-      // unfollow but tried unfollow
-      return;
+      // todo: conflict exception handling
+      throw new ConflictException(['you are already unfollowing him']);
     }
-    client
+    server
       .to('room:user:' + client.user.userId.toString())
       .emit('friendChanged', {
         userId: client.user.userId,
