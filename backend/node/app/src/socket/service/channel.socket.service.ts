@@ -4,10 +4,11 @@ import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
 import { ChannelCreateDto, ChannelDto } from '@socket/dto/channel.socket.dto';
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
+import GameLogRepository from "@repository/game.log.repository";
 
 @Injectable()
 export class ChannelSocketService {
-  constructor(private readonly channelSocketStore: ChannelSocketStore) {}
+  constructor(private readonly channelSocketStore: ChannelSocketStore, private gameLogRepository:GameLogRepository) {}
 
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
@@ -39,9 +40,14 @@ export class ChannelSocketService {
   }
 
   sendMSG(client: SocketInstance, msg: string) {
+    const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
+      0,
+    );
+    const channelDto = this.channelSocketStore.find(channelName);
+
     client
       .to(this.getChannelFullName(client.rooms, /^room:channel:/))
-      .emit('getMSG', {
+      .emit('channel:getMSG', {
         userID: client.user.userId,
         userName: client.user.username,
         msg,
@@ -53,14 +59,8 @@ export class ChannelSocketService {
       0,
     );
     const channelDto = this.channelSocketStore.find(channelName);
-    if (
-      Array.from(channelDto.matcher.values()).filter((isReady) => !isReady)
-        .length
-    ) {
-      server.in(channelName).emit('readyGame', client.user.userId);
-    } else {
-      server.in(channelName).emit('startGame');
-    }
+    channelDto.onGame = false;
+    this.gameLogRepository.create();
   }
 
   readyGame(client: SocketInstance, server: Server) {
@@ -69,9 +69,9 @@ export class ChannelSocketService {
     );
     const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
     if (channelDto.matcher.filter((value) => value.isReady == false).length) {
-      server.in(channelName).emit('readyGame', client.user.userId);
+      server.in(channelName).emit('channel:readyGame', client.user.userId);
     }
-    server.in(channelName).emit('startGame', {
+    server.in(channelName).emit('channel:startGame', {
       waiter: channelDto.waiter,
       matcher: channelDto.matcher,
       score: channelDto.channelInfo.score,
@@ -85,7 +85,9 @@ export class ChannelSocketService {
     const channelDto = this.channelSocketStore.find(channelName);
     channelDto.waiter.push(client.user.userId);
     if (channelDto.waiter.length < 2) {
-      client.to(channelName).emit('readyGame', { waiter: client.user.userId });
+      client
+        .to(channelName)
+        .emit('channel:readyGame', { waiter: client.user.userId });
       return;
     }
     for (let i = 0; i < 2; i++) {

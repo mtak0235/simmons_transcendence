@@ -62,9 +62,6 @@ export class UserSocketService {
       });
       await this.blockRepository.save(blocks);
     }
-
-    this.logger.debug('block', client.user);
-    this.logger.debug('rooms', client.rooms);
     if (this.userSocketStore.isFollowing(client.user, targetId)) {
       await this.friendChanged(client, targetId, false, server);
     }
@@ -105,7 +102,7 @@ export class UserSocketService {
     }
     server
       .to('room:user:' + client.user.userId.toString())
-      .emit('friendChanged', {
+      .emit('user:friendChanged', {
         userId: client.user.userId,
         targetId,
         isFollowing,

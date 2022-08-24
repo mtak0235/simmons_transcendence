@@ -188,6 +188,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('muteUser')
   muteUser(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
+    // this.channelSocketService.mute
   }
 
   @SubscribeMessage('waitingGame')
