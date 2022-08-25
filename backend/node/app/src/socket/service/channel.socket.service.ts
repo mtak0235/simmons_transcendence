@@ -4,11 +4,14 @@ import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
 import { ChannelCreateDto, ChannelDto } from '@socket/dto/channel.socket.dto';
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
-import GameLogRepository from "@repository/game.log.repository";
+import GameLogRepository from '@repository/game.log.repository';
 
 @Injectable()
 export class ChannelSocketService {
-  constructor(private readonly channelSocketStore: ChannelSocketStore, private gameLogRepository:GameLogRepository) {}
+  constructor(
+    private readonly channelSocketStore: ChannelSocketStore,
+    private gameLogRepository: GameLogRepository,
+  ) {}
 
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
