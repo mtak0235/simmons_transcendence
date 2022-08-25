@@ -93,7 +93,11 @@ export class ChannelSocketService {
       client.rooms,
       /^room:channel:/,
     ).at(0);
+    //todo channelName
     const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
+    channelDto.matcher
+      .filter((val) => val.userId === client.user.userId)
+      .at(0).isReady = true;
     if (channelDto.matcher.filter((value) => value.isReady == false).length) {
       server.in(channelName).emit('channel:readyGame', client.user.userId);
     }

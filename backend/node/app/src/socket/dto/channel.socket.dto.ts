@@ -13,7 +13,7 @@ export class MutedUser {
   expiredAt: number;
 }
 
-export class Matcher {
+export interface Matcher {
   userId: number;
   isReady: boolean;
   //todo: 여기에  score가 왜있지?
