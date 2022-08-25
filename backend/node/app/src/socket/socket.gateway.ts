@@ -193,7 +193,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
-    this.channelSocketService.waitingGame(socket);
+    this.channelSocketService.waitingGame(socket, this.server);
   }
 
   @SubscribeMessage('readyGame')

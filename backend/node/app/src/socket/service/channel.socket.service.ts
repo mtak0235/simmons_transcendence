@@ -89,9 +89,10 @@ export class ChannelSocketService {
   }
 
   readyGame(client: SocketInstance, server: Server) {
-    const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-      0,
-    );
+    const channelName = this.getChannelFullName(
+      client.rooms,
+      /^room:channel:/,
+    ).at(0);
     const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
     if (channelDto.matcher.filter((value) => value.isReady == false).length) {
       server.in(channelName).emit('channel:readyGame', client.user.userId);
@@ -103,14 +104,15 @@ export class ChannelSocketService {
     });
   }
 
-  waitingGame(client: SocketInstance) {
-    const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-      0,
-    );
+  waitingGame(client: SocketInstance, server: Server) {
+    const channelName = this.getChannelFullName(
+      client.rooms,
+      /^room:channel:/,
+    ).at(0);
     const channelDto = this.channelSocketStore.find(channelName);
     channelDto.waiter.push(client.user.userId);
     if (channelDto.waiter.length < 2) {
-      client
+      server
         .to(channelName)
         .emit('channel:readyGame', { waiter: client.user.userId });
       return;
