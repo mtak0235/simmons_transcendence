@@ -94,7 +94,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       socket.user = mainPageDto.me;
 
-      this.logger.debug('rooms on connection', socket.rooms);
       socket.join(`room:user:${socket.user.userId}`);
       socket.emit('user:connected', mainPageDto);
       socket.broadcast.emit('user:connectedUser', {
@@ -204,9 +203,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('endGame')
-  endGame(@ConnectedSocket() socket: SocketInstance) {
+  endGame(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('result') result: number,
+  ) {
     // todo: development
-    this.channelSocketService.endGame(socket, this.server);
+    return this.channelSocketService.endGame(socket, this.server, result);
   }
 
   @SubscribeMessage('sendMSG')

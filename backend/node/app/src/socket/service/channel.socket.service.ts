@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
-import { ChannelCreateDto, ChannelDto } from '@socket/dto/channel.socket.dto';
+import {
+  ACCESS_LAYER,
+  ChannelCreateDto,
+  ChannelDto,
+} from '@socket/dto/channel.socket.dto';
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
 import GameLogRepository from '@repository/game.log.repository';
+import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class ChannelSocketService {
@@ -12,7 +17,6 @@ export class ChannelSocketService {
     private readonly channelSocketStore: ChannelSocketStore,
     private gameLogRepository: GameLogRepository,
   ) {}
-
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
     for (const room of rooms) {
@@ -47,7 +51,6 @@ export class ChannelSocketService {
       0,
     );
     const channelDto = this.channelSocketStore.find(channelName);
-
     client
       .to(this.getChannelFullName(client.rooms, /^room:channel:/))
       .emit('channel:getMSG', {
@@ -57,13 +60,32 @@ export class ChannelSocketService {
       });
   }
 
-  endGame(client: SocketInstance, server: Server) {
-    const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-      0,
-    );
+  async endGame(client: SocketInstance, server: Server, result) {
+    const channelName = this.getChannelFullName(
+      client.rooms,
+      /^room:channel:/,
+    ).at(0);
     const channelDto = this.channelSocketStore.find(channelName);
     channelDto.onGame = false;
-    this.gameLogRepository.create();
+    const logs = this.gameLogRepository.create({
+      playerAId: channelDto.matcher.at(0).userId,
+      playerBId: channelDto.matcher.at(1).userId,
+      result,
+    });
+    channelDto.matcher = [];
+    if (channelDto.waiter.length >= 2) {
+      for (let i = 0; i < 2; i++) {
+        channelDto.matcher.push({
+          isReady: false,
+          userId: channelDto.waiter.shift(),
+        });
+      }
+    }
+    await this.gameLogRepository.save(logs);
+    server.in(channelName).emit('gameOver', {
+      waiter: channelDto.waiter,
+      matcher: channelDto.matcher,
+    });
   }
 
   readyGame(client: SocketInstance, server: Server) {
@@ -96,7 +118,6 @@ export class ChannelSocketService {
     for (let i = 0; i < 2; i++) {
       channelDto.matcher.push({
         isReady: false,
-        score: channelDto.channelInfo.score,
         userId: channelDto.waiter.shift(),
       });
     }

@@ -40,8 +40,9 @@ export class MainSocketService {
           (await this.encryptionService.decrypt(payload.id)).toString(),
           10,
         );
-      console.log(userId);
-      if (isNaN(userId)) throw new UnauthorizedException();
+      if (isNaN(userId)) {
+        throw new UnauthorizedException();
+      }
       return await this.userRepository.findUser('id', userId);
     } catch (err) {
       throw new UnauthorizedException();
