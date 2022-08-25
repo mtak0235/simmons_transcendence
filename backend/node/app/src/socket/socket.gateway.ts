@@ -223,11 +223,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendDM')
   sendDM(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('targetId') targetId: string,
+    @MessageBody('targetId') targetId: number,
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendDM(socket, targetId, msg);
+    return this.channelSocketService.sendDM(socket, targetId, msg);
   }
 
   /* ============================================= */

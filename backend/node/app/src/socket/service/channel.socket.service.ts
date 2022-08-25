@@ -9,13 +9,13 @@ import {
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
 import GameLogRepository from '@repository/game.log.repository';
-import { channel } from 'diagnostics_channel';
-
+import { UserSocketStore } from '@socket/storage/user.socket.store';
 @Injectable()
 export class ChannelSocketService {
   constructor(
     private readonly channelSocketStore: ChannelSocketStore,
     private gameLogRepository: GameLogRepository,
+    private userSocketStore: UserSocketStore,
   ) {}
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
@@ -38,7 +38,11 @@ export class ChannelSocketService {
     return channel;
   }
 
-  sendDM(client: SocketInstance, targetId: string, msg: string) {
+  async sendDM(client: SocketInstance, targetId: number, msg: string) {
+    const targetUser = this.userSocketStore.find(targetId);
+    if (this.userSocketStore.isBlocking(targetUser, client.user.userId)) {
+      return;
+    }
     client.to(`room:user:${targetId}`).emit('getDM', {
       userID: client.user.userId,
       userName: client.user.username,
