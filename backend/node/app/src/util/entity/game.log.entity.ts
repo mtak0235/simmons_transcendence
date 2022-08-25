@@ -33,4 +33,25 @@ export default class GameLogs {
   @ManyToOne(() => Users, (users) => users.gameLogPlayerB, { nullable: false })
   @JoinColumn({ name: 'playerBId', referencedColumnName: 'id' })
   playerB: Users;
+
+  // static builder(gameLogsBuilder: GameLogsBuilder) {
+  //   const log = new GameLogs();
+  //   log.playerAId = gameLogsBuilder.playerAId;
+  //   log.playerBId = gameLogsBuilder.playerBId;
+  //   log.result = gameLogsBuilder.result;
+  //   return log;
+  // }
 }
+
+// export class GameLogsBuilder {
+//   get result(): any {
+//     return this._result;
+//   }
+//
+//   set result(value: number) {
+//     this._result = value;
+//   }
+//   playerAId: number;
+//   playerBId: number;
+//   private _result: number;
+// }

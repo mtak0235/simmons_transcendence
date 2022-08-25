@@ -6,6 +6,7 @@ import {
   Res,
   Post,
   UseInterceptors,
+  Param,
 } from '@nestjs/common';
 import { Response } from 'express';
 
@@ -57,14 +58,33 @@ export class AuthController {
     res.status(200).send('Access, Refresh 토큰 재발행 성공');
   }
 
-  @Get('test') // todo: delete: 개발용 토큰 발급 API Controller
-  async testGenerator(@Res() res) {
+  // @Get('test') // todo: delete: 개발용 토큰 발급 API Controller
+  // async testGenerator(@Res() res) {
+  //   if (process.env.NODE_ENV !== 'local')
+  //     throw new InternalServerErrorException();
+  //
+  //   const encryptId = await this.encryptionService.encrypt(String(2269));
+  //   const accessToken = this.jwtService.sign(
+  //     { id: encryptId, type: 'dev' },
+  //     { expiresIn: '365d' },
+  //   );
+  //   const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });
+  //
+  //   res.cookie('access_token', accessToken);
+  //   res.cookie('refresh_token', refreshToken);
+  //
+  //   res.status(200).json({});
+  // }
+  @Get('test/:id') // todo: delete: 개발용 토큰 발급 API Controller
+  async testGenerator2(@Res() res, @Param('id') id: number) {
     if (process.env.NODE_ENV !== 'local')
       throw new InternalServerErrorException();
 
-    const encryptId = await this.encryptionService.encrypt(String(2269));
+    if (!id) id = 2269;
+
+    const encryptId = await this.encryptionService.encrypt(String(id));
     const accessToken = this.jwtService.sign(
-      { id: encryptId, type: 'dev' },
+      { id: id, type: 'dev' },
       { expiresIn: '365d' },
     );
     const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });

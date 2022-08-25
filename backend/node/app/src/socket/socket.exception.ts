@@ -1,6 +1,12 @@
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
-import { ArgumentsHost, Catch } from '@nestjs/common';
-import { Client } from '@socket/socket.gateway';
+import { ArgumentsHost, Catch, HttpException } from '@nestjs/common';
+import { SocketInstance } from '@socket/socket.gateway';
+
+interface ErrorDto {
+  status: number;
+  message: string;
+  stack?: string | object;
+}
 
 export class SocketException extends WsException {
   constructor(error: string) {
@@ -11,17 +17,25 @@ export class SocketException extends WsException {
 
 @Catch()
 export class SocketExceptionFilter extends BaseWsExceptionFilter {
-  catch(exception: SocketException | any, host: ArgumentsHost) {
-    const client: Client = host.switchToWs().getClient();
-    let error: SocketException | any = exception;
+  catch(exception: HttpException | any, host: ArgumentsHost) {
+    const client: SocketInstance = host.switchToWs().getClient();
+    let error: ErrorDto;
 
-    // todo: 이 경우 로깅 해야함
-    if (!(exception instanceof SocketException)) {
+    if (exception instanceof HttpException) {
       error = {
-        error: 'server',
+        status: exception.getStatus(),
         message: exception.message,
       };
+    } else {
+      // todo: 이 경우 로깅 해야함
+      error = {
+        status: 500,
+        message: 'Internal Server Error',
+        stack: exception.stack,
+      };
     }
+
+    if (exception.stack) console.error(exception.stack);
 
     client.emit('customError', error);
   }

@@ -28,13 +28,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException();
 
     // todo: delete: 개발용 코드
-    if (payload.type === 'dev')
-      return await this.userService.findUserById(2269);
-
-    const userId = parseInt(
-      (await this.encryptionService.decrypt(payload.id)).toString(),
-      10,
-    );
+    let userId: number;
+    if (payload.type === 'dev') userId = payload.id;
+    else
+      userId = parseInt(
+        (await this.encryptionService.decrypt(payload.id)).toString(),
+        10,
+      );
 
     if (isNaN(userId)) throw new UnauthorizedException();
 

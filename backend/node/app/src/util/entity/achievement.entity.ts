@@ -31,4 +31,26 @@ export default class Achievements {
     (userAchievements) => userAchievements.achievements,
   )
   userAchievements: UserAchievements[];
+
+  static builder(achievementBuilder: AchievementBuilder) {
+    const achievement = new Achievements();
+    achievement.title = achievementBuilder._title;
+    achievement.content = achievementBuilder._content;
+    return achievement;
+  }
+}
+
+export class AchievementBuilder {
+  public _title: string;
+  public _content: string;
+  title(value: string) {
+    this._title = value;
+  }
+  content(value: string) {
+    this._content = value;
+  }
+
+  build() {
+    return Achievements.builder(this);
+  }
 }

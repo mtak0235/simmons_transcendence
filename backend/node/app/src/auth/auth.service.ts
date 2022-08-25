@@ -38,7 +38,7 @@ export class AuthService {
     const code = await this.sendMail(id);
     const encryptId = await this.encryptionService.encrypt(String(id));
     const payload = {
-      id: encryptId,
+      id: process.env.NODE_ENV !== 'local' ? encryptId : id,
       code: await this.encryptionService.hash(code),
     };
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -24,20 +24,28 @@ export class MainSocketService {
   ) {}
 
   async verifyUser(token: any): Promise<Users> {
-    const payload = this.jwtService.verify(token, {
-      secret: this.configService.get('authConfig.jwt'),
-    });
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get('authConfig.jwt'),
+      });
+      // todo: delete: 개발용 코드
+      // if (payload.type === 'dev')
+      //   return await this.userRepository.findUser('id', 2269);
 
-    // todo: delete: 개발용 코드
-    if (payload.type === 'dev')
-      return await this.userRepository.findUser('id', 2269);
+      let userId;
 
-    const userId = parseInt(
-      (await this.encryptionService.decrypt(payload.id)).toString(),
-      10,
-    );
-
-    return await this.userRepository.findUser('id', userId);
+      if (payload.type === 'dev') userId = payload.id;
+      else
+        userId = parseInt(
+          (await this.encryptionService.decrypt(payload.id)).toString(),
+          10,
+        );
+      console.log(userId);
+      if (isNaN(userId)) throw new UnauthorizedException();
+      return await this.userRepository.findUser('id', userId);
+    } catch (err) {
+      throw new UnauthorizedException();
+    }
   }
 
   async setClient(userInfo: Users): Promise<MainPageDto> {
@@ -48,24 +56,20 @@ export class MainSocketService {
       follows: [],
       blocks: [],
     }); // todo: delete: 개발용 코드
-
     const mainPageDto: MainPageDto = {
       me: this.userSocketStore.find(userInfo.id),
       users: this.userSocketStore.findAllInfo(userInfo.id),
       channels: this.channelSocketStore.findAllInfo(),
     };
-
-    if (!mainPageDto.me) {
-      mainPageDto.me = await this.userSocketService.connect(userInfo);
-    } else {
-      if (mainPageDto.me.status !== 'offline')
-        if (process.env.NODE_ENV !== 'local')
-          // todo: delete: 개발용 if문, 삭제 필요
-          throw new SocketException('Forbidden');
-
-      await this.userSocketService.reconnect(mainPageDto.me);
+    if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
+      if (process.env.NODE_ENV !== 'local') {
+        // todo: delete: 개발용 if문, 삭제 필요
+        throw new SocketException('Forbidden');
+      }
     }
-
+    mainPageDto.me = await this.userSocketService.connect(
+      !mainPageDto.me ? userInfo : mainPageDto.me,
+    );
     return mainPageDto;
   }
 }

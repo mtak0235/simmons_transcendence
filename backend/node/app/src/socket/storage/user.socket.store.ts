@@ -20,7 +20,7 @@ export class UserSocketStore {
 
   findAllInfo(userId: number): UserInfoDto[] {
     return [...this.users.values()].map((user: UserDto): UserInfoDto => {
-      if (userId !== user.userId)
+      if (userId !== user.userId && user.status !== 'offline')
         return {
           userId: user.userId,
           username: user.username,
@@ -37,11 +37,36 @@ export class UserSocketStore {
     for (const key in updateData) user[key] = updateData[key];
   }
 
+  addBlock(user: UserDto, targetId: number) {
+    user.blocks.push(targetId);
+  }
   addFollow(user: UserDto, targetId: number) {
     user.follows.push(targetId);
   }
 
   delete(userId: number) {
     this.users.delete(userId);
+  }
+
+  deleteFollow(user: UserDto, targetId: number) {
+    user.follows = user.follows.filter((val) => {
+      return val != targetId;
+    });
+  }
+
+  isFollowing(user: UserDto, targetId: number) {
+    const numbers = user.follows.filter((val) => val == targetId);
+    return Boolean(numbers.length);
+  }
+
+  isBlocking(user: UserDto, targetId: number): boolean {
+    const numbers = user.blocks.filter((val) => val == targetId);
+    return Boolean(numbers.length);
+  }
+
+  deleteBlock(user: UserDto, targetId: number) {
+    user.blocks = user.blocks.filter((val) => {
+      return val != targetId;
+    });
   }
 }
