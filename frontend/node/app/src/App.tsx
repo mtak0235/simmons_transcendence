@@ -1,31 +1,22 @@
-import React, { Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
-import Layout from "./0_presentation/components/layouts/Layout";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./0_presentation/pages/Home";
+import NotFound from "./0_presentation/pages/core/NotFound";
+import Header from "./0_presentation/components/Header";
+import Game from "./0_presentation/pages/Game";
+import Chat from "./0_presentation/pages/Chat";
 
-const NotFound = React.lazy(
-  () => import("./0_presentation/pages/core/NotFound")
-);
-const About = React.lazy(() => import("./0_presentation/pages/About"));
-const Setting = React.lazy(() => import("./0_presentation/pages/Setting"));
-const Main = React.lazy(() => import("./0_presentation/pages/Main"));
-const Login = React.lazy(() => import("./0_presentation/pages/Login"));
-const Game = React.lazy(() => import("./0_presentation/pages/Game"));
-
-const App: React.FC = () => {
+function App() {
   return (
-    <Layout>
-      <Suspense fallback={<div>Loading Page...</div>}>
-        <Routes>
-          <Route path="*" element={<NotFound></NotFound>}></Route>
-          <Route path="/" element={<Login></Login>}></Route>
-          <Route path="/main" element={<Main></Main>}></Route>
-          <Route path="/game" element={<Game></Game>}></Route>
-          <Route path="/about" element={<About></About>}></Route>
-          <Route path="/setting" element={<Setting></Setting>}></Route>
-        </Routes>
-      </Suspense>
-    </Layout>
+    <Router>
+      <Header />
+      <Routes>
+        <Route path="*" element={<NotFound />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/game" element={<Game />} />
+        <Route path="/chat" element={<Chat />} />
+      </Routes>
+    </Router>
   );
-};
+}
 
 export default App;
