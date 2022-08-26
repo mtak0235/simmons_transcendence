@@ -18,6 +18,7 @@ import {
 import { Namespace, Server, Socket } from 'socket.io';
 import { Client } from 'socket.io/dist/client';
 import {
+  flatten,
   Logger,
   ParseIntPipe,
   UseFilters,
@@ -60,7 +61,7 @@ import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interc
 //   }
 // }
 
-export class SocketInstance extends Socket {
+export class ClientInstance extends Socket {
   user: UserDto;
   channel: ChannelDto;
 }
@@ -71,9 +72,6 @@ export class SocketInstance extends Socket {
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-
-  // todo: delete: 어디에 사용해야할 지 아직 모르겠음 =>  디버깅용
-  private logger: Logger = new Logger('SocketGateway');
 
   constructor(
     private readonly mainSocketService: MainSocketService,
@@ -86,39 +84,39 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*            #1 Handling Connection             */
   /* ============================================= */
 
-  async handleConnection(socket: SocketInstance) {
+  async handleConnection(client: ClientInstance) {
     try {
       const userInfo = await this.mainSocketService.verifyUser(
-        socket.handshake.headers['access_token'],
+        client.handshake.headers['access_token'],
       );
       console.log(userInfo);
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
-      socket.user = mainPageDto.me;
+      client.user = mainPageDto.me;
 
-      socket.join(`room:user:${socket.user.userId}`);
-      socket.emit('user:connected', mainPageDto);
-      socket.broadcast.emit('user:connectedUser', {
+      client.join(`room:user:${client.user.userId}`);
+      client.emit('user:connected', mainPageDto);
+      client.broadcast.emit('user:connectedUser', {
         // todo: user 또는 main 둘중 하나 생각해 봐야함
-        userId: socket.user.userId,
-        username: socket.user.username,
-        status: socket.user.status,
+        userId: client.user.userId,
+        username: client.user.username,
+        status: client.user.status,
       });
     } catch (err) {
-      if (err instanceof SocketException) socket.emit('error', err);
-      else socket.emit('error', { error: 'server', message: 'unKnown' });
+      if (err instanceof SocketException) client.emit('error', err);
+      else client.emit('error', { error: 'server', message: 'unKnown' });
 
-      socket.disconnect();
+      client.disconnect();
     }
   }
 
-  async handleDisconnect(socket: SocketInstance): Promise<any> {
-    if (socket.user) {
-      this.userSocketService.switchStatus(socket.user, 'offline');
+  async handleDisconnect(client: ClientInstance): Promise<any> {
+    if (client.user) {
+      this.userSocketService.switchStatus(client.user, 'offline');
 
-      socket.broadcast.emit('user:disconnectUser', {
+      client.broadcast.emit('user:disconnectUser', {
         // todo: user 또는 main 둘중 하나 생각해 봐야함
-        userId: socket.user.userId,
-        status: socket.user.status,
+        userId: client.user.userId,
+        status: client.user.status,
       });
     }
   }
@@ -127,10 +125,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new SocketBodyCheckInterceptor('test', 'world'))
   @SubscribeMessage('test')
   testUpdate(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody() targetId: string,
   ) {
-    this.userSocketStore.update(socket.user, {
+    this.userSocketStore.update(client.user, {
       follows: [parseInt(targetId, 10)],
     });
   }
@@ -143,92 +141,92 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('createChannel')
   async createChannel(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('channel') channel: ChannelCreateDto,
   ) {
-    socket.channel = await this.channelSocketService.createChannel(
-      socket.user.userId,
+    client.channel = await this.channelSocketService.createChannel(
+      client.user.userId,
       channel,
     );
 
-    socket.join(socket.channel.channelInfo.channelKey.toString());
-    socket.emit('channel:createChannel', socket.channel);
-    socket.broadcast.emit('main:createdNewChannel', socket.channel.channelInfo);
+    client.join(client.channel.channelInfo.channelKey.toString());
+    client.emit('channel:createChannel', client.channel);
+    client.broadcast.emit('main:createdNewChannel', client.channel.channelInfo);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
   modifyGame(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('channel') channel: ChannelUpdateDto,
   ) {
     // todo: development
   }
 
   @SubscribeMessage('inChannel')
-  inChannel(@ConnectedSocket() socket: SocketInstance) {
+  inChannel(@ConnectedSocket() client: ClientInstance) {
     // todo: development
   }
 
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() socket: SocketInstance) {
+  outChannel(@ConnectedSocket() client: ClientInstance) {
     // todo: development
   }
 
   @SubscribeMessage('inviteUser')
-  inviteUser(@ConnectedSocket() socket: SocketInstance) {
+  inviteUser(@ConnectedSocket() client: ClientInstance) {
     // todo: development
   }
 
   @SubscribeMessage('kickOutUser')
-  kickOutUser(@ConnectedSocket() socket: SocketInstance) {
+  kickOutUser(@ConnectedSocket() client: ClientInstance) {
     // todo: development
   }
 
   @SubscribeMessage('muteUser')
-  muteUser(@ConnectedSocket() socket: SocketInstance) {
+  muteUser(@ConnectedSocket() client: ClientInstance) {
     // todo: development
     // this.channelSocketService.mute
   }
 
   @SubscribeMessage('waitingGame')
-  waitingGame(@ConnectedSocket() socket: SocketInstance) {
+  waitingGame(@ConnectedSocket() client: ClientInstance) {
     // todo: development
-    this.channelSocketService.waitingGame(socket, this.server);
+    // this.channelSocketService.waitingGame(client, this.server);
   }
 
   @SubscribeMessage('readyGame')
-  readyGame(@ConnectedSocket() socket: SocketInstance) {
+  readyGame(@ConnectedSocket() client: ClientInstance) {
     // todo: development
-    this.channelSocketService.readyGame(socket, this.server);
+    // this.channelSocketService.readyGame(client, this.server);
   }
 
   @SubscribeMessage('endGame')
   endGame(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('result', ParseIntPipe) result: number,
   ) {
     // todo: development
-    return this.channelSocketService.endGame(socket, this.server, result);
+    // return this.channelSocketService.endGame(client, this.server, result);
   }
 
   @SubscribeMessage('sendMSG')
   sendMSG(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendMSG(socket, msg);
+    // this.channelSocketService.sendMSG(client, msg);
   }
 
   @SubscribeMessage('sendDM')
   sendDM(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('targetId') targetId: string,
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendDM(socket, targetId, msg);
+    this.channelSocketService.sendDM(client, targetId, msg);
   }
 
   /* ============================================= */
@@ -237,38 +235,73 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('blockUser')
   blockUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.block(socket, targetId, this.server);
+    this.userSocketService
+      .block(
+        client.user.blocks,
+        client.user.follows,
+        client.user.userId,
+        targetId,
+      )
+      .then();
+    if (this.userSocketService.isFollowing(client.user.follows, targetId)) {
+      this.userSocketService
+        .unfollow(client.user.follows, targetId, client.user.userId)
+        .then(() => {
+          this.server
+            .to('room:user:' + client.user.userId.toString())
+            .emit('user:friendChanged', {
+              userId: client.user.userId,
+              targetId,
+              isFollowing: false,
+            });
+        });
+    }
   }
 
   @SubscribeMessage('followUser')
   followUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.friendChanged(
-      socket,
-      targetId,
-      true,
-      this.server,
-    );
+    this.userSocketService
+      .follows(
+        client.user.follows,
+        client.user.userId,
+        targetId,
+        client.user.blocks,
+      )
+      .then(() => {
+        this.server
+          .to('room:user:' + client.user.userId.toString())
+          .emit('user:friendChanged', {
+            userId: client.user.userId,
+            targetId,
+            isFollowing: true,
+          });
+      });
   }
 
   @SubscribeMessage('unfollowUser')
   unfollowUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
-    return this.userSocketService.friendChanged(
-      socket,
-      targetId,
-      false,
-      this.server,
-    );
+    this.userSocketService
+      .unfollow(client.user.follows, targetId, client.user.userId)
+      .then(() => {
+        this.server
+          .to('room:user:' + client.user.userId.toString())
+          .emit('user:friendChanged', {
+            userId: client.user.userId,
+            targetId,
+            isFollowing: false,
+          });
+      });
   }
 }

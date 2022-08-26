@@ -6,7 +6,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { SocketInstance } from '@socket/socket.gateway';
+import { ClientInstance } from '@socket/socket.gateway';
 
 @Injectable()
 export class HasChannelInterceptor implements NestInterceptor {
@@ -14,7 +14,7 @@ export class HasChannelInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    const client: SocketInstance = context.switchToWs().getClient();
+    const client: ClientInstance = context.switchToWs().getClient();
 
     if (client.channel) throw new BadRequestException();
 
