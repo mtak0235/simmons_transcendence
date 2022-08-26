@@ -33,7 +33,6 @@ export class MainSocketService {
       //   return await this.userRepository.findUser('id', 2269);
 
       let userId;
-
       if (payload.type === 'dev') userId = payload.id;
       else
         userId = parseInt(

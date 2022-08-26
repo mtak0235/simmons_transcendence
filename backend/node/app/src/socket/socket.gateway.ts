@@ -94,6 +94,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       socket.user = mainPageDto.me;
 
+      //todo rm
+      socket.join('room:channel:0');
+
       socket.join(`room:user:${socket.user.userId}`);
       socket.emit('user:connected', mainPageDto);
       socket.broadcast.emit('user:connectedUser', {
@@ -217,7 +220,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendMSG(socket, msg);
+    this.channelSocketService.sendMSG(socket, msg, this.server);
   }
 
   @SubscribeMessage('sendDM')

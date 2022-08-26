@@ -10,7 +10,7 @@ export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
 export class MutedUser {
   userId: number;
-  expiredAt: number;
+  expiredAt: Date;
 }
 
 export interface Matcher {

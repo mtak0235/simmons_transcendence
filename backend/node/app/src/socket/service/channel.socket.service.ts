@@ -5,6 +5,7 @@ import {
   ACCESS_LAYER,
   ChannelCreateDto,
   ChannelDto,
+  MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
@@ -43,18 +44,42 @@ export class ChannelSocketService {
     if (this.userSocketStore.isBlocking(targetUser, client.user.userId)) {
       return;
     }
-    client.to(`room:user:${targetId}`).emit('getDM', {
+    client.to(`room:user:${targetId}`).emit('channel:getDM', {
       userID: client.user.userId,
       userName: client.user.username,
       msg,
     });
   }
 
-  sendMSG(client: SocketInstance, msg: string) {
-    const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-      0,
-    );
+  async sendMSG(client: SocketInstance, msg: string, server: Server) {
+    let channelName = this.getChannelFullName(
+      client.rooms,
+      /^room:channel:/,
+    ).at(0);
+    //todo rm
+    channelName = 'room:channel:0';
     const channelDto = this.channelSocketStore.find(channelName);
+    //todo rm
+    const date1 = new Date();
+    date1.setMinutes(date1.getMinutes() - 3);
+    channelDto.mutedUsers.push({
+      userId: client.user.userId,
+      expiredAt: date1,
+    });
+    console.log(channelDto);
+    const mutedUser: MutedUser = channelDto.mutedUsers
+      .filter((value) => value.userId == client.user.userId)
+      .at(0);
+    console.log(
+      'muted time: ' +
+        (new Date().getTime() - mutedUser.expiredAt.getTime()) / 60000,
+    );
+    if (
+      (new Date().getTime() - mutedUser.expiredAt.getTime()) / 60000 < 5 &&
+      mutedUser
+    ) {
+      return;
+    }
     client
       .to(this.getChannelFullName(client.rooms, /^room:channel:/))
       .emit('channel:getMSG', {
