@@ -36,6 +36,7 @@ export interface ChannelDto {
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
   matcher: Matcher[];
+  invited: number[];
   onGame: boolean;
 }
 
@@ -46,7 +47,6 @@ export class ChannelCreateDto {
   @IsNotEmpty()
   channelName: string;
 
-  @MinLength(4)
   password?: string;
 
   @IsNotEmpty()
