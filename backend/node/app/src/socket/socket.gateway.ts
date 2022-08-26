@@ -151,7 +151,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channel,
     );
 
-    socket.join(socket.channel.channelInfo.channelKey);
+    socket.join(socket.channel.channelInfo.channelKey.toString());
     socket.emit('channel:createChannel', socket.channel);
     socket.broadcast.emit('main:createdNewChannel', socket.channel.channelInfo);
   }

@@ -21,8 +21,8 @@ export interface Matcher {
 }
 
 export class ChannelInfoDto {
-  channelIdx: number;
-  channelKey: string;
+  // channelIdx: number;
+  channelKey: number;
   adminId: number;
   channelName: string;
   accessLayer: ACCESS_LAYER;
