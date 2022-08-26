@@ -19,6 +19,7 @@ import { Namespace, Server, Socket } from 'socket.io';
 import { Client } from 'socket.io/dist/client';
 import {
   Logger,
+  ParseIntPipe,
   UseFilters,
   UseInterceptors,
   UsePipes,
@@ -205,7 +206,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('endGame')
   endGame(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('result') result: number,
+    @MessageBody('result', ParseIntPipe) result: number,
   ) {
     // todo: development
     return this.channelSocketService.endGame(socket, this.server, result);
@@ -237,7 +238,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('blockUser')
   blockUser(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('targetId') targetId: number,
+    @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
     return this.userSocketService.block(socket, targetId, this.server);
@@ -246,7 +247,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('followUser')
   followUser(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('targetId') targetId: number,
+    @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
     return this.userSocketService.friendChanged(
@@ -260,7 +261,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('unfollowUser')
   unfollowUser(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('targetId') targetId: number,
+    @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: development
     return this.userSocketService.friendChanged(
