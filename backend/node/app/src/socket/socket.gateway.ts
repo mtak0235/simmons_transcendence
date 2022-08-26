@@ -94,7 +94,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       socket.user = mainPageDto.me;
 
-      this.logger.debug('rooms on connection', socket.rooms);
+      //todo rm
+      socket.join('room:channel:0');
+
       socket.join(`room:user:${socket.user.userId}`);
       socket.emit('user:connected', mainPageDto);
       socket.broadcast.emit('user:connectedUser', {
@@ -194,7 +196,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() socket: SocketInstance) {
     // todo: development
-    this.channelSocketService.waitingGame(socket);
+    this.channelSocketService.waitingGame(socket, this.server);
   }
 
   @SubscribeMessage('readyGame')
@@ -204,9 +206,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('endGame')
-  endGame(@ConnectedSocket() socket: SocketInstance) {
+  endGame(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('result') result: number,
+  ) {
     // todo: development
-    this.channelSocketService.endGame(socket, this.server);
+    return this.channelSocketService.endGame(socket, this.server, result);
   }
 
   @SubscribeMessage('sendMSG')
@@ -215,17 +220,17 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendMSG(socket, msg);
+    this.channelSocketService.sendMSG(socket, msg, this.server);
   }
 
   @SubscribeMessage('sendDM')
   sendDM(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('targetId') targetId: string,
+    @MessageBody('targetId') targetId: number,
     @MessageBody('msg') msg: string,
   ) {
     // todo: development
-    this.channelSocketService.sendDM(socket, targetId, msg);
+    return this.channelSocketService.sendDM(socket, targetId, msg);
   }
 
   /* ============================================= */
