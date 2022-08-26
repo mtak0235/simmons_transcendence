@@ -33,15 +33,15 @@ export class MainSocketService {
       //   return await this.userRepository.findUser('id', 2269);
 
       let userId;
+
       if (payload.type === 'dev') userId = payload.id;
       else
         userId = parseInt(
           (await this.encryptionService.decrypt(payload.id)).toString(),
           10,
         );
-      if (isNaN(userId)) {
-        throw new UnauthorizedException();
-      }
+      console.log(userId);
+      if (isNaN(userId)) throw new UnauthorizedException();
       return await this.userRepository.findUser('id', userId);
     } catch (err) {
       throw new UnauthorizedException();

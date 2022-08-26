@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
@@ -12,6 +12,7 @@ import { Server } from 'socket.io';
 
 @Injectable()
 export class UserSocketService {
+  private logger: Logger = new Logger('SocketGateway');
   constructor(
     private readonly userSocketStore: UserSocketStore,
     private readonly userRepository: UserRepository,

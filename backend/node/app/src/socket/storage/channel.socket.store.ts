@@ -22,7 +22,7 @@ export class ChannelSocketStore {
     this.channels.set('room:channel:0', {
       channelInfo: {
         channelIdx: this.channelIdx,
-        channelKey: 'room:channel:0',
+        channelKey: 'room:channel:1',
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,

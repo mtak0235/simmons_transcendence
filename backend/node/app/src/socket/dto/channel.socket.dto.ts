@@ -8,19 +8,18 @@ export const ACCESS_LAYER = {
 
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
-export class MutedUser {
+export interface MutedUser {
   userId: number;
-  expiredAt: Date;
+  expiredAt: number;
 }
 
 export interface Matcher {
   userId: number;
   isReady: boolean;
-  //todo: 여기에  score가 왜있지?
-  // score: number;
+  score: number;
 }
 
-export class ChannelInfoDto {
+export interface ChannelInfoDto {
   channelIdx: number;
   channelKey: string;
   adminId: number;
@@ -29,7 +28,7 @@ export class ChannelInfoDto {
   score: number;
 }
 
-export class ChannelDto {
+export interface ChannelDto {
   channelInfo: ChannelInfoDto;
   password?: string;
   users: number[];
