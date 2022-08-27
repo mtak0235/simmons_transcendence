@@ -2,24 +2,40 @@ import {
   BadRequestException,
   CallHandler,
   ExecutionContext,
-  Injectable,
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { SocketInstance } from '@socket/socket.gateway';
 
-@Injectable()
-export class HasChannelInterceptor implements NestInterceptor {
+export class ChannelInterceptor implements NestInterceptor {
+  private readonly hasChannel: boolean;
+  private readonly requireAdmin: boolean;
+
+  constructor(hasChannel: boolean, requireAdmin: boolean) {
+    this.hasChannel = hasChannel;
+    this.requireAdmin = requireAdmin;
+  }
+
   async intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
     const client: SocketInstance = context.switchToWs().getClient();
 
-    if (client.channel) throw new BadRequestException();
+    if (this.hasChannel && !client.channel) {
+      throw new BadRequestException();
+    } else if (!this.hasChannel && client.channel) {
+      throw new BadRequestException();
+    }
+
+    if (
+      this.requireAdmin &&
+      client.channel.channelInfo.adminId !== client.user.userId
+    )
+      throw new BadRequestException();
 
     return next.handle();
   }
 }
 
-export const ChannelInterceptors = [HasChannelInterceptor];
+export const ChannelInterceptors = [ChannelInterceptor];

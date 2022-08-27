@@ -36,7 +36,7 @@ export class UserSocketService {
       this.userSocketStore.save(user);
 
       return user;
-    } else if (userInfo instanceof UserDto) {
+    } else {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
@@ -53,7 +53,6 @@ export class UserSocketService {
   }
 
   async block(client: SocketInstance, targetId: number, server: Server) {
-    console.log();
     if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
       this.userSocketStore.addBlock(client.user, targetId);
       const blocks: Blocks = this.blockRepository.create({
