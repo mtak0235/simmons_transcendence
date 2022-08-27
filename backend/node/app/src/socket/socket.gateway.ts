@@ -70,6 +70,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userId: client.user.userId,
         username: client.user.username,
         status: client.user.status,
+        //todo: sendMsg에서 블락된 사용자 메시지 차단을 클라이언트에서 안보여주려면 blocks도 내려줘야 할 것 같다.
       });
     } catch (err) {
       console.log(err);
