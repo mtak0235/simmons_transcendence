@@ -1,22 +1,31 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
 import {
-  ACCESS_LAYER,
   ChannelCreateDto,
   ChannelDto,
-  Matcher,
+  ChannelUpdateDto,
+  MutedUser,
 } from '@socket/dto/channel.socket.dto';
-import { ClientInstance } from '@socket/socket.gateway';
+import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
 import GameLogRepository from '@repository/game.log.repository';
-import { channel } from 'diagnostics_channel';
+import { UserDto } from '@socket/dto/user.socket.dto';
+import { UserSocketService } from '@socket/service/user.socket.service';
+import { EncryptionService } from '@util/encryption.service';
 
 @Injectable()
 export class ChannelSocketService {
   constructor(
     private readonly channelSocketStore: ChannelSocketStore,
-    private gameLogRepository: GameLogRepository,
+    private readonly gameLogRepository: GameLogRepository,
+    private readonly userSocketService: UserSocketService,
+    private readonly encryptionService: EncryptionService,
   ) {}
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
@@ -29,12 +38,55 @@ export class ChannelSocketService {
   }
 
   async createChannel(
-    userId: number,
+    user: UserDto,
     channelCreateDto: ChannelCreateDto,
   ): Promise<ChannelDto> {
     const channel = await this.channelSocketStore.create(channelCreateDto);
 
-    this.channelSocketStore.addUser(channel.channelInfo.channelKey, userId);
+    this.channelSocketStore.addUser(
+      channel.channelInfo.channelIdx,
+      user.userId,
+    );
+
+    this.userSocketService.switchStatus(user, 'waitingGame');
+
+    return channel;
+  }
+
+  updateChannel(channel: ChannelDto, channelUpdateDto: ChannelUpdateDto) {
+    for (const key in channelUpdateDto)
+      channel.channelInfo[key] = channelUpdateDto[key];
+  }
+
+  deleteChannel(channelId: number) {
+    this.channelSocketStore.delete(channelId);
+  }
+
+  async inChannel(
+    user: UserDto,
+    channelId: number,
+    password?: string,
+  ): Promise<ChannelDto> {
+    const channel: ChannelDto = this.channelSocketStore.find(channelId);
+
+    if (!channel) throw new NotFoundException();
+
+    // todo: if문 최적화, interceptor 로 뺴도 될듯
+    if (
+      (!channel.invited.indexOf(user.userId) &&
+        ((channel.channelInfo.accessLayer === 'protected' &&
+          !(await this.encryptionService.compare(
+            password,
+            channel.password,
+          ))) ||
+          channel.channelInfo.accessLayer === 'private')) ||
+      channel.kickedOutUsers.indexOf(user.userId)
+    )
+      throw new ForbiddenException();
+
+    channel.invited = channel.invited.filter((id) => id != user.userId);
+
+    channel.users.push(user.userId);
 
     return channel;
   }
@@ -72,5 +124,40 @@ export class ChannelSocketService {
         });
       }
     }
+
+  outChannel(user: UserDto, channel: ChannelDto) {
+    const result = {
+      userExist: true,
+      adminChange: false,
+    };
+
+    if (channel.channelInfo.adminId === user.userId) {
+      channel.channelInfo.adminId = channel.users[1];
+      result.adminChange = true;
+    }
+
+    if (user.status === 'inGame')
+      channel.matcher = channel.matcher.filter(
+        (matcher) => matcher.userId !== user.userId,
+      );
+    else if (user.status === 'waitingGame')
+      channel.waiter = channel.waiter.filter((id) => id !== user.userId);
+    channel.users = channel.users.filter((id) => id !== user.userId);
+
+    if (channel.users.length === 0) result.userExist = false;
+
+    return result;
+  }
+
+  inviteUser(channel: ChannelDto, userId: number) {
+    channel.invited.push(userId);
+  }
+
+  kickOutUser(channel: ChannelDto, userId: number) {
+    channel.kickedOutUsers.push(userId);
+  }
+
+  mutedUser(channel: ChannelDto, mutedUser: MutedUser) {
+    channel.mutedUsers.push(mutedUser);
   }
 }

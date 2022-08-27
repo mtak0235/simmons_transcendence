@@ -12,6 +12,7 @@ import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
+  MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import { Server, Socket } from 'socket.io';
 import {
@@ -28,11 +29,10 @@ import {
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
-import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
 import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 import { channel } from 'diagnostics_channel';
-
+import { ChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 export class ClientInstance extends Socket {
   user: UserDto;
   channel: ChannelDto;
@@ -49,7 +49,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly mainSocketService: MainSocketService,
     private readonly userSocketService: UserSocketService,
     private readonly channelSocketService: ChannelSocketService,
-    private readonly userSocketStore: UserSocketStore, // todo: delete: store 접근은 service layer에서 해야함
   ) {}
 
   /* ============================================= */
@@ -62,7 +61,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const userInfo = await this.mainSocketService.verifyUser(
         client.handshake.headers['access_token'],
       );
-      console.log(userInfo);
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       client.user = mainPageDto.me;
 
@@ -75,9 +73,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         status: client.user.status,
       });
     } catch (err) {
-      if (err instanceof SocketException) client.emit('error', err);
-      else client.emit('error', { error: 'server', message: 'unKnown' });
-
+      console.log(err);
+      if (err instanceof SocketException) socket.emit('error', err);
+      else socket.emit('error', { error: 'server', message: 'unKnown' });
       client.disconnect();
     }
   }
@@ -95,7 +93,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // todo: delete: 개발용 코드
-  @UseInterceptors(new SocketBodyCheckInterceptor('test', 'world'))
   @SubscribeMessage('test')
   testUpdate(
     @ConnectedSocket() client: ClientInstance,
@@ -111,16 +108,18 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /* ============================================= */
 
-  @UseInterceptors(HasChannelInterceptor)
-  @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
+  @UseInterceptors(
+    new ChannelInterceptor(false, false),
+    new SocketBodyCheckInterceptor('channel'),
+  )
   @SubscribeMessage('createChannel')
   async createChannel(
-    @ConnectedSocket() client: ClientInstance,
-    @MessageBody('channel') channel: ChannelCreateDto,
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('channel') channelCreateDto: ChannelCreateDto,
   ) {
-    client.channel = await this.channelSocketService.createChannel(
-      client.user.userId,
-      channel,
+    socket.channel = await this.channelSocketService.createChannel(
+      socket.user,
+      channelCreateDto,
     );
 
     client.join(client.channel.channelInfo.channelKey.toString());
@@ -128,41 +127,133 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.broadcast.emit('main:createdNewChannel', client.channel.channelInfo);
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, true),
+    new SocketBodyCheckInterceptor('channel'),
+  )
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
   modifyGame(
-    @ConnectedSocket() client: ClientInstance,
-    @MessageBody('channel') channel: ChannelUpdateDto,
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('channel') channelUpdateDto: ChannelUpdateDto,
   ) {
-    // todo: development
+    this.channelSocketService.updateChannel(socket.channel, channelUpdateDto);
+
+    this.server.emit('updateChannel', socket.channel);
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(false, false),
+    new SocketBodyCheckInterceptor('channelId'),
+  )
   @SubscribeMessage('inChannel')
-  inChannel(@ConnectedSocket() client: ClientInstance) {
-    // todo: development
+  async inChannel(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('channelId', ParseIntPipe) channelId: number,
+    @MessageBody('password') password?: string,
+  ) {
+    // todo: password도 응답할 때 빼야할 지 고민 해봐야 함
+    socket.channel = await this.channelSocketService.inChannel(
+      socket.user,
+      channelId,
+      password,
+    );
+    this.userSocketService.switchStatus(socket.user, 'watchingGame');
+
+    socket.emit('inChannel', socket.channel);
+    socket
+      .to(socket.channel.channelInfo.channelKey)
+      .emit('joinUser', socket.user.userId);
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(false, false),
+    new SocketBodyCheckInterceptor('channelId'),
+  )
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() client: ClientInstance) {
-    // todo: development
+  outChannel(@ConnectedSocket() socket: SocketInstance) {
+    const channelStatus = this.channelSocketService.outChannel(
+      socket.user,
+      socket.channel,
+    );
+    this.userSocketService.switchStatus(socket.user, 'online');
+
+    socket.emit('outChannel');
+
+    if (channelStatus.userExist)
+      socket
+        .to(socket.channel.channelInfo.channelKey)
+        .emit('exitUser', socket.user.userId);
+    else {
+      this.server.emit('deleteChannel', socket.channel.channelInfo.channelIdx);
+      this.channelSocketService.deleteChannel(
+        socket.channel.channelInfo.channelIdx,
+      );
+    }
+
+    if (channelStatus.adminChange)
+      this.server.emit('adminChange', {
+        channelId: socket.channel.channelInfo.channelIdx,
+        adminId: socket.channel.channelInfo.adminId,
+      });
+
+    socket.channel = undefined;
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(false, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('inviteUser')
-  inviteUser(@ConnectedSocket() client: ClientInstance) {
-    // todo: development
+  inviteUser(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('userId', ParseIntPipe) userId: number,
+  ) {
+    this.channelSocketService.inviteUser(socket.channel, userId);
+
+    socket.to(`room:user:${userId}`).emit('inviteUser', {
+      channelId: socket.channel.channelInfo.channelIdx,
+      channelName: socket.channel.channelInfo.channelName,
+    });
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, true),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('kickOutUser')
-  kickOutUser(@ConnectedSocket() client: ClientInstance) {
-    // todo: development
+  kickOutUser(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('userId', ParseIntPipe) userId: number,
+  ) {
+    this.channelSocketService.kickOutUser(socket.channel, userId);
+
+    socket.to(`room:user:${userId}`).emit('kickOut');
+    socket
+      .to(socket.channel.channelInfo.channelKey)
+      .emit('kickOutUser', userId);
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, true),
+    new SocketBodyCheckInterceptor('mutedUser'),
+  )
   @SubscribeMessage('muteUser')
-  muteUser(@ConnectedSocket() client: ClientInstance) {
-    // todo: development
-    // this.channelSocketService.mute
+  muteUser(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('mutedUser') mutedUser: MutedUser,
+  ) {
+    this.channelSocketService.mutedUser(socket.channel, mutedUser);
+
+    this.server
+      .to(`room:channel:${socket.channel.channelInfo.channelIdx}`)
+      .emit('mutedUser', mutedUser);
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.waitingGame(client.channel, client.user.userId);
@@ -174,6 +265,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('readyGame')
   readyGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.readyGame(
@@ -199,6 +294,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
   }
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('endGame')
   endGame(
     @ConnectedSocket() client: ClientInstance,
@@ -214,6 +313,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
   //todo: intereceptor에 mute되었는지 검사 필요.
+  @UseInterceptors(
+    new ChannelInterceptor(true, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('sendMSG')
   sendMSG(
     @ConnectedSocket() client: ClientInstance,
@@ -229,6 +332,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   //todo: interceptor에서 block 확인
 
+  @UseInterceptors(
+    new ChannelInterceptor(true, false),
+    new SocketBodyCheckInterceptor('userId'),
+  )
   @SubscribeMessage('sendDM')
   sendDM(
     @ConnectedSocket() client: ClientInstance,

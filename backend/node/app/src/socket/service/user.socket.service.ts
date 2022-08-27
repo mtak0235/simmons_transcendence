@@ -35,7 +35,7 @@ export class UserSocketService {
       this.userSocketStore.save(user);
 
       return user;
-    } else if (userInfo instanceof UserDto) {
+    } else {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
