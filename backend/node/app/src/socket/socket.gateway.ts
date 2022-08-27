@@ -204,16 +204,30 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('result', ParseIntPipe) result: number,
   ) {
-    return this.channelSocketService.endGame(this.server, result);
+    this.channelSocketService.endGame(client.channel, result).then(() => {
+      this.server
+        .in(client.channel.channelInfo.channelKey.toString())
+        .emit('gameOver', {
+          waiter: client.channel.waiter,
+          matcher: client.channel.matcher,
+        });
+    });
   }
-
+  //todo: intereceptor에 mute되었는지 검사 필요.
   @SubscribeMessage('sendMSG')
   sendMSG(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('msg') msg: string,
   ) {
-    // this.channelSocketService.sendMSG(client, msg);
+    client
+      .to(client.channel.channelInfo.channelKey.toString())
+      .emit('channel:getMSG', {
+        userID: client.user.userId,
+        userName: client.user.username,
+        msg,
+      });
   }
+  //todo: interceptor에서 block 확인
 
   @SubscribeMessage('sendDM')
   sendDM(
@@ -221,7 +235,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('targetId') targetId: string,
     @MessageBody('msg') msg: string,
   ) {
-    this.channelSocketService.sendDM(client, targetId, msg);
+    client.to(`room:user:${targetId}`).emit('getDM', {
+      userID: client.user.userId,
+      userName: client.user.username,
+      msg,
+    });
   }
 
   /* ============================================= */

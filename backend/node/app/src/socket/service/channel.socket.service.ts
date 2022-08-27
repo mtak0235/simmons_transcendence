@@ -39,53 +39,23 @@ export class ChannelSocketService {
     return channel;
   }
 
-  sendDM(client: ClientInstance, targetId: string, msg: string) {
-    client.to(`room:user:${targetId}`).emit('getDM', {
-      userID: client.user.userId,
-      userName: client.user.username,
-      msg,
-    });
-  }
-
-  // sendMSG(client: SocketInstance, msg: string) {
-  //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-  //     0,
-  //   );
-  //   const channelDto = this.channelSocketStore.find(channelName);
-  //   client
-  //     .to(this.getChannelFullName(client.rooms, /^room:channel:/))
-  //     .emit('channel:getMSG', {
-  //       userID: client.user.userId,
-  //       userName: client.user.username,
-  //       msg,
-  //     });
-  // }
-  async endGame(server: Server, result) {
-    const channelName = this.getChannelFullName(
-      client.rooms,
-      /^room:channel:/,
-    ).at(0);
-    const channelDto = this.channelSocketStore.find(channelName);
-    channelDto.onGame = false;
+  async endGame(channel: ChannelDto, result: number) {
+    channel.onGame = false;
     const logs = this.gameLogRepository.create({
-      playerAId: channelDto.matcher.at(0).userId,
-      playerBId: channelDto.matcher.at(1).userId,
+      playerAId: channel.matcher.at(0).userId,
+      playerBId: channel.matcher.at(1).userId,
       result,
     });
-    channelDto.matcher = [];
-    if (channelDto.waiter.length >= 2) {
+    channel.matcher = [];
+    if (channel.waiter.length >= 2) {
       for (let i = 0; i < 2; i++) {
-        channelDto.matcher.push({
+        channel.matcher.push({
           isReady: false,
-          userId: channelDto.waiter.shift(),
+          userId: channel.waiter.shift(),
         });
       }
     }
     await this.gameLogRepository.save(logs);
-    server.in(channelName).emit('gameOver', {
-      waiter: channelDto.waiter,
-      matcher: channelDto.matcher,
-    });
   }
 
   readyGame(matcher: Matcher[], userId: number) {
