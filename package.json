@@ -1,3 +1,5 @@
 {
-  "dependencies": {}
+  "dependencies": {
+    "antd": "^4.22.7"
+  }
 }
