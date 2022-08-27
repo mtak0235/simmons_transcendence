@@ -15,7 +15,6 @@ export const ACCESS_LAYER = {
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
 export class MutedUser {
-
   @IsNotEmpty()
   @IsNumber()
   userId: number;
@@ -33,8 +32,7 @@ export interface Matcher {
 }
 
 export class ChannelInfoDto {
-  // channelIdx: number;
-  channelKey: number;
+  channelIdx: number;
   adminId: number;
   channelName: string;
   accessLayer: ACCESS_LAYER;

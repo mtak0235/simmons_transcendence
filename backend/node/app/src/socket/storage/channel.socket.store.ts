@@ -16,7 +16,6 @@ export class ChannelSocketStore {
     this.channels.set(0, {
       channelInfo: {
         channelIdx: this.channelIdx,
-        channelKey: 'room:channel:0',
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
@@ -57,8 +56,7 @@ export class ChannelSocketStore {
 
     const channel: ChannelDto = {
       channelInfo: {
-        // channelIdx: this.channelIdx,
-        channelKey: channelKey,
+        channelIdx: this.channelIdx,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,

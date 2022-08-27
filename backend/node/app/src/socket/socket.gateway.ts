@@ -30,8 +30,6 @@ import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
-import { HasChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
-import { channel } from 'diagnostics_channel';
 import { ChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 export class ClientInstance extends Socket {
   user: UserDto;
@@ -74,8 +72,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     } catch (err) {
       console.log(err);
-      if (err instanceof SocketException) socket.emit('error', err);
-      else socket.emit('error', { error: 'server', message: 'unKnown' });
+      if (err instanceof SocketException) client.emit('error', err);
+      else client.emit('error', { error: 'server', message: 'unKnown' });
       client.disconnect();
     }
   }
@@ -98,9 +96,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: ClientInstance,
     @MessageBody() targetId: string,
   ) {
-    this.userSocketStore.update(client.user, {
-      follows: [parseInt(targetId, 10)],
-    });
+    // todo: test
   }
 
   /* ============================================= */
@@ -114,15 +110,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('createChannel')
   async createChannel(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('channel') channelCreateDto: ChannelCreateDto,
   ) {
-    socket.channel = await this.channelSocketService.createChannel(
-      socket.user,
+    client.channel = await this.channelSocketService.createChannel(
+      client.user,
       channelCreateDto,
     );
 
-    client.join(client.channel.channelInfo.channelKey.toString());
+    client.join(`room:channel:${client.channel.channelInfo.channelIdx}`);
     client.emit('channel:createChannel', client.channel);
     client.broadcast.emit('main:createdNewChannel', client.channel.channelInfo);
   }
@@ -134,12 +130,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
   modifyGame(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('channel') channelUpdateDto: ChannelUpdateDto,
   ) {
-    this.channelSocketService.updateChannel(socket.channel, channelUpdateDto);
+    this.channelSocketService.updateChannel(client.channel, channelUpdateDto);
 
-    this.server.emit('updateChannel', socket.channel);
+    this.server.emit('updateChannel', client.channel);
   }
 
   @UseInterceptors(
@@ -148,22 +144,22 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('inChannel')
   async inChannel(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('channelId', ParseIntPipe) channelId: number,
     @MessageBody('password') password?: string,
   ) {
     // todo: password도 응답할 때 빼야할 지 고민 해봐야 함
-    socket.channel = await this.channelSocketService.inChannel(
-      socket.user,
+    client.channel = await this.channelSocketService.inChannel(
+      client.user,
       channelId,
       password,
     );
-    this.userSocketService.switchStatus(socket.user, 'watchingGame');
+    this.userSocketService.switchStatus(client.user, 'watchingGame');
 
-    socket.emit('inChannel', socket.channel);
-    socket
-      .to(socket.channel.channelInfo.channelKey)
-      .emit('joinUser', socket.user.userId);
+    client.emit('inChannel', client.channel);
+    client
+      .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
+      .emit('joinUser', client.user.userId);
   }
 
   @UseInterceptors(
@@ -171,33 +167,33 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     new SocketBodyCheckInterceptor('channelId'),
   )
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() socket: SocketInstance) {
+  outChannel(@ConnectedSocket() client: ClientInstance) {
     const channelStatus = this.channelSocketService.outChannel(
-      socket.user,
-      socket.channel,
+      client.user,
+      client.channel,
     );
-    this.userSocketService.switchStatus(socket.user, 'online');
+    this.userSocketService.switchStatus(client.user, 'online');
 
-    socket.emit('outChannel');
+    client.emit('outChannel');
 
     if (channelStatus.userExist)
-      socket
-        .to(socket.channel.channelInfo.channelKey)
-        .emit('exitUser', socket.user.userId);
+      client
+        .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
+        .emit('exitUser', client.user.userId);
     else {
-      this.server.emit('deleteChannel', socket.channel.channelInfo.channelIdx);
+      this.server.emit('deleteChannel', client.channel.channelInfo.channelIdx);
       this.channelSocketService.deleteChannel(
-        socket.channel.channelInfo.channelIdx,
+        client.channel.channelInfo.channelIdx,
       );
     }
 
     if (channelStatus.adminChange)
       this.server.emit('adminChange', {
-        channelId: socket.channel.channelInfo.channelIdx,
-        adminId: socket.channel.channelInfo.adminId,
+        channelId: client.channel.channelInfo.channelIdx,
+        adminId: client.channel.channelInfo.adminId,
       });
 
-    socket.channel = undefined;
+    client.channel = undefined;
   }
 
   @UseInterceptors(
@@ -206,14 +202,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('inviteUser')
   inviteUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
-    this.channelSocketService.inviteUser(socket.channel, userId);
+    this.channelSocketService.inviteUser(client.channel, userId);
 
-    socket.to(`room:user:${userId}`).emit('inviteUser', {
-      channelId: socket.channel.channelInfo.channelIdx,
-      channelName: socket.channel.channelInfo.channelName,
+    client.to(`room:user:${userId}`).emit('inviteUser', {
+      channelId: client.channel.channelInfo.channelIdx,
+      channelName: client.channel.channelInfo.channelName,
     });
   }
 
@@ -223,14 +219,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('kickOutUser')
   kickOutUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
-    this.channelSocketService.kickOutUser(socket.channel, userId);
+    this.channelSocketService.kickOutUser(client.channel, userId);
 
-    socket.to(`room:user:${userId}`).emit('kickOut');
-    socket
-      .to(socket.channel.channelInfo.channelKey)
+    client.to(`room:user:${userId}`).emit('kickOut');
+    client
+      .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
       .emit('kickOutUser', userId);
   }
 
@@ -240,13 +236,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('muteUser')
   muteUser(
-    @ConnectedSocket() socket: SocketInstance,
+    @ConnectedSocket() client: ClientInstance,
     @MessageBody('mutedUser') mutedUser: MutedUser,
   ) {
-    this.channelSocketService.mutedUser(socket.channel, mutedUser);
+    this.channelSocketService.mutedUser(client.channel, mutedUser);
 
     this.server
-      .to(`room:channel:${socket.channel.channelInfo.channelIdx}`)
+      .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
       .emit('mutedUser', mutedUser);
   }
 
@@ -258,7 +254,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   waitingGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.waitingGame(client.channel, client.user.userId);
     this.server
-      .to(client.channel.channelInfo.channelKey.toString())
+      .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
       .emit('channel:getGameParticipants', {
         matcher: client.channel.matcher,
         waiter: client.channel.waiter,
@@ -279,14 +275,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.channel.matcher.filter((value) => value.isReady == false).length
     ) {
       this.server
-        .in(client.channel.channelInfo.channelKey.toString())
+        .in(`room:channel:${client.channel.channelInfo.channelIdx}`)
         .emit('channel:readyGame', {
           matcher: client.user.userId,
         });
       return;
     }
     this.server
-      .in(client.channel.channelInfo.channelKey.toString())
+      .in(`room:channel:${client.channel.channelInfo.channelIdx}`)
       .emit('channel:startGame', {
         waiter: client.channel.waiter,
         matcher: client.channel.matcher,
@@ -305,7 +301,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.channelSocketService.endGame(client.channel, result).then(() => {
       this.server
-        .in(client.channel.channelInfo.channelKey.toString())
+        .in(`room:channel:${client.channel.channelInfo.channelIdx}`)
         .emit('gameOver', {
           waiter: client.channel.waiter,
           matcher: client.channel.matcher,
@@ -323,7 +319,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('msg') msg: string,
   ) {
     client
-      .to(client.channel.channelInfo.channelKey.toString())
+      .to(`room:channel:${client.channel.channelInfo.channelIdx}`)
       .emit('channel:getMSG', {
         userID: client.user.userId,
         userName: client.user.username,
@@ -373,7 +369,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .unfollow(client.user.follows, targetId, client.user.userId)
         .then(() => {
           this.server
-            .to('room:user:' + client.user.userId.toString())
+            .to(`room:user:${client.user.userId}`)
             .emit('user:friendChanged', {
               userId: client.user.userId,
               targetId,
@@ -398,7 +394,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       )
       .then(() => {
         this.server
-          .to('room:user:' + client.user.userId.toString())
+          .to(`room:user:${client.user.userId}`)
           .emit('user:friendChanged', {
             userId: client.user.userId,
             targetId,
@@ -417,7 +413,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .unfollow(client.user.follows, targetId, client.user.userId)
       .then(() => {
         this.server
-          .to('room:user:' + client.user.userId.toString())
+          .to(`room:user:${client.user.userId}`)
           .emit('user:friendChanged', {
             userId: client.user.userId,
             targetId,
