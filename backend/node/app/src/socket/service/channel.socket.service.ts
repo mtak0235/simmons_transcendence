@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 
 import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
-import { ChannelCreateDto, ChannelDto } from '@socket/dto/channel.socket.dto';
+import {
+  ChannelCreateDto,
+  ChannelDto,
+  ChannelUpdateDto,
+  MutedUser,
+} from '@socket/dto/channel.socket.dto';
 import { SocketInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
 import GameLogRepository from '@repository/game.log.repository';
@@ -49,6 +54,15 @@ export class ChannelSocketService {
     return channel;
   }
 
+  updateChannel(channel: ChannelDto, channelUpdateDto: ChannelUpdateDto) {
+    for (const key in channelUpdateDto)
+      channel.channelInfo[key] = channelUpdateDto[key];
+  }
+
+  deleteChannel(channelId: number) {
+    this.channelSocketStore.delete(channelId);
+  }
+
   async inChannel(
     user: UserDto,
     channelId: number,
@@ -58,11 +72,16 @@ export class ChannelSocketService {
 
     if (!channel) throw new NotFoundException();
 
+    // todo: if문 최적화, interceptor 로 뺴도 될듯
     if (
-      !channel.invited.indexOf(user.userId) &&
-      ((channel.channelInfo.accessLayer === 'protected' &&
-        !(await this.encryptionService.compare(password, channel.password))) ||
-        channel.channelInfo.accessLayer === 'private')
+      (!channel.invited.indexOf(user.userId) &&
+        ((channel.channelInfo.accessLayer === 'protected' &&
+          !(await this.encryptionService.compare(
+            password,
+            channel.password,
+          ))) ||
+          channel.channelInfo.accessLayer === 'private')) ||
+      channel.kickedOutUsers.indexOf(user.userId)
     )
       throw new ForbiddenException();
 
@@ -73,11 +92,16 @@ export class ChannelSocketService {
     return channel;
   }
 
-  outChannel(user: UserDto, channel: ChannelDto): boolean {
-    if (!channel) throw new NotFoundException();
+  outChannel(user: UserDto, channel: ChannelDto) {
+    const result = {
+      userExist: true,
+      adminChange: false,
+    };
 
-    if (channel.channelInfo.adminId === user.userId)
+    if (channel.channelInfo.adminId === user.userId) {
       channel.channelInfo.adminId = channel.users[1];
+      result.adminChange = true;
+    }
 
     if (user.status === 'inGame')
       channel.matcher = channel.matcher.filter(
@@ -87,13 +111,21 @@ export class ChannelSocketService {
       channel.waiter = channel.waiter.filter((id) => id !== user.userId);
     channel.users = channel.users.filter((id) => id !== user.userId);
 
-    return channel.users.length > 0;
+    if (channel.users.length === 0) result.userExist = false;
+
+    return result;
   }
 
   inviteUser(channel: ChannelDto, userId: number) {
-    if (!channel) throw new BadRequestException();
-
     channel.invited.push(userId);
+  }
+
+  kickOutUser(channel: ChannelDto, userId: number) {
+    channel.kickedOutUsers.push(userId);
+  }
+
+  mutedUser(channel: ChannelDto, mutedUser: MutedUser) {
+    channel.mutedUsers.push(mutedUser);
   }
 
   sendDM(client: SocketInstance, targetId: string, msg: string) {

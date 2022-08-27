@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmpty,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export const ACCESS_LAYER = {
   PUBLIC: 'public',
@@ -8,8 +14,13 @@ export const ACCESS_LAYER = {
 
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
-export interface MutedUser {
+export class MutedUser {
+  @IsNotEmpty()
+  @IsNumber()
   userId: number;
+
+  @IsNotEmpty()
+  @IsNumber()
   expiredAt: number;
 }
 
@@ -42,9 +53,11 @@ export interface ChannelDto {
 
 export class ChannelCreateDto {
   @IsNotEmpty()
+  @IsNumber()
   adminId: number;
 
   @IsNotEmpty()
+  @IsString()
   channelName: string;
 
   password?: string;
@@ -54,13 +67,24 @@ export class ChannelCreateDto {
   accessLayer: ACCESS_LAYER;
 
   @IsNotEmpty()
+  @IsNumber()
   score: number;
 }
 
-export interface ChannelUpdateDto {
-  adminId?: number;
+export class ChannelUpdateDto {
+  @IsEmpty()
+  @IsString()
   channelName?: string;
+
+  @IsEmpty()
+  @IsString()
   password?: string;
+
+  @IsEmpty()
+  @IsString()
   accessLayer?: ACCESS_LAYER;
+
+  @IsEmpty()
+  @IsNumber()
   score?: number;
 }

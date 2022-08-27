@@ -12,6 +12,7 @@ import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
+  MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import { Server, Socket } from 'socket.io';
 import {
@@ -29,7 +30,6 @@ import {
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
-import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
 import { ChannelInterceptor } from '@socket/interceptor/channel.socket.interceptor';
 
@@ -136,9 +136,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('modifyChannel')
   modifyGame(
     @ConnectedSocket() socket: SocketInstance,
-    @MessageBody('channel') channel: ChannelUpdateDto,
+    @MessageBody('channel') channelUpdateDto: ChannelUpdateDto,
   ) {
-    // todo: development
+    this.channelSocketService.updateChannel(socket.channel, channelUpdateDto);
+
+    this.server.emit('updateChannel', socket.channel);
   }
 
   @UseInterceptors(
@@ -171,7 +173,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   )
   @SubscribeMessage('outChannel')
   outChannel(@ConnectedSocket() socket: SocketInstance) {
-    const userExist = this.channelSocketService.outChannel(
+    const channelStatus = this.channelSocketService.outChannel(
       socket.user,
       socket.channel,
     );
@@ -179,12 +181,22 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     socket.emit('outChannel');
 
-    if (userExist)
+    if (channelStatus.userExist)
       socket
         .to(socket.channel.channelInfo.channelKey)
         .emit('exitUser', socket.user.userId);
-    else
+    else {
       this.server.emit('deleteChannel', socket.channel.channelInfo.channelIdx);
+      this.channelSocketService.deleteChannel(
+        socket.channel.channelInfo.channelIdx,
+      );
+    }
+
+    if (channelStatus.adminChange)
+      this.server.emit('adminChange', {
+        channelId: socket.channel.channelInfo.channelIdx,
+        adminId: socket.channel.channelInfo.adminId,
+      });
 
     socket.channel = undefined;
   }
@@ -211,18 +223,32 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     new SocketBodyCheckInterceptor('userId'),
   )
   @SubscribeMessage('kickOutUser')
-  kickOutUser(@ConnectedSocket() socket: SocketInstance) {
-    // todo: development
+  kickOutUser(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('userId', ParseIntPipe) userId: number,
+  ) {
+    this.channelSocketService.kickOutUser(socket.channel, userId);
+
+    socket.to(`room:user:${userId}`).emit('kickOut');
+    socket
+      .to(socket.channel.channelInfo.channelKey)
+      .emit('kickOutUser', userId);
   }
 
   @UseInterceptors(
     new ChannelInterceptor(true, true),
-    new SocketBodyCheckInterceptor('userId'),
+    new SocketBodyCheckInterceptor('mutedUser'),
   )
   @SubscribeMessage('muteUser')
-  muteUser(@ConnectedSocket() socket: SocketInstance) {
-    // todo: development
-    // this.channelSocketService.mute
+  muteUser(
+    @ConnectedSocket() socket: SocketInstance,
+    @MessageBody('mutedUser') mutedUser: MutedUser,
+  ) {
+    this.channelSocketService.mutedUser(socket.channel, mutedUser);
+
+    this.server
+      .to(`room:channel:${socket.channel.channelInfo.channelIdx}`)
+      .emit('mutedUser', mutedUser);
   }
 
   @UseInterceptors(
