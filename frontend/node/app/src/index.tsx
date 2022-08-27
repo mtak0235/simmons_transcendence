@@ -7,6 +7,9 @@ import "./index.css";
 import App from "./App";
 import dependencyInject from "./3_infrastructure/core/DependencyInject";
 import { RecoilRoot } from "recoil";
+import ReactModal from "react-modal";
+
+ReactModal.setAppElement("#root");
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
