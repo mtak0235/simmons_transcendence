@@ -27,7 +27,6 @@ export class ChannelSocketService {
     private readonly userSocketService: UserSocketService,
     private readonly encryptionService: EncryptionService,
   ) {}
-
   getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
     const ret = new Array<string>();
     for (const room of rooms) {
@@ -92,6 +91,40 @@ export class ChannelSocketService {
     return channel;
   }
 
+  async endGame(channel: ChannelDto, result: number) {
+    channel.onGame = false;
+    const logs = this.gameLogRepository.create({
+      playerAId: channel.matcher.at(0).userId,
+      playerBId: channel.matcher.at(1).userId,
+      result,
+    });
+    channel.matcher = [];
+    if (channel.waiter.length >= 2) {
+      for (let i = 0; i < 2; i++) {
+        channel.matcher.push({
+          isReady: false,
+          userId: channel.waiter.shift(),
+        });
+      }
+    }
+    await this.gameLogRepository.save(logs);
+  }
+
+  readyGame(matcher: Matcher[], userId: number) {
+    matcher.filter((val) => val.userId === userId).at(0).isReady = true;
+  }
+
+  waitingGame(channelDto: ChannelDto, userId) {
+    channelDto.waiter.push(userId);
+    if (channelDto.waiter.length >= 2) {
+      for (let i = 0; i < 2; i++) {
+        channelDto.matcher.push({
+          isReady: false,
+          userId: channelDto.waiter.shift(),
+        });
+      }
+    }
+
   outChannel(user: UserDto, channel: ChannelDto) {
     const result = {
       userExist: true,
@@ -126,73 +159,5 @@ export class ChannelSocketService {
 
   mutedUser(channel: ChannelDto, mutedUser: MutedUser) {
     channel.mutedUsers.push(mutedUser);
-  }
-
-  sendDM(client: SocketInstance, targetId: string, msg: string) {
-    // client.to(`room:user:${targetId}`).emit('getDM', {
-    //   userID: client.user.userId,
-    //   userName: client.user.username,
-    //   msg,
-    // });
-  }
-
-  sendMSG(client: SocketInstance, msg: string) {
-    // const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-    //   0,
-    // );
-    // const channelDto = this.channelSocketStore.find(channelName);
-    //
-    // client
-    //   .to(this.getChannelFullName(client.rooms, /^room:channel:/))
-    //   .emit('channel:getMSG', {
-    //     userID: client.user.userId,
-    //     userName: client.user.username,
-    //     msg,
-    //   });
-  }
-
-  endGame(client: SocketInstance, server: Server) {
-    // const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-    //   0,
-    // );
-    // const channelDto = this.channelSocketStore.find(channelName);
-    // channelDto.onGame = false;
-    // this.gameLogRepository.create();
-  }
-
-  readyGame(client: SocketInstance, server: Server) {
-    // const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-    //   0,
-    // );
-    // const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
-    // if (channelDto.matcher.filter((value) => value.isReady == false).length) {
-    //   server.in(channelName).emit('channel:readyGame', client.user.userId);
-    // }
-    // server.in(channelName).emit('channel:startGame', {
-    //   waiter: channelDto.waiter,
-    //   matcher: channelDto.matcher,
-    //   score: channelDto.channelInfo.score,
-    // });
-  }
-
-  waitingGame(client: SocketInstance) {
-    //   const channelName = this.getChannelFullName(client.rooms, /^room:user:/).at(
-    //     0,
-    //   );
-    //   const channelDto = this.channelSocketStore.find(channelName);
-    //   channelDto.waiter.push(client.user.userId);
-    //   if (channelDto.waiter.length < 2) {
-    //     client
-    //       .to(channelName)
-    //       .emit('channel:readyGame', { waiter: client.user.userId });
-    //     return;
-    //   }
-    //   for (let i = 0; i < 2; i++) {
-    //     channelDto.matcher.push({
-    //       isReady: false,
-    //       score: channelDto.channelInfo.score,
-    //       userId: channelDto.waiter.shift(),
-    //     });
-    //   }
   }
 }

@@ -37,8 +37,9 @@ export class MainSocketService {
           (await this.encryptionService.decrypt(payload.id)).toString(),
           10,
         );
-
-      if (isNaN(userId)) throw new UnauthorizedException();
+      if (isNaN(userId)) {
+        throw new UnauthorizedException();
+      }
       return await this.userRepository.findUser('id', userId);
     } catch (err) {
       throw new UnauthorizedException();

@@ -15,6 +15,7 @@ export const ACCESS_LAYER = {
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
 export class MutedUser {
+
   @IsNotEmpty()
   @IsNumber()
   userId: number;
@@ -27,19 +28,20 @@ export class MutedUser {
 export interface Matcher {
   userId: number;
   isReady: boolean;
-  score: number;
+  //todo: 여기에  score가 왜있지?
+  // score: number;
 }
 
-export interface ChannelInfoDto {
-  channelIdx: number;
-  channelKey: string;
+export class ChannelInfoDto {
+  // channelIdx: number;
+  channelKey: number;
   adminId: number;
   channelName: string;
   accessLayer: ACCESS_LAYER;
   score: number;
 }
 
-export interface ChannelDto {
+export class ChannelDto {
   channelInfo: ChannelInfoDto;
   password?: string;
   users: number[];

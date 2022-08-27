@@ -49,7 +49,7 @@ export class ChannelSocketStore {
   async create(channelCreateDto: ChannelCreateDto): Promise<ChannelDto> {
     this.channelIdx++;
 
-    const channelKey = `room:channel:${this.channelIdx}`;
+    const channelKey = this.channelIdx;
 
     const password = channelCreateDto.password
       ? await this.encryptionService.hash(channelCreateDto.password)
@@ -57,7 +57,7 @@ export class ChannelSocketStore {
 
     const channel: ChannelDto = {
       channelInfo: {
-        channelIdx: this.channelIdx,
+        // channelIdx: this.channelIdx,
         channelKey: channelKey,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
@@ -81,7 +81,6 @@ export class ChannelSocketStore {
 
   addUser(channelId: number, userId: number) {
     const channel = this.find(channelId);
-
     channel.users.push(userId);
   }
 
