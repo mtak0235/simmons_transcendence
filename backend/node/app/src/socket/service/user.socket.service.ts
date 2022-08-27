@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
@@ -6,9 +6,7 @@ import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
-import { ClientInstance } from '@socket/socket.gateway';
 import Blocks from '@entity/block.entity';
-import { Server } from 'socket.io';
 
 @Injectable()
 export class UserSocketService {
@@ -51,16 +49,12 @@ export class UserSocketService {
     this.userSocketStore.update(user, { status: status });
   }
 
-  async block(
-    blocks: number[],
-    follows: number[],
-    sourceId: number,
-    targetId: number,
-  ) {
-    if (this.userSocketStore.isBlocking(blocks, targetId) == false) {
-      this.userSocketStore.addBlock(blocks, targetId);
+  async block(user: UserDto, targetId: number) {
+    if (user.blocks.indexOf(targetId) === -1) {
+      user.blocks.push(targetId);
+
       const block: Blocks = this.blockRepository.create({
-        sourceId: sourceId,
+        sourceId: user.userId,
         targetId,
       });
       await this.blockRepository.save(block);
@@ -71,36 +65,37 @@ export class UserSocketService {
     return this.userSocketStore.isFollowing(follows, targetId);
   }
 
-  async unfollow(follows: number[], targetId: number, sourceId: number) {
-    if (this.userSocketStore.isFollowing(follows, targetId)) {
-      this.userSocketStore.deleteFollow(follows, targetId);
+  async unfollow(user: UserDto, targetId: number) {
+    const followIdx = user.follows.indexOf(targetId);
+
+    if (followIdx !== -1) {
       await this.followRepository.delete({
-        sourceId,
+        sourceId: user.userId,
         targetId,
       });
+      user.follows.slice(followIdx);
     } else {
-      throw new ConflictException(['you are already unfollowing him']);
+      throw new BadRequestException();
     }
   }
 
-  async follows(
-    follows: number[],
-    targetId: number,
-    sourceId: number,
-    blocks: number[],
-  ) {
-    this.userSocketStore.addFollow(follows, targetId);
+  async follow(user: UserDto, targetId: number) {
+    const blockIdx = user.blocks.indexOf(targetId);
+
+    if (blockIdx !== -1) {
+      await this.blockRepository.delete({
+        sourceId: user.userId,
+        targetId,
+      });
+      user.blocks.slice(blockIdx);
+    }
+
     const follow = this.followRepository.create({
-      sourceId: sourceId,
+      sourceId: user.userId,
       targetId,
     });
     await this.followRepository.save(follow);
-    if (this.userSocketStore.isBlocking(blocks, targetId)) {
-      this.userSocketStore.deleteBlock(blocks, targetId);
-      await this.blockRepository.delete({
-        sourceId: sourceId,
-        targetId,
-      });
-    }
+
+    user.follows.push(targetId);
   }
 }

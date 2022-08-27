@@ -2,6 +2,8 @@ import {
   BadRequestException,
   CallHandler,
   ExecutionContext,
+  ForbiddenException,
+  Injectable,
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
@@ -30,7 +32,7 @@ export class ChannelInterceptor implements NestInterceptor {
 
     if (
       this.requireAdmin &&
-      client.channel.channelInfo.adminId !== client.user.userId
+      client.channel.channelPublic.adminId !== client.user.userId
     )
       throw new BadRequestException();
 
@@ -38,4 +40,29 @@ export class ChannelInterceptor implements NestInterceptor {
   }
 }
 
-export const ChannelInterceptors = [ChannelInterceptor];
+@Injectable()
+export class ChannelMessageInterceptor implements NestInterceptor {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<any>,
+  ): Observable<any> | Promise<Observable<any>> {
+    const client: ClientInstance = context.switchToWs().getClient();
+
+    const mutedUser = client.channel.mutedUsers.filter(
+      (user) => user.userId === client.user.userId,
+    );
+
+    if (mutedUser.length !== 0) {
+      if (mutedUser[0].expiredAt >= new Date().getDate())
+        throw new ForbiddenException();
+      else mutedUser.slice(0);
+    }
+
+    return next.handle();
+  }
+}
+
+export const ChannelInterceptors = [
+  ChannelInterceptor,
+  ChannelMessageInterceptor,
+];

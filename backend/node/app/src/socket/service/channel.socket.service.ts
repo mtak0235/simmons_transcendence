@@ -10,31 +10,25 @@ import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
-  Matcher,
   MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import GameLogRepository from '@repository/game.log.repository';
 import { UserDto } from '@socket/dto/user.socket.dto';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { EncryptionService } from '@util/encryption.service';
+import BLockRepository from '@repository/block.repository';
+import { UserSocketStore } from '@socket/storage/user.socket.store';
 
 @Injectable()
 export class ChannelSocketService {
   constructor(
     private readonly channelSocketStore: ChannelSocketStore,
-    private readonly gameLogRepository: GameLogRepository,
+    private readonly userSocketStore: UserSocketStore,
     private readonly userSocketService: UserSocketService,
+    private readonly gameLogRepository: GameLogRepository,
+    private readonly blockRepository: BLockRepository,
     private readonly encryptionService: EncryptionService,
   ) {}
-  getChannelFullName(rooms: Set<string>, roomNamePrefix: RegExp) {
-    const ret = new Array<string>();
-    for (const room of rooms) {
-      if (roomNamePrefix.test(room)) {
-        ret.push(room);
-      }
-    }
-    return ret;
-  }
 
   async createChannel(
     user: UserDto,
@@ -43,7 +37,7 @@ export class ChannelSocketService {
     const channel = await this.channelSocketStore.create(channelCreateDto);
 
     this.channelSocketStore.addUser(
-      channel.channelInfo.channelIdx,
+      channel.channelPublic.channelIdx,
       user.userId,
     );
 
@@ -54,7 +48,7 @@ export class ChannelSocketService {
 
   updateChannel(channel: ChannelDto, channelUpdateDto: ChannelUpdateDto) {
     for (const key in channelUpdateDto)
-      channel.channelInfo[key] = channelUpdateDto[key];
+      channel.channelPublic[key] = channelUpdateDto[key];
   }
 
   deleteChannel(channelId: number) {
@@ -73,55 +67,63 @@ export class ChannelSocketService {
     // todo: if문 최적화, interceptor 로 뺴도 될듯
     if (
       (!channel.invited.indexOf(user.userId) &&
-        ((channel.channelInfo.accessLayer === 'protected' &&
+        ((channel.channelPublic.accessLayer === 'protected' &&
           !(await this.encryptionService.compare(
             password,
             channel.password,
           ))) ||
-          channel.channelInfo.accessLayer === 'private')) ||
+          channel.channelPublic.accessLayer === 'private')) ||
       channel.kickedOutUsers.indexOf(user.userId)
     )
       throw new ForbiddenException();
 
     channel.invited = channel.invited.filter((id) => id != user.userId);
 
-    channel.users.push(user.userId);
+    this.channelSocketStore.addUser(channelId, user.userId);
 
     return channel;
   }
 
   async endGame(channel: ChannelDto, result: number) {
-    channel.onGame = false;
+    channel.channelPublic.onGame = false;
     const logs = this.gameLogRepository.create({
-      playerAId: channel.matcher.at(0).userId,
-      playerBId: channel.matcher.at(1).userId,
+      playerAId: channel.channelPrivate.matcher.at(0).userId,
+      playerBId: channel.channelPrivate.matcher.at(1).userId,
       result,
     });
-    channel.matcher = [];
-    if (channel.waiter.length >= 2) {
+    channel.channelPrivate.matcher = [];
+    if (channel.channelPrivate.waiter.length >= 2) {
       for (let i = 0; i < 2; i++) {
-        channel.matcher.push({
+        channel.channelPrivate.matcher.push({
           isReady: false,
-          userId: channel.waiter.shift(),
+          userId: channel.channelPrivate.waiter.shift(),
         });
       }
     }
     await this.gameLogRepository.save(logs);
   }
 
-  readyGame(matcher: Matcher[], userId: number) {
-    matcher.filter((val) => val.userId === userId).at(0).isReady = true;
+  readyGame(channel: ChannelDto, userId: number) {
+    let readyCount = 0;
+
+    channel.channelPrivate.matcher.map((user) => {
+      if (user.userId === userId) user.isReady = !user.isReady;
+      if (user.isReady === true) readyCount++;
+    });
+
+    if (readyCount === 2) channel.channelPublic.onGame = true;
+
+    return readyCount;
   }
 
-  waitingGame(channelDto: ChannelDto, userId) {
-    channelDto.waiter.push(userId);
-    if (channelDto.waiter.length >= 2) {
-      for (let i = 0; i < 2; i++) {
-        channelDto.matcher.push({
-          isReady: false,
-          userId: channelDto.waiter.shift(),
-        });
-      }
+  waitingGame(channel: ChannelDto, userId) {
+    if (channel.channelPrivate.matcher.length < 2)
+      channel.channelPrivate.matcher.push({
+        userId: userId,
+        isReady: false,
+      });
+    else {
+      channel.channelPrivate.waiter.push(userId);
     }
   }
 
@@ -131,20 +133,26 @@ export class ChannelSocketService {
       adminChange: false,
     };
 
-    if (channel.channelInfo.adminId === user.userId) {
-      channel.channelInfo.adminId = channel.users[1];
+    if (channel.channelPublic.adminId === user.userId) {
+      channel.channelPublic.adminId = channel.channelPrivate.users[1];
       result.adminChange = true;
     }
 
-    if (user.status === 'inGame')
-      channel.matcher = channel.matcher.filter(
+    if (user.status === 'inGame') {
+      // todo: endGame func 만들어야 함
+      channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
         (matcher) => matcher.userId !== user.userId,
       );
-    else if (user.status === 'waitingGame')
-      channel.waiter = channel.waiter.filter((id) => id !== user.userId);
-    channel.users = channel.users.filter((id) => id !== user.userId);
+    } else if (user.status === 'waitingGame')
+      channel.channelPrivate.waiter = channel.channelPrivate.waiter.filter(
+        (id) => id !== user.userId,
+      );
 
-    if (channel.users.length === 0) result.userExist = false;
+    channel.channelPrivate.users = channel.channelPrivate.users.filter(
+      (id) => id !== user.userId,
+    );
+
+    if (channel.channelPrivate.users.length === 0) result.userExist = false;
 
     return result;
   }
@@ -154,10 +162,26 @@ export class ChannelSocketService {
   }
 
   kickOutUser(channel: ChannelDto, userId: number) {
+    if (channel.channelPrivate.users.indexOf(userId) === -1) {
+      throw new BadRequestException();
+    }
+
     channel.kickedOutUsers.push(userId);
   }
 
   mutedUser(channel: ChannelDto, mutedUser: MutedUser) {
+    if (channel.channelPrivate.users.indexOf(mutedUser.userId) === -1) {
+      throw new BadRequestException();
+    }
+
     channel.mutedUsers.push(mutedUser);
+  }
+
+  async sendDm(sourceId: number, targetId: number) {
+    const user = this.userSocketStore.find(targetId);
+
+    if (user.blocks.indexOf(sourceId) !== -1) {
+      throw new ForbiddenException();
+    }
   }
 }
