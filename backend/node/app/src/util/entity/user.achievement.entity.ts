@@ -1,15 +1,14 @@
 import {
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   Column,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
-import Achievements from '@util/entity/achievement.entity';
+import Users from '@entity/user.entity';
+import Achievements from '@entity/achievement.entity';
 
 @Entity('user_achievements')
 export default class UserAchievements {
@@ -24,9 +23,6 @@ export default class UserAchievements {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Users, (users) => users.userAchievements, {
     nullable: false,
@@ -43,4 +39,29 @@ export default class UserAchievements {
   )
   @JoinColumn({ name: 'achievementId', referencedColumnName: 'id' })
   achievements: Achievements;
+
+  static builder(userAchievementBuilder: UserAchievementBuilder) {
+    const userAchievement = new UserAchievements();
+    userAchievement.userId = userAchievementBuilder._userId;
+    userAchievement.achievementId = userAchievementBuilder._achievementId;
+    return userAchievement;
+  }
+}
+
+export class UserAchievementBuilder {
+  public _userId: number;
+  public _achievementId: number;
+  userId(value: number) {
+    this._userId = value;
+    return this;
+  }
+
+  achievementId(value: number) {
+    this._achievementId = value;
+    return this;
+  }
+
+  build() {
+    return UserAchievements.builder(this);
+  }
 }

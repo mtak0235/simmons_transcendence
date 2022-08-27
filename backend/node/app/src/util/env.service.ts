@@ -3,9 +3,9 @@ import * as Joi from 'joi';
 export const envValidation = () =>
   Joi.object({
     NODE_ENV: Joi.string()
-      .valid('development', 'production', 'test')
+      .valid('local', 'development', 'production', 'test')
       .required(),
-    // PORT: Joi.string().required(), // todo: 아마 필요 없을 듯?
+    // PORT: Joi.string().required(), // todo: 주석 해제 해야 함
     // API_URL: Joi.string().required(),
     // CLIENT_URL: Joi.string().required(),
     // FT_API_UID: Joi.string().required(),

@@ -2,12 +2,11 @@ import {
   Entity,
   PrimaryColumn,
   CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('blocks')
 export default class Blocks {
@@ -20,9 +19,6 @@ export default class Blocks {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
-
   @ManyToOne(() => Users, (users) => users.blockSourceUsers)
   @JoinColumn({ name: 'sourceId', referencedColumnName: 'id' })
   sourceUsers: Users;
@@ -30,4 +26,27 @@ export default class Blocks {
   @ManyToOne(() => Users, (users) => users.blockTargetUsers)
   @JoinColumn({ name: 'targetId', referencedColumnName: 'id' })
   targetUsers: Users;
+
+  // static builder(blockBuilder: BlockBuilder) {
+  //   const blocks = new Blocks();
+  //   blocks.targetId = blockBuilder._targetId;
+  //   blocks.sourceId = blockBuilder._sourceId;
+  //   return blocks;
+  // }
 }
+
+// export class BlockBuilder {
+//   public _targetId: number;
+//   public _sourceId: number;
+//   targetId(value: number) {
+//     this._targetId = value;
+//     return this;
+//   }
+//   sourceId(value: number) {
+//     this._sourceId = value;
+//     return this;
+//   }
+//   build() {
+//     return Blocks.builder(this);
+//   }
+// }

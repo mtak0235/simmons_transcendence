@@ -1,14 +1,13 @@
 import {
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 
-import Users from '@util/entity/user.entity';
+import Users from '@entity/user.entity';
 
 @Entity('game_logs')
 export default class GameLogs {
@@ -27,9 +26,6 @@ export default class GameLogs {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
-
   @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })
   @JoinColumn({ name: 'playerAId', referencedColumnName: 'id' })
   playerA: Users;
@@ -37,4 +33,25 @@ export default class GameLogs {
   @ManyToOne(() => Users, (users) => users.gameLogPlayerB, { nullable: false })
   @JoinColumn({ name: 'playerBId', referencedColumnName: 'id' })
   playerB: Users;
+
+  // static builder(gameLogsBuilder: GameLogsBuilder) {
+  //   const log = new GameLogs();
+  //   log.playerAId = gameLogsBuilder.playerAId;
+  //   log.playerBId = gameLogsBuilder.playerBId;
+  //   log.result = gameLogsBuilder.result;
+  //   return log;
+  // }
 }
+
+// export class GameLogsBuilder {
+//   get result(): any {
+//     return this._result;
+//   }
+//
+//   set result(value: number) {
+//     this._result = value;
+//   }
+//   playerAId: number;
+//   playerBId: number;
+//   private _result: number;
+// }

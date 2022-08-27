@@ -1,4 +1,4 @@
-import { ExtractJwt, Strategy, VerifiedCallback } from 'passport-jwt';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -24,13 +24,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(req: Request, payload: any): Promise<UserType> {
     const now = Date.parse(Date()) / 1000;
 
-    if (req.url !== '/auth/token' && now > payload.exp)
+    if (req.url !== '/v0/auth/token' && now > payload.exp)
       throw new UnauthorizedException();
 
-    const userId = (
-      await this.encryptionService.decrypt(payload.id)
-    ).toString();
+    // todo: delete: 개발용 코드
+    let userId: number;
+    if (payload.type === 'dev') userId = payload.id;
+    else
+      userId = parseInt(
+        (await this.encryptionService.decrypt(payload.id)).toString(),
+        10,
+      );
 
-    return await this.userService.findOne(1); // todo: update: parseInt(userId, 10)
+    if (isNaN(userId)) throw new UnauthorizedException();
+
+    return await this.userService.findUserById(userId);
   }
 }

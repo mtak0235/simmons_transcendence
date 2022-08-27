@@ -4,3 +4,6 @@ build
 dist
 .idea
 .env.*
+.vscode
+yarn.lock
+package*.json

@@ -20,7 +20,7 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
   }
 
   async validate(accessToken: string, refreshToken: string, profile: any) {
-    const user: UserType = await this.authService.validateUser(
+    const user: UserType = await this.authService.verifyUser(
       profile['username'],
     );
 

@@ -33,6 +33,6 @@ export class EmailStrategy extends PassportStrategy(Strategy, 'email') {
     if (!code || !(await this.encryptionService.compare(code, hash)))
       throw new UnauthorizedException();
 
-    return await this.userService.findOne(userId);
+    return await this.userService.findUserById(userId);
   }
 }

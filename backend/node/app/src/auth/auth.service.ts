@@ -21,11 +21,8 @@ export class AuthService {
     private readonly encryptionService: EncryptionService,
   ) {}
 
-  // todo: 추후 db 조회로 변경될 예정이라 Promise 반환
-  async validateUser(username: string): Promise<UserType> {
-    // todo: db에서 데이터 validating 하는 부분
-    const user = await this.userService.findOne('1');
-    return user;
+  async verifyUser(username: string): Promise<UserType> {
+    return await this.userService.findUserByUsername(username);
   }
 
   async generateToken(id: number): Promise<TokenType> {
@@ -41,7 +38,7 @@ export class AuthService {
     const code = await this.sendMail(id);
     const encryptId = await this.encryptionService.encrypt(String(id));
     const payload = {
-      id: encryptId,
+      id: process.env.NODE_ENV !== 'local' ? encryptId : id,
       code: await this.encryptionService.hash(code),
     };
 
@@ -50,7 +47,7 @@ export class AuthService {
 
   async sendMail(id: number): Promise<string> {
     try {
-      const user = await this.userService.findOne(id);
+      const user = await this.userService.findUserById(id);
       const number: number = Math.floor(100000 + Math.random() * 900000);
 
       await this.mailerService.sendMail({
