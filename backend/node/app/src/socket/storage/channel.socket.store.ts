@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import {
   ChannelDto,
   ChannelCreateDto,
-  ChannelInfoDto,
+  ChannelPublicDto,
 } from '@socket/dto/channel.socket.dto';
 import { EncryptionService } from '@util/encryption.service';
 
@@ -14,21 +14,23 @@ export class ChannelSocketStore {
 
   constructor(private readonly encryptionService: EncryptionService) {
     this.channels.set(0, {
-      channelInfo: {
+      channelPublic: {
         channelIdx: this.channelIdx,
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
         adminId: 2000,
+        onGame: false,
+      },
+      channelPrivate: {
+        users: [],
+        waiter: [],
+        matcher: [],
       },
       password: '123123',
-      users: [],
-      waiter: [],
       kickedOutUsers: [],
       mutedUsers: [],
-      matcher: [],
       invited: [],
-      onGame: false,
     }); // todo: delete: 개발용 코드
   }
 
@@ -36,11 +38,11 @@ export class ChannelSocketStore {
     return this.channels.get(channelId);
   }
 
-  findAllInfo(): ChannelInfoDto[] {
+  findAllInfo(): ChannelPublicDto[] {
     return [...this.channels.values()]
-      .map((channel: ChannelDto): ChannelInfoDto => {
-        if (channel.channelInfo.accessLayer !== 'private')
-          return channel.channelInfo;
+      .map((channel: ChannelDto): ChannelPublicDto => {
+        if (channel.channelPublic.accessLayer !== 'private')
+          return channel.channelPublic;
       })
       .filter((channel) => channel);
   }
@@ -48,28 +50,29 @@ export class ChannelSocketStore {
   async create(channelCreateDto: ChannelCreateDto): Promise<ChannelDto> {
     this.channelIdx++;
 
-    const channelKey = this.channelIdx;
-
+    // todo: protected인 경우만 들어와야 함
     const password = channelCreateDto.password
       ? await this.encryptionService.hash(channelCreateDto.password)
       : undefined;
 
     const channel: ChannelDto = {
-      channelInfo: {
+      channelPublic: {
         channelIdx: this.channelIdx,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,
         adminId: channelCreateDto.adminId,
+        onGame: false,
+      },
+      channelPrivate: {
+        users: [],
+        waiter: [],
+        matcher: [],
       },
       password: password,
-      users: [],
-      waiter: [],
       kickedOutUsers: [],
       mutedUsers: [],
-      matcher: [],
       invited: [],
-      onGame: false,
     };
 
     this.channels.set(this.channelIdx, channel);
@@ -79,7 +82,7 @@ export class ChannelSocketStore {
 
   addUser(channelId: number, userId: number) {
     const channel = this.find(channelId);
-    channel.users.push(userId);
+    channel.channelPrivate.users.push(userId);
   }
 
   delete(channelId: number) {

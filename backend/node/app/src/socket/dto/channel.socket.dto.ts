@@ -31,24 +31,28 @@ export interface Matcher {
   // score: number;
 }
 
-export class ChannelInfoDto {
-  channelIdx: number;
+export interface ChannelPublicDto {
   adminId: number;
-  channelName: string;
+  channelIdx: number;
   accessLayer: ACCESS_LAYER;
+  channelName: string;
   score: number;
+  onGame: boolean;
+}
+
+export interface ChannelPrivateDto {
+  users: number[];
+  waiter: number[];
+  matcher: Matcher[];
 }
 
 export class ChannelDto {
-  channelInfo: ChannelInfoDto;
+  channelPublic: ChannelPublicDto;
+  channelPrivate: ChannelPrivateDto;
   password?: string;
-  users: number[];
-  waiter: number[];
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
-  matcher: Matcher[];
   invited: number[];
-  onGame: boolean;
 }
 
 export class ChannelCreateDto {
