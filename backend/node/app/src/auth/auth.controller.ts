@@ -17,15 +17,11 @@ import { TokenInterceptor } from '@auth/auth.interceptor';
 
 // todo: delete: 테스트용 imports
 import { JwtService } from '@nestjs/jwt';
-import { EncryptionService } from '@util/encryption.service';
 import { InternalServerErrorException } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly encryptionService: EncryptionService,
-  ) {} // todo: delete: 개발용 Constructor
+  constructor(private readonly jwtService: JwtService) {} // todo: delete: 개발용 Constructor
 
   @Get('login')
   @UseGuards(FtAuthGuard)
@@ -58,23 +54,6 @@ export class AuthController {
     res.status(200).send('Access, Refresh 토큰 재발행 성공');
   }
 
-  // @Get('test') // todo: delete: 개발용 토큰 발급 API Controller
-  // async testGenerator(@Res() res) {
-  //   if (process.env.NODE_ENV !== 'local')
-  //     throw new InternalServerErrorException();
-  //
-  //   const encryptId = await this.encryptionService.encrypt(String(2269));
-  //   const accessToken = this.jwtService.sign(
-  //     { id: encryptId, type: 'dev' },
-  //     { expiresIn: '365d' },
-  //   );
-  //   const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });
-  //
-  //   res.cookie('access_token', accessToken);
-  //   res.cookie('refresh_token', refreshToken);
-  //
-  //   res.status(200).json({});
-  // }
   @Get('test/:id') // todo: delete: 개발용 토큰 발급 API Controller
   async testGenerator2(@Res() res, @Param('id') id: number) {
     if (process.env.NODE_ENV !== 'local')
@@ -82,7 +61,6 @@ export class AuthController {
 
     if (!id) id = 2269;
 
-    const encryptId = await this.encryptionService.encrypt(String(id));
     const accessToken = this.jwtService.sign(
       { id: id, type: 'dev' },
       { expiresIn: '365d' },
