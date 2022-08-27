@@ -28,20 +28,18 @@ export class MainSocketService {
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get('authConfig.jwt'),
       });
-      // todo: delete: 개발용 코드
-      // if (payload.type === 'dev')
-      //   return await this.userRepository.findUser('id', 2269);
 
       let userId;
 
-      if (payload.type === 'dev') userId = payload.id;
+      if (payload.type === 'dev') userId = parseInt(payload.id, 10);
       else
         userId = parseInt(
           (await this.encryptionService.decrypt(payload.id)).toString(),
           10,
         );
-      console.log(userId);
-      if (isNaN(userId)) throw new UnauthorizedException();
+      if (isNaN(userId)) {
+        throw new UnauthorizedException();
+      }
       return await this.userRepository.findUser('id', userId);
     } catch (err) {
       throw new UnauthorizedException();
@@ -49,13 +47,6 @@ export class MainSocketService {
   }
 
   async setClient(userInfo: Users): Promise<MainPageDto> {
-    this.userSocketStore.save({
-      userId: 2270,
-      username: 'unknown',
-      status: 'online',
-      follows: [],
-      blocks: [],
-    }); // todo: delete: 개발용 코드
     const mainPageDto: MainPageDto = {
       me: this.userSocketStore.find(userInfo.id),
       users: this.userSocketStore.findAllInfo(userInfo.id),

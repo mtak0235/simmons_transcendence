@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmpty,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export const ACCESS_LAYER = {
   PUBLIC: 'public',
@@ -8,27 +14,34 @@ export const ACCESS_LAYER = {
 
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
-export interface MutedUser {
+export class MutedUser {
+
+  @IsNotEmpty()
+  @IsNumber()
   userId: number;
+
+  @IsNotEmpty()
+  @IsNumber()
   expiredAt: number;
 }
 
 export interface Matcher {
   userId: number;
   isReady: boolean;
-  score: number;
+  //todo: 여기에  score가 왜있지?
+  // score: number;
 }
 
-export interface ChannelInfoDto {
-  channelIdx: number;
-  channelKey: string;
+export class ChannelInfoDto {
+  // channelIdx: number;
+  channelKey: number;
   adminId: number;
   channelName: string;
   accessLayer: ACCESS_LAYER;
   score: number;
 }
 
-export interface ChannelDto {
+export class ChannelDto {
   channelInfo: ChannelInfoDto;
   password?: string;
   users: number[];
@@ -36,17 +49,19 @@ export interface ChannelDto {
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
   matcher: Matcher[];
+  invited: number[];
   onGame: boolean;
 }
 
 export class ChannelCreateDto {
   @IsNotEmpty()
+  @IsNumber()
   adminId: number;
 
   @IsNotEmpty()
+  @IsString()
   channelName: string;
 
-  @MinLength(4)
   password?: string;
 
   @IsNotEmpty()
@@ -54,13 +69,24 @@ export class ChannelCreateDto {
   accessLayer: ACCESS_LAYER;
 
   @IsNotEmpty()
+  @IsNumber()
   score: number;
 }
 
-export interface ChannelUpdateDto {
-  adminId?: number;
+export class ChannelUpdateDto {
+  @IsEmpty()
+  @IsString()
   channelName?: string;
+
+  @IsEmpty()
+  @IsString()
   password?: string;
+
+  @IsEmpty()
+  @IsString()
   accessLayer?: ACCESS_LAYER;
+
+  @IsEmpty()
+  @IsNumber()
   score?: number;
 }
