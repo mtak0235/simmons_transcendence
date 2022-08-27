@@ -5,6 +5,7 @@ import {
   ACCESS_LAYER,
   ChannelCreateDto,
   ChannelDto,
+  Matcher,
 } from '@socket/dto/channel.socket.dto';
 import { ClientInstance } from '@socket/socket.gateway';
 import { Server } from 'socket.io';
@@ -87,24 +88,8 @@ export class ChannelSocketService {
     });
   }
 
-  readyGame(client: ClientInstance, server: Server) {
-    const channelName = this.getChannelFullName(
-      client.rooms,
-      /^room:channel:/,
-    ).at(0);
-    //todo channelName
-    const channelDto: ChannelDto = this.channelSocketStore.find(channelName);
-    channelDto.matcher
-      .filter((val) => val.userId === client.user.userId)
-      .at(0).isReady = true;
-    if (channelDto.matcher.filter((value) => value.isReady == false).length) {
-      server.in(channelName).emit('channel:readyGame', client.user.userId);
-    }
-    server.in(channelName).emit('channel:startGame', {
-      waiter: channelDto.waiter,
-      matcher: channelDto.matcher,
-      score: channelDto.channelInfo.score,
-    });
+  readyGame(matcher: Matcher[], userId: number) {
+    matcher.filter((val) => val.userId === userId).at(0).isReady = true;
   }
 
   waitingGame(channelDto: ChannelDto, userId) {
