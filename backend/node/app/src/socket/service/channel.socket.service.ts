@@ -10,10 +10,9 @@ import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
+  Matcher,
   MutedUser,
 } from '@socket/dto/channel.socket.dto';
-import { SocketInstance } from '@socket/socket.gateway';
-import { Server } from 'socket.io';
 import GameLogRepository from '@repository/game.log.repository';
 import { UserDto } from '@socket/dto/user.socket.dto';
 import { UserSocketService } from '@socket/service/user.socket.service';
@@ -124,6 +123,7 @@ export class ChannelSocketService {
         });
       }
     }
+  }
 
   outChannel(user: UserDto, channel: ChannelDto) {
     const result = {
