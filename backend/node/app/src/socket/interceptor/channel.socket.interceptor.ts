@@ -12,10 +12,16 @@ import { ClientInstance } from '@socket/socket.gateway';
 export class ChannelInterceptor implements NestInterceptor {
   private readonly hasChannel: boolean;
   private readonly requireAdmin: boolean;
+  private readonly requireOwner: boolean;
 
-  constructor(hasChannel: boolean, requireAdmin: boolean) {
+  constructor(
+    hasChannel: boolean,
+    requireAdmin: boolean,
+    requireOwner = false,
+  ) {
     this.hasChannel = hasChannel;
     this.requireAdmin = requireAdmin;
+    this.requireOwner = requireOwner;
   }
 
   async intercept(
@@ -25,16 +31,18 @@ export class ChannelInterceptor implements NestInterceptor {
     const client: ClientInstance = context.switchToWs().getClient();
 
     if (this.hasChannel && !client.channel) {
-      throw new BadRequestException();
+      throw new ForbiddenException();
     } else if (!this.hasChannel && client.channel) {
-      throw new BadRequestException();
+      throw new ForbiddenException();
     }
 
     if (
-      this.requireAdmin &&
-      client.channel.channelPublic.adminId !== client.user.userId
+      (this.requireAdmin &&
+        client.channel.channelPublic.adminId !== client.user.userId) ||
+      (this.requireOwner &&
+        client.channel.channelPublic.ownerId !== client.user.userId)
     )
-      throw new BadRequestException();
+      throw new ForbiddenException();
 
     return next.handle();
   }

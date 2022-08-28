@@ -127,8 +127,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     client.join(`room:channel:${client.channel.channelPublic.channelIdx}`);
-    client.emit('single:channel:createChannel', client.channel.channelPrivate);
-    this.server.emit(
+    client.emit('single:channel:createChannel', {
+      channelPublic: client.channel.channelPublic,
+      channelPrivate: client.channel.channelPrivate,
+    });
+    client.broadcast.emit(
       'broad:channel:createdChannel',
       client.channel.channelPublic,
     );
@@ -190,12 +193,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.userSocketService.switchStatus(client.user, 'online');
 
     client.leave(`room:channel:${client.channel.channelPublic.channelIdx}`);
-    client.emit('single:channel:outChannel');
+    client.emit('single:channel:outChannel', {
+      channelId: client.channel.channelPublic.channelIdx,
+    });
 
     if (channelStatus.userExist) {
-      if (channelStatus.adminChange)
-        this.server.emit('broad:channel:changeAdmin', {
+      if (channelStatus.ownerChange || channelStatus.adminChange)
+        this.server.emit('broad:channel:setAdmin', {
           channelId: client.channel.channelPublic.channelIdx,
+          ownerId: client.channel.channelPublic.ownerId,
           adminId: client.channel.channelPublic.adminId,
         });
 
@@ -229,6 +235,24 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(`room:user:${userId}`).emit('single:channel:inviteUser', {
       channelId: client.channel.channelPublic.channelIdx,
       channelName: client.channel.channelPublic.channelName,
+    });
+  }
+
+  @UseInterceptors(
+    new ChannelInterceptor(true, false, true),
+    new SocketBodyCheckInterceptor('userId'),
+  )
+  @SubscribeMessage('setAdmin')
+  setAdmin(
+    @ConnectedSocket() client: ClientInstance,
+    @MessageBody('userId', ParseIntPipe) userId: number,
+  ) {
+    this.channelSocketService.setAdmin(client.channel, userId);
+
+    this.server.emit('broad:channel:setAdmin', {
+      channelId: client.channel.channelPublic.channelIdx,
+      ownerId: client.channel.channelPublic.ownerId,
+      adminId: client.channel.channelPublic.adminId,
     });
   }
 

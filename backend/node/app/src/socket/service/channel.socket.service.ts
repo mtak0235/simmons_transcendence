@@ -131,12 +131,13 @@ export class ChannelSocketService {
     const result = {
       userExist: true,
       adminChange: false,
+      ownerChange: false,
     };
 
-    if (channel.channelPublic.adminId === user.userId) {
-      channel.channelPublic.adminId = channel.channelPrivate.users[1];
+    if (channel.channelPublic.ownerId === user.userId)
+      result.ownerChange = true;
+    else if (channel.channelPublic.adminId === user.userId)
       result.adminChange = true;
-    }
 
     if (user.status === 'inGame') {
       // todo: endGame func 만들어야 함
@@ -154,7 +155,34 @@ export class ChannelSocketService {
 
     if (channel.channelPrivate.users.length === 0) result.userExist = false;
 
+    if (result.userExist) {
+      if (result.ownerChange) this.leaveOwner(channel);
+      else if (result.adminChange) this.leaveAdmin(channel);
+    }
+
     return result;
+  }
+
+  setAdmin(channel: ChannelDto, userId: number) {
+    if (channel.channelPrivate.users.indexOf(userId) === -1)
+      throw new BadRequestException();
+
+    channel.channelPublic.adminId = userId;
+  }
+
+  leaveOwner(channel: ChannelDto) {
+    const ownerId = channel.channelPublic.ownerId;
+    const adminId = channel.channelPublic.adminId;
+
+    if (ownerId !== adminId) channel.channelPublic.ownerId = adminId;
+    else {
+      channel.channelPublic.ownerId = channel.channelPrivate.users[0];
+      channel.channelPublic.adminId = channel.channelPublic.ownerId;
+    }
+  }
+
+  leaveAdmin(channel: ChannelDto) {
+    channel.channelPublic.adminId = channel.channelPublic.ownerId;
   }
 
   inviteUser(channel: ChannelDto, userId: number) {

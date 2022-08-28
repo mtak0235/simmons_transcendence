@@ -20,6 +20,7 @@ export class ChannelSocketStore {
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
         adminId: 2000,
+        ownerId: 2000,
         onGame: false,
       },
       channelPrivate: {
@@ -61,7 +62,8 @@ export class ChannelSocketStore {
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,
-        adminId: channelCreateDto.adminId,
+        adminId: channelCreateDto.ownerId,
+        ownerId: channelCreateDto.ownerId,
         onGame: false,
       },
       channelPrivate: {
