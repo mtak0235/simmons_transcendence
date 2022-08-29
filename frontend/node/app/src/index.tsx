@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { RecoilRoot } from "recoil";
-import { ThemeProvider } from "styled-components";
+import styled, { ThemeProvider } from "styled-components";
 import App from "./App";
 import { createGlobalStyle } from "styled-components";
 import { theme } from "./theme";

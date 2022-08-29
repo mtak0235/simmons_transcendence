@@ -1,4 +1,5 @@
 import { Link, useMatch } from "react-router-dom";
+import { Button } from "antd";
 import styled from "styled-components";
 
 const Nav = styled.nav`
@@ -6,6 +7,7 @@ const Nav = styled.nav`
   justify-content: space-between;
   align-items: center;
   position: fixed;
+  height: 100px;
   width: 100%;
   top: 0;
   background-color: black;
@@ -47,7 +49,6 @@ const Item = styled.li`
 `;
 
 function Header() {
-  const gameMatch = useMatch("game");
   const chatMatch = useMatch("chat");
   return (
     <Nav>
@@ -56,9 +57,6 @@ function Header() {
           <Link to="/">트렌센더스</Link>
         </Logo>
         <Items>
-          <Item style={{ fontWeight: gameMatch ? "600" : "100" }}>
-            <Link to="/game">Game</Link>
-          </Item>
           <Item style={{ fontWeight: chatMatch ? "600" : "100" }}>
             <Link to="/chat">Chat</Link>
           </Item>
