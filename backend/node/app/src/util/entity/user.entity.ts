@@ -1,10 +1,10 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  PrimaryColumn,
 } from 'typeorm';
 
 import Follows from '@entity/follow.entity';
@@ -14,20 +14,23 @@ import UserAchievements from '@entity/user.achievement.entity';
 
 @Entity('users')
 export default class Users {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: number;
 
   @Column('varchar', { length: 10 })
   username: string;
 
-  @Column('varchar', { length: 20 })
+  @Column('varchar', { length: 20, nullable: true })
   displayName: string;
 
   @Column('varchar', { length: 100 })
   email: string;
 
-  @Column('varchar', { length: 255, default: '' }) // todo: update: default local path
+  @Column('varchar', { length: 255 })
   imagePath: string;
+
+  @Column('boolean', { default: true })
+  firstAccess: boolean;
 
   @Column('boolean', { default: false })
   twoFactor: boolean;

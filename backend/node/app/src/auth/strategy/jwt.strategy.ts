@@ -4,7 +4,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { EncryptionService } from '@util/encryption.service';
-import { UserService, UserType } from '@user/user.service';
+import { UserService } from '@user/user.service';
+import Users from '@entity/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -21,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(req: Request, payload: any): Promise<UserType> {
+  async validate(req: Request, payload: any): Promise<Users> {
     const now = Date.parse(Date()) / 1000;
 
     if (req.url !== '/v0/auth/token' && now > payload.exp)

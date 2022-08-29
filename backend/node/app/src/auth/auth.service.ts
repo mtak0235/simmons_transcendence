@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 
-import { UserService, UserType } from '@user/user.service';
+import { UserService } from '@user/user.service';
 import { EncryptionService } from '@util/encryption.service';
 
 interface TokenType {
@@ -20,10 +20,6 @@ export class AuthService {
     private readonly mailerService: MailerService,
     private readonly encryptionService: EncryptionService,
   ) {}
-
-  async verifyUser(username: string): Promise<UserType> {
-    return await this.userService.findUserByUsername(username);
-  }
 
   async generateToken(id: number): Promise<TokenType> {
     const encryptId = await this.encryptionService.encrypt(String(id));

@@ -18,10 +18,15 @@ import { TokenInterceptor } from '@auth/auth.interceptor';
 // todo: delete: 테스트용 imports
 import { JwtService } from '@nestjs/jwt';
 import { InternalServerErrorException } from '@nestjs/common';
+import { UserService } from '@user/user.service';
+import Users from '@entity/user.entity';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly jwtService: JwtService) {} // todo: delete: 개발용 Constructor
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService, // todo: 얘는 삭제하면 안됨
+  ) {} // todo: delete: 개발용 Constructor
 
   @Get('login')
   @UseGuards(FtAuthGuard)
@@ -32,11 +37,34 @@ export class AuthController {
   @Get('login/callback')
   @UseGuards(FtAuthGuard)
   @UseInterceptors(TokenInterceptor)
-  async loginCallback(@Req() req, @Res({ passthrough: true }) res: Response) {
+  async loginCallback(@Req() req, @Res() res: Response) {
+    const user: Users = req.user;
+
+    if (user.firstAccess) {
+      res.status(201).json({
+        status: 201,
+        message: '회원가입 완료',
+      });
+    } else {
+      if (!req.user.requireTwoFactor) res.status(200).send('로그인 성공');
+      else {
+        req.user.requireTwoFactor = false;
+        res.status(202).send('2단계 인증 필요');
+      }
+    }
+  }
+
+  @Post('login/access')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TokenInterceptor)
+  async firstAccess(@Req() req, @Res() res) {
+    console.log(req.user);
+    await this.userService.firstAccess(req.user, req.body);
+
     if (!req.user.requireTwoFactor) res.status(200).send('로그인 성공');
     else {
       req.user.requireTwoFactor = false;
-      res.status(201).send('2단계 인증 필요');
+      res.status(202).send('2단계 인증 필요');
     }
   }
 
