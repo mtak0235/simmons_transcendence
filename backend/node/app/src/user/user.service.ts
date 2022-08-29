@@ -1,11 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import * as path from 'path';
+
 import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import { UserAccessDto, UserSignDto } from '@user/user.dto';
+import { ConfigService } from '@nestjs/config';
+import { ImageService } from '@util/image.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userRepository: UserRepository,
+    private readonly imageService: ImageService,
+  ) {}
 
   async findUserByUsername(username: string): Promise<Users | null> {
     return await this.userRepository.findUser('username', username);
@@ -33,6 +41,18 @@ export class UserService {
     await this.userRepository.save(userSignDto);
 
     return user;
+  }
+
+  async uploadImage(userId: number, file: Express.Multer.File) {
+    const extension = path.extname(file.originalname);
+
+    if (extension !== '.jpeg' && extension !== '.jpg' && extension !== '.png')
+      throw new BadRequestException();
+
+    await this.imageService.uploadImage(
+      'avatar/' + userId.toString() + extension,
+      file.buffer,
+    );
   }
 
   async firstAccess(userId: number, userAccessDto: UserAccessDto) {
