@@ -28,17 +28,14 @@ export class TokenInterceptor implements NestInterceptor {
     const user: Users = req.user;
 
     if (
-      req.url === '/auth/token' &&
+      req.url === '/v0/auth/token' &&
       req.cookies['refresh_token'] !==
         (await this.redisService.get(user.id.toString()))
     )
       throw new UnauthorizedException();
 
     if (user.firstAccess) {
-      res.cookie(
-        'sign',
-        (await this.authService.generateToken(user.id)).accessToken,
-      );
+      res.cookie('sign', this.authService.generateSignCode(user.id));
     } else if (req.user['requireTwoFactor'] === true) {
       res.cookie('code', await this.authService.generateMailCode(user.id));
     } else {

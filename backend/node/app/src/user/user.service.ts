@@ -27,6 +27,8 @@ export class UserService {
     user.displayName = userSignDto.displayName;
     user.email = userSignDto.email;
     user.imagePath = userSignDto.imagePath;
+    user.firstAccess = true;
+    user.twoFactor = false;
 
     await this.userRepository.save(userSignDto);
 
@@ -34,13 +36,9 @@ export class UserService {
   }
 
   async firstAccess(userId: number, userAccessDto: UserAccessDto) {
-    const user = await this.findUserById(userId);
+    userAccessDto.firstAccess = false;
 
-    user.firstAccess = false;
-
-    await this.userRepository.update(userAccessDto, user);
-
-    console.log(await this.findUserById(85274));
+    await this.userRepository.updateFirstAccess(userId, userAccessDto);
   }
 
   async switchTwoFactor(user: Users): Promise<boolean> {
@@ -48,5 +46,15 @@ export class UserService {
     await this.userRepository.save(user);
 
     return user.twoFactor;
+  }
+
+  async deleteUserById(userId: number) {
+    const user = await this.findUserById(userId);
+
+    await this.userRepository.delete(user);
+  }
+
+  async deleteUserByEntity(user: Users) {
+    await this.userRepository.delete(user);
   }
 }

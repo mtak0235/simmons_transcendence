@@ -20,13 +20,20 @@ import { JwtService } from '@nestjs/jwt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { UserService } from '@user/user.service';
 import Users from '@entity/user.entity';
+import { AuthService } from '@auth/auth.service';
+import { UserAccessDto } from '@user/user.dto';
+import { EncryptionService } from '@util/encryption.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+
+    // todo: delete: 개발용 service 주입
     private readonly jwtService: JwtService,
-    private readonly userService: UserService, // todo: 얘는 삭제하면 안됨
-  ) {} // todo: delete: 개발용 Constructor
+    private readonly encryptionService: EncryptionService,
+  ) {}
 
   @Get('login')
   @UseGuards(FtAuthGuard)
@@ -41,16 +48,14 @@ export class AuthController {
     const user: Users = req.user;
 
     if (user.firstAccess) {
+      res.cookie('sign', this.authService.generateSignCode(user.id));
       res.status(201).json({
         status: 201,
         message: '회원가입 완료',
       });
     } else {
       if (!req.user.requireTwoFactor) res.status(200).send('로그인 성공');
-      else {
-        req.user.requireTwoFactor = false;
-        res.status(202).send('2단계 인증 필요');
-      }
+      else res.status(202).send('2단계 인증 필요');
     }
   }
 
@@ -58,12 +63,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(TokenInterceptor)
   async firstAccess(@Req() req, @Res() res) {
-    console.log(req.user);
-    await this.userService.firstAccess(req.user, req.body);
+    const user: Users = req.user;
+    const userAccessDto: UserAccessDto = req.body;
 
-    if (!req.user.requireTwoFactor) res.status(200).send('로그인 성공');
+    await this.userService.firstAccess(user.id, userAccessDto);
+
+    if (!userAccessDto.twoFactor) res.status(200).send('로그인 성공');
     else {
-      req.user.requireTwoFactor = false;
+      res.cookie('code', await this.authService.generateMailCode(user.id));
       res.status(202).send('2단계 인증 필요');
     }
   }
@@ -82,8 +89,9 @@ export class AuthController {
     res.status(200).send('Access, Refresh 토큰 재발행 성공');
   }
 
-  @Get('test/:id') // todo: delete: 개발용 토큰 발급 API Controller
-  async testGenerator2(@Res() res, @Param('id') id: number) {
+  // todo: delete: 개발용 토큰 발급 API Controller
+  @Get('test/:id')
+  async testGenerator(@Res() res, @Param('id') id: number) {
     if (process.env.NODE_ENV !== 'local')
       throw new InternalServerErrorException();
 

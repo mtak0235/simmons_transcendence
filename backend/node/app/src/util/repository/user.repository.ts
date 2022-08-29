@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 
 import Users from '@entity/user.entity';
+import { UserAccessDto } from '@user/user.dto';
 
 @Injectable()
 export default class UserRepository extends Repository<Users> {
@@ -17,5 +18,12 @@ export default class UserRepository extends Repository<Users> {
       },
     );
     return query.getOne();
+  }
+
+  async updateFirstAccess(userId: number, userAccessDto: UserAccessDto) {
+    await this.createQueryBuilder('users')
+      .update(userAccessDto)
+      .where('users.id = :id', { id: userId })
+      .execute();
   }
 }

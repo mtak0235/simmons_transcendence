@@ -29,18 +29,9 @@ export class MainSocketService {
         secret: this.configService.get('authConfig.jwt'),
       });
 
-      let userId;
+      if (payload.type !== 'access') throw new UnauthorizedException();
 
-      if (payload.type === 'dev') userId = parseInt(payload.id, 10);
-      else
-        userId = parseInt(
-          (await this.encryptionService.decrypt(payload.id)).toString(),
-          10,
-        );
-      if (isNaN(userId)) {
-        throw new UnauthorizedException();
-      }
-      return await this.userRepository.findUser('id', userId);
+      return await this.userRepository.findUser('id', payload.id);
     } catch (err) {
       throw new UnauthorizedException();
     }
@@ -53,8 +44,8 @@ export class MainSocketService {
       channels: this.channelSocketStore.findAllInfo(),
     };
     if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
+      // todo: delete: 개발용 if문, 삭제 필요, 조건문만 삭제해야 함
       if (process.env.NODE_ENV !== 'local') {
-        // todo: delete: 개발용 if문, 삭제 필요
         throw new SocketException('Forbidden');
       }
     }

@@ -46,6 +46,7 @@ export const envConfig = () => ({
   authConfig: {
     jwt: process.env.JWT_SECRET,
     session: process.env.SESSION_SECRET,
+    crypto: process.env.CRYPTO_SECRET,
   },
   dbConfig: {
     username: process.env.DATABASE_USERNAME,
