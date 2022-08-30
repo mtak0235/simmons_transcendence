@@ -19,7 +19,7 @@ const Box = styled(motion.div)`
 function Home() {
   return (
     <Row>
-      <Link to={"/game/12"}>asdfa</Link>
+      <Link to={"/game/12"}>test</Link>
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>

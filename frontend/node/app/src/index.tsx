@@ -1,10 +1,11 @@
 import React from "react";
-import ReactDOM from "react-dom";
-import { RecoilRoot } from "recoil";
-import styled, { ThemeProvider } from "styled-components";
+import ReactDOM from "react-dom/client";
 import App from "./App";
-import { createGlobalStyle } from "styled-components";
+import dependencyInject from "./3_infrastructure/core/DependencyInject";
+import { RecoilRoot } from "recoil";
+import { ThemeProvider, createGlobalStyle } from "styled-components";
 import { theme } from "./theme";
+import "antd/dist/antd.min.css";
 
 const GlobalStyle = createGlobalStyle`
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
@@ -71,7 +72,13 @@ a {
 }
 `;
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(
+  document.getElementById("root") as HTMLElement
+);
+
+dependencyInject();
+
+root.render(
   <React.StrictMode>
     <RecoilRoot>
       <ThemeProvider theme={theme}>
@@ -79,6 +86,5 @@ ReactDOM.render(
         <App />
       </ThemeProvider>
     </RecoilRoot>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
