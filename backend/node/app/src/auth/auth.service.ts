@@ -5,6 +5,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 import { UserService } from '@user/user.service';
 import { EncryptionService } from '@util/encryption.service';
+import { RedisService } from '@util/redis.service';
 
 interface TokenType {
   accessToken: string;
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
     private readonly encryptionService: EncryptionService,
+    private readonly redisService: RedisService,
   ) {}
 
   async generateToken(id: number): Promise<TokenType> {
@@ -62,5 +64,9 @@ export class AuthService {
 
     if (user.firstAccess === true)
       await this.userService.deleteUserByEntity(user);
+  }
+
+  async logout(id: number) {
+    await this.redisService.delete(id.toString());
   }
 }
