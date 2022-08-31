@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   description: "트센 API 명세"
-  version: "1.1.0"
+  version: "1.2.0"
   title: "ft_transcendance"
   termsOfService: "https://"
   contact:
@@ -10,65 +10,63 @@ info:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 servers:
-  - url: 'http://localhost:5000/v0'
+  - url: 'ec2-43-200-195-11.ap-northeast-2.compute.amazonaws.com'
 
 # API 카테고리
 tags:
   - name: Auth
     description: 사용자 인증 API
-  - name: Sockets
-    description: 소켓 통신 API
   - name: Users
-    description: 사용자 & 관리자 정보 API
-
-      # - in: header
-      #   name: access_token
-      #   schema:
-      #     type: "string"
-      #     example: 발급받은 Access Toekn 입력
-      #   required: true
-      # - in: header
-      #   name: refresh_token
-      #   schema:
-      #     type: "string"
-      #     example: 발급받은 Refresh Toekn 입력
-      #   required: true
-
-      # tags:
-      # -
-      # summary:
-      # description: <h1></h1><br><br><h2>Permission</h2>`사용자` `사장님` `관리자`<br><br><h2>이 Api는 현재</h2>`기획중` `개발중` `완료`
-      # parameters:
-      #   - in: header
-      #     name: access_token
-      #     schema:
-      #       type: "string"
-      #       example: 발급받은 Access Toekn 입력
-      #     required: true
-      #   - in: header
-      #     name: refresh_token
-      #     schema:
-      #       type: "string"
-      #       example: 발급받은 Refresh Toekn 입력
-      #     required: true
-      # requestBody:
-      #   description:
-      #   required: true
-      #   content:
-      #     application/json:
-      #       schema:
-      # responses:
-      #   200:
-      #     $ref: "#/components/responses/Ok"
-      #   400:
-      #     $ref: "#/components/responses/BadRequest"
-      #   401:
-      #     $ref: "#/components/responses/Unauthorized"
-      #   500:
-    #     $ref: "#/components/responses/ServerError"
+    description: 사용자 정보 API
 
 # API 문서
 paths:
+
+  /v0/auth/test/{userId}:
+    get:
+      tags:
+        - Auth
+      summary: ❗ 테스트용 토큰 발급 API ❗
+      description: <h1>개발용 토큰 발급 간소화 API</h1><br>`process.env.NODE_ENV === local` 에서만 작동함
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+            example: "사용자 id, 기본값 85274"
+          required: true
+      responses:
+        200:
+          $ref: "#/components/responses/Ok-Cookie"
+
+  /v0/auth/token:
+    get:
+      tags:
+        - Auth
+      summary: 토큰 재발급
+      description: <h1>Access Token 만료 시 사용하는 API</h1><br><h2>만료된 Access Token과 유효한 Refresh 토큰을 전송해야 함</h2><br>`redis에 저장된 client 정보와 대조 후 유효하면 재발행이 됨`
+      parameters:
+        - in: header
+          name: Authorization
+          description: 만료된 Access Token을 입력한다.
+          schema:
+            $ref: "#/components/schemas/Cookie"
+          required: true
+        - in: header
+          name: Cookie
+          description: 유효한 Refresh Token을 입력한다.
+          schema:
+            type: string
+            example: "refresh_token=\"이곳에 Token 입력\""
+      responses:
+        200:
+          $ref: "#/components/responses/Ok-Cookie"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        500:
+          $ref: "#/components/responses/ServerError"
 
   # 인증 API
   /v0/auth/login:
@@ -92,7 +90,7 @@ paths:
       tags:
         - Auth
       summary: 로그인 콜백
-      description: <h1>42 OAuth redirect uri<h1/><br>로그인이 완료된 시점이니 메모리에 사용자 정보가 저장 될 거임<br><br><h2>2단계 인증이 활성화 되어있는 경우 204 status와 인증코드가 해싱된 토큰이 반환되며, 사용자의 이메일로 인증 코드가 발송된다.</h2>
+      description: <h1>42 OAuth redirect uri<h1/><br><h2>첫 로그인인 경우 회원 가입이 완료 되며 201 status가 응답 되고, /v0/auth/login/access로 추가 정보 입력을 요청해야 Access Token이 발급 됨<br><br>2단계 인증이 활성화 되어있는 경우 202 status와 인증코드가 해싱된 토큰이 반환되며, 사용자의 이메일로 인증 코드가 발송된다.<br><br>2단계 인증이 비활성인 경우 200 status가 응답 되고, Access Token이 발급 됨</h2>
       parameters:
         - in: query
           name: code
@@ -102,20 +100,26 @@ paths:
           required: true
       responses:
         200:
-          description: <h2>성공, 사용자 정보가 담긴 Access, Refresh Token이 담긴 쿠키 반환</h2>
+          $ref: "#/components/responses/Ok-Cookie"
+        201:
+          description: <h2>회원가입 완료, 추가 정보 입력을 위해 sign이라는 토큰 반환</h2>
           headers:
-            access_token:
+            sign:
               schema:
-                $ref: "#/components/schemas/access_token"
-            refresh_token:
-              schema:
-                $ref: "#/components/schemas/refresh_token"
+                $ref: "#/components/schemas/sign"
           content:
             application/json:
               schema:
                 type: "object"
-        204:
-          description: <h2>로그인 성공, 2단계 인증 추가 필요</h2>
+                properties:
+                  status:
+                    type: "integer"
+                    example: 201
+                  message:
+                    type: "string"
+                    example: "회원가입 완료"
+        202:
+          description: <h2>로그인 성공, 추가로 2단계 인증 필요</h2>
           headers:
             code:
               schema:
@@ -125,6 +129,13 @@ paths:
             application/json:
               schema:
                 type: "object"
+                properties:
+                  status:
+                    type: "integer"
+                    example: 202
+                  message:
+                    type: "string"
+                    example: "2단계 인증 필요"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -134,8 +145,97 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
-  /v0/auth/logout:
+  /v0/auth/email-verify:
     get:
+      tags:
+        - Auth
+      summary: 2단계 인증 (이메일)
+      description: <h1>2단계 인증 확인을 위한 API</h1><br><h2>이메일로 온 6자리 인증코드를 Query String에 담아 전송해야 한다</h2><br>`인증코드 유효기간은 5분이다.`
+      parameters:
+        - in: header
+          name: Authorization
+          description: 쿠키로 발급받은 `code` 토큰을 밑 양식에 맞춰 전달한다.
+          schema:
+            $ref: "#/components/schemas/Cookie"
+          required: true
+        - in: query
+          name: code
+          description: 이메일로 전달받은 6자리 인증번호를 입력한다.
+          schema:
+            type: "string"
+            example: 123456
+      responses:
+        200:
+          $ref: "#/components/responses/Ok-Cookie"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /v0/auth/login/access:
+    post:
+      tags:
+        - Auth
+      summary: 추가 정보 입력
+      description: <h1>최초 로그인 이후 추가 정보 입력 API</h1>
+      parameters:
+        - in: header
+          name: Authorization
+          description: 쿠키로 발급받은 `sign` 토큰을 밑 양식에 맞춰 전달한다.
+          schema:
+            $ref: "#/components/schemas/Cookie"
+      requestBody:
+        description: 수정하고 싶은 내용만 key-value 형태로 기입
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                displayName:
+                  type: "string"
+                  example: "seongsu  // 중복시 400 Bad Request"
+                email:
+                  type: "string"
+                  example: "test@teest.com  // 이메일 양식 검사함"
+                two_factor:
+                  type: "boolean"
+                  example: "true 또는 false"
+                image:
+                  type: "string"
+                  example: "png, jpeg, jpg 총 3개의 확장자인 이미지 파일만 받아옴. form-data로 전송할 것"
+      responses:
+        200:
+          $ref: "#/components/responses/Ok-Cookie"
+        202:
+          description: <h2>로그인 성공, 추가로 2단계 인증 필요</h2>
+          headers:
+            code:
+              schema:
+                type: "string"
+                example: 해싱된 이메일 인증코드가 담겨있음
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  status:
+                    type: "integer"
+                    example: 202
+                  message:
+                    type: "string"
+                    example: "2단계 인증 필요"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /v0/auth/logout:
+    delete:
       tags:
         - Auth
       summary: 로그아웃
@@ -143,6 +243,7 @@ paths:
       parameters:
         - in: header
           name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
@@ -150,75 +251,6 @@ paths:
       responses:
         200:
           $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
-
-  /v0/auth/email:
-    post:
-      tags:
-        - Auth
-      summary: 이메일 인증번호 확인
-      description: <h1>개별 인증번호 확인</h1>
-      parameters:
-        - in: header
-          name: Authorization
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-      responses:
-        301:
-          # 내일 redirection으로 수정해함. 한번 실습 후 수정 예정
-          $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
-
-    get:
-      tags:
-        - Auth
-      summary: 이메일로 인증번호 전송
-      description: <h1>인증번호를 포함한 메일 전송</h1>
-      parameters:
-        - in: header
-          name: Cookie
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-      responses:
-        200:
-          $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
-
-
-  # Socket
-
-  /v0/socket/syn:
-    get:
-      tags:
-        - Sockets
-      summary: 소켓 연결 요청
-      description: <h1>소켓 연결 요청</h1>
-      parameters:
-        - in: header
-          name: Cookie
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-      responses:
-        101:
-          $ref: "#/components/responses/Switching-Protocols"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -229,48 +261,6 @@ paths:
   # Users
 
   /v0/users/{user_id}/profile:
-    patch:
-      tags:
-        - Users
-      summary: 사용자 프로필 수정
-      description: <h1>Display name, 2단계 인증 활성/비활성 등 사용자 정보 범용적 수정 API</h1>
-      parameters:
-        - in: header
-          name: Cookie
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
-      requestBody:
-        description: 수정하고 싶은 내용만 key-value 형태로 기입
-        required: true
-        content:
-          application/json:
-            schema:
-              type: "object"
-              properties:
-                name:
-                  type: "string"
-                  example: "seongsu"
-                two_factor:
-                  type: "boolean"
-                  example: "true 또는 false"
-
-      responses:
-        200:
-          $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
-
     get:
       tags:
         - Users
@@ -278,7 +268,8 @@ paths:
       description: <h1>사용자 프로필 조회</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
@@ -290,7 +281,33 @@ paths:
           required: true
       responses:
         200:
-          $ref: "#/components/responses/Ok"
+          description: <h2>성공</h2>
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: number
+                    example: "85274"
+                  username:
+                    type: string
+                    example: "seonkim"
+                  displayName:
+                    type: string
+                    example: "seongsu"
+                  email:
+                    type: string
+                    example: "seonkim@student.42seoul.kr"
+                  imagePath:
+                    type: string
+                    example: "https://ft-transcendence.s3.ap-northeast-2.amazonaws.com/profile/default_avatar.png"
+                  firstAccess:
+                    type: boolean
+                    example: false
+                  twoFactor:
+                    type: boolean
+                    example: true
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -306,7 +323,8 @@ paths:
       description: <h1>사용자 업적 조회</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
@@ -318,7 +336,30 @@ paths:
           required: true
       responses:
         200:
-          $ref: "#/components/responses/Ok"
+          description: <h2>성공</h2>
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      type: "number"
+                      example: 1
+                    achievements:
+                      type: "object"
+                      properties:
+                        id:
+                          type: "number"
+                          example: 1
+                        title:
+                          type: "string"
+                          example: "첫번째 업적"
+                        content:
+                          type: "string"
+                          example: "가입하면 주는 업적"
+
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -334,7 +375,8 @@ paths:
       description: <h1>사용자 전적 조회</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
@@ -346,6 +388,7 @@ paths:
           required: true
       responses:
         200:
+          description: 아직 구현 중
           $ref: "#/components/responses/Ok"
         400:
           $ref: "#/components/responses/BadRequest"
@@ -354,40 +397,34 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
-  /v0/users/{user_id}/follow:
-    post:
+  /v0/users/profile:
+    patch:
       tags:
         - Users
-      summary: 사용자 팔로우 신청
-      description: <h1>사용자 팔로우 신청</h1>
+      summary: 사용자 프로필 수정
+      description: <h1>Display name, 2단계 인증 활성/비활성 등 사용자 정보 범용적 수정 API</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
-        - in: query
-          name: target
-          schema:
-            type: string
-            example: "1"
-          required: true
-      # requestBody:
-      #   description: "<h2>target에 팔로우 할 사용자 id 입력</h2>"
-      #   content:
-      #     application/json:
-      #       schema:
-      #         type: "object"
-      #         properties:
-      #           target:
-      #             type: "string"
-      #             example: "1"
+      requestBody:
+        description: 수정하고 싶은 내용만 key-value 형태로 기입
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                displayName:
+                  type: "string"
+                  example: "seongsu"
+                twoFactor:
+                  type: "boolean"
+                  example: "true 또는 false"
+
       responses:
         200:
           $ref: "#/components/responses/Ok"
@@ -398,92 +435,22 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
-    get:
-      tags:
-        - Users
-      summary: 사용자 팔로잉/팔로워 조회
-      description: <h1>Query에 들어오는 string에 따라 다른 결과 반환</h1>
-      parameters:
-        - in: header
-          name: Cookie
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
-        - in: query
-          name: target
-          schema:
-            type: string
-            example: "following 또는 follower"
-          required: true
-      responses:
-        200:
-          $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
 
-    delete:
-      tags:
-        - Users
-      summary: 사용자 팔로우 취소
-      description: <h1>Query에 들어오는 target이 취소될 사용자</h1>
-      parameters:
-        - in: header
-          name: Cookie
-          schema:
-            $ref: "#/components/schemas/Cookie"
-          required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
-        - in: query
-          name: target
-          schema:
-            type: string
-            example: "1"
-          required: true
-      responses:
-        200:
-          $ref: "#/components/responses/Ok"
-        400:
-          $ref: "#/components/responses/BadRequest"
-        401:
-          $ref: "#/components/responses/Unauthorized"
-        500:
-          $ref: "#/components/responses/ServerError"
-
-  /v0/users/{user_id}/image:
-    post:
+  /v0/users/image:
+    put:
       tags:
         - Users
       summary: 사용자 프로필 사진 등록
       description: <h1>S3 저장 미들웨어에서 저장 후 image url db 저장됨</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
       requestBody:
-        description: <h2>발급받은 카카오 Access Token을 넣어 요청해야함<h2>
+        description: <h2>사진 확장자는 다음과 같이 제한한다.<h2> `png`, `jpeg`, `jpg`
         required: true
         content:
           mutipart/form-data:
@@ -496,7 +463,15 @@ paths:
                   example: 사진 넣으면 됨
       responses:
         200:
-          $ref: "#/components/responses/Ok"
+          description: <h2>성공</h2>
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrl:
+                    type: string
+                    example: "https://ft-transcendence.s3.ap-northeast-2.amazonaws.com/profile/85274"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -508,22 +483,25 @@ paths:
       tags:
         - Users
       summary: 사용자 프로필 사진 삭제
-      description: <h1>S3에 올라간 프로필 사진이 삭제되며, 올린적이 없는 경우 400 Error, 삭제 후 기본 이미지로 바뀐다.</h1>
+      description: <h1>프로필 이미지가 기본 이미지로 바뀐다.</h1>
       parameters:
         - in: header
-          name: Cookie
+          name: Authorization
+          description: '발급받은 `Access Token` 입력'
           schema:
             $ref: "#/components/schemas/Cookie"
           required: true
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-            example: "유저 id"
-          required: true
       responses:
         200:
-          $ref: "#/components/responses/Ok"
+          description: <h2>성공</h2>
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrl:
+                    type: string
+                    example: "https://ft-transcendence.s3.ap-northeast-2.amazonaws.com/profile/default_avatar.png"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -538,78 +516,6 @@ components:
   # 응답
   responses:
 
-    Switching-Protocols:
-      description: <h2>소켓으로 프로토콜 변경</h2>
-      headers:
-        Sec-WebSocket-Accept:
-          description: 고유 Socket Key가 담길 거임
-          schema:
-            type: "string"
-        Sec-WebSocket-Protocol:
-          description: 어떤 프로토콜인지 알려줌
-          schema:
-            type: "string"
-            example: "chat"
-      content:
-        application/json:
-          schema:
-            type: "object"
-            properties:
-              Sec-WebSocket-Accept:
-                type: "string"
-                example: 고유 Socket Key가 담길 거임
-              Sec-WebSocket-Protocol:
-                type: "string"
-                example: "chat"
-                nullable: false
-              channels:
-                type: "array"
-                items:
-                  type: "object"
-                  properties:
-                    channelId:
-                      type: "string"
-                      example: "[uuid같은 channel identifier]"
-                    channelName:
-                      type: "string"
-                      example: "mtak lovers"
-                    isGameActive:
-                      type: "boolean"
-                      example: true
-              activeUsers:
-                type: "array"
-                items:
-                  type: "object"
-                  properties:
-                    userId:
-                      type: "integer"
-                      example: "1"
-                    userName:
-                      type: "string"
-                      example: "mtak"
-                    socketId:
-                      type: "string"
-                      example: "ojIckSD2jqNzOqIrAGzL"
-                    inGame:
-                      type: "boolean"
-                      example: false
-                    # friends:
-                    #   type: "array"
-                    #   items:
-                    #     type: "object"
-                    #     properties:
-                    # 이부분 수정해야함 모든 유저와 친구 목록 둘다 똑같은 엔티티로 들어감
-
-              loginUser:
-                type: "object"
-                properties:
-                  userId:
-                    type: "integer"
-                    example: "1"
-                  userName:
-                    type: "string"
-                    example: "seonkim"
-
     Ok:
       description: <h2>성공</h2>
       content:
@@ -618,15 +524,25 @@ components:
             type: "object"
 
     Ok-Cookie:
-      description: <h2>성공, encrypted-name이 담긴 쿠키 반환</h2>
+      description: <h2>성공, 사용자 정보가 담긴 Access, Refresh Token이 담긴 쿠키 반환</h2>
       headers:
-        encrypted-name:
+        access_token:
           schema:
-            $ref: "#/components/schemas/encrypted-name"
+            $ref: "#/components/schemas/access_token"
+        refresh_token:
+          schema:
+            $ref: "#/components/schemas/refresh_token"
       content:
         application/json:
           schema:
             type: "object"
+            properties:
+              status:
+                type: "integer"
+                example: 200
+              message:
+                type: "string"
+                example: "OK"
 
     BadRequest:
       description: <h2>잘못된 요청</h2><br>`필수 인자 누락, 타입 오류 등`
@@ -710,6 +626,10 @@ components:
       type: "string"
       example: "서버 session의 client식별자인 암호화 된 사용자 이름"
 
+    sign:
+      type: "string"
+      example: "추가 정보 입력에 필요한 Token"
+
     access_token:
       type: "string"
       example: "API 통신에 필요한 Access Token"
@@ -720,7 +640,7 @@ components:
 
     Cookie:
       type: "string"
-      example: "Bearer \"이곳에 Access Token 입력\""
+      example: "Bearer \"이곳에 Token 입력\""
 
 
 
