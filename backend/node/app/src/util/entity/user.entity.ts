@@ -35,10 +35,10 @@ export default class Users {
   @Column('boolean', { default: false })
   twoFactor: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ select: false })
   updatedAt: Date;
 
   @OneToMany(() => Follows, (follows) => follows.sourceUsers, { cascade: true })
