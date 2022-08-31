@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 
 import Users from '@entity/user.entity';
-import { UserAccessDto } from '@user/user.dto';
+import { UserAccessDto, UserUpdateDto } from '@user/user.dto';
 
 @Injectable()
 export default class UserRepository extends Repository<Users> {
@@ -18,6 +18,20 @@ export default class UserRepository extends Repository<Users> {
       },
     );
     return query.getOne();
+  }
+
+  async updateProfile(userId: number, userUpdateDto: UserUpdateDto) {
+    await this.createQueryBuilder('users')
+      .update(userUpdateDto)
+      .where('users.id = :id', { id: userId })
+      .execute();
+  }
+
+  async updateImagePath(userId: number, imagePath: string) {
+    await this.createQueryBuilder('users')
+      .update({ imagePath: imagePath })
+      .where('users.id = :id', { id: userId })
+      .execute();
   }
 
   async updateFirstAccess(userId: number, userAccessDto: UserAccessDto) {

@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import * as path from 'path';
 
 import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
-import { UserAccessDto, UserSignDto } from '@user/user.dto';
+import { UserAccessDto, UserSignDto, UserUpdateDto } from '@user/user.dto';
 import { ConfigService } from '@nestjs/config';
 import { ImageService } from '@util/image.service';
 
@@ -43,35 +42,40 @@ export class UserService {
     return user;
   }
 
+  async updateProfile(userId: number, userUpdateDto: UserUpdateDto) {
+    await this.userRepository.updateProfile(userId, userUpdateDto);
+  }
+
   async uploadImage(userId: number, file: Express.Multer.File) {
-    const extension = path.extname(file.originalname);
+    if (!file) throw new BadRequestException();
+
+    const extension = file.mimetype.replace(/image\//gi, '.');
 
     if (extension !== '.jpeg' && extension !== '.jpg' && extension !== '.png')
       throw new BadRequestException();
 
-    await this.imageService.uploadImage(
-      'avatar/' + userId.toString() + extension,
+    const location = await this.imageService.uploadImage(
+      'profile/' + userId.toString(),
       file.buffer,
+      file.mimetype,
+    );
+
+    await this.userRepository.updateImagePath(userId, location);
+
+    return location;
+  }
+
+  async deleteImage(userId: number) {
+    await this.userRepository.updateImagePath(
+      userId,
+      this.configService.get('awsConfig.defaultProfileUrl'),
     );
   }
 
-  async firstAccess(userId: number, userAccessDto: UserAccessDto) {
+  async firstAccess(user: Users, userAccessDto: UserAccessDto) {
     userAccessDto.firstAccess = false;
 
-    await this.userRepository.updateFirstAccess(userId, userAccessDto);
-  }
-
-  async switchTwoFactor(user: Users): Promise<boolean> {
-    user.twoFactor = !user.twoFactor;
-    await this.userRepository.save(user);
-
-    return user.twoFactor;
-  }
-
-  async deleteUserById(userId: number) {
-    const user = await this.findUserById(userId);
-
-    await this.userRepository.delete(user);
+    await this.userRepository.updateFirstAccess(user.id, userAccessDto);
   }
 
   async deleteUserByEntity(user: Users) {

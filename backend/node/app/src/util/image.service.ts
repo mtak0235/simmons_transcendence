@@ -16,13 +16,21 @@ export class ImageService {
     });
   }
 
-  async uploadImage(filename: string, image: Buffer) {
-    await this.s3
+  async uploadImage(
+    filename: string,
+    image: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    const result = await this.s3
       .upload({
         Bucket: this.configService.get('awsConfig.bucket'),
         Key: filename,
         Body: image,
+        ACL: 'public-read',
+        ContentType: mimeType,
+        ContentDisposition: 'inline',
       })
       .promise();
+    return result.Location;
   }
 }

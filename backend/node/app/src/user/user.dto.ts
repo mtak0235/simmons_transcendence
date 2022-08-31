@@ -1,4 +1,13 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEmpty,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsVariableWidth,
+} from 'class-validator';
 
 export class UserSignDto {
   @IsNotEmpty()
@@ -23,18 +32,35 @@ export class UserSignDto {
 }
 
 export class UserAccessDto {
+  @IsOptional()
   @IsString()
   displayName: string;
 
-  @IsString()
+  @IsOptional()
+  @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsBoolean()
   firstAccess?: boolean;
 
+  @IsOptional()
   @IsBoolean()
   twoFactor: boolean;
+}
 
+export class UserUpdateDto {
+  @IsOptional()
   @IsString()
-  imagePath: string;
+  displayName: string;
+
+  @IsOptional()
+  @IsBoolean()
+  twoFactor?: boolean;
+}
+
+export class UserResponseDto {
+  status: number;
+
+  body: object;
 }

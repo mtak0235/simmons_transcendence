@@ -42,6 +42,7 @@ export const envConfig = () => ({
     uid: process.env.AWS_ACCESS_UID,
     secret: process.env.AWS_ACCESS_SECRET,
     region: process.env.AWS_REGION,
+    defaultProfileUrl: process.env.AWS_DEFAULT_PROFILE_URL,
   },
   smtpConfig: {
     user: process.env.SMTP_USER,
