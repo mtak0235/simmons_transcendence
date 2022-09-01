@@ -7,4 +7,4 @@ cd ../../../frontend/node/app
 yarn
 
 cd ../../../
-docker-compose up
+docker-compose up --build
