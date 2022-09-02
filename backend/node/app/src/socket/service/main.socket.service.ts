@@ -28,42 +28,24 @@ export class MainSocketService {
       const payload = this.jwtService.verify(token, {
         secret: this.configService.get('authConfig.jwt'),
       });
-      // todo: delete: 개발용 코드
-      // if (payload.type === 'dev')
-      //   return await this.userRepository.findUser('id', 2269);
 
-      let userId;
-      if (payload.type === 'dev') userId = payload.id;
-      else
-        userId = parseInt(
-          (await this.encryptionService.decrypt(payload.id)).toString(),
-          10,
-        );
-      if (isNaN(userId)) {
-        throw new UnauthorizedException();
-      }
-      return await this.userRepository.findUser('id', userId);
+      if (payload.type !== 'access') throw new UnauthorizedException();
+
+      return await this.userRepository.findUser('id', payload.id);
     } catch (err) {
       throw new UnauthorizedException();
     }
   }
 
   async setClient(userInfo: Users): Promise<MainPageDto> {
-    this.userSocketStore.save({
-      userId: 2270,
-      username: 'unknown',
-      status: 'online',
-      follows: [],
-      blocks: [],
-    }); // todo: delete: 개발용 코드
     const mainPageDto: MainPageDto = {
       me: this.userSocketStore.find(userInfo.id),
       users: this.userSocketStore.findAllInfo(userInfo.id),
       channels: this.channelSocketStore.findAllInfo(),
     };
     if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
+      // todo: delete: 개발용 if문, 삭제 필요, 조건문만 삭제해야 함
       if (process.env.NODE_ENV !== 'local') {
-        // todo: delete: 개발용 if문, 삭제 필요
         throw new SocketException('Forbidden');
       }
     }

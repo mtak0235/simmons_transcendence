@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
@@ -6,9 +6,7 @@ import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
 import BLockRepository from '@repository/block.repository';
-import { SocketInstance } from '@socket/socket.gateway';
 import Blocks from '@entity/block.entity';
-import { Server } from 'socket.io';
 
 @Injectable()
 export class UserSocketService {
@@ -35,7 +33,7 @@ export class UserSocketService {
       this.userSocketStore.save(user);
 
       return user;
-    } else if (userInfo instanceof UserDto) {
+    } else {
       const follows = await this.followRepository.findFolloweeList(
         userInfo.userId,
       );
@@ -51,60 +49,53 @@ export class UserSocketService {
     this.userSocketStore.update(user, { status: status });
   }
 
-  async block(client: SocketInstance, targetId: number, server: Server) {
-    console.log();
-    if (this.userSocketStore.isBlocking(client.user, targetId) == false) {
-      this.userSocketStore.addBlock(client.user, targetId);
-      const blocks: Blocks = this.blockRepository.create({
-        sourceId: client.user.userId,
+  async block(user: UserDto, targetId: number) {
+    if (user.blocks.indexOf(targetId) === -1) {
+      user.blocks.push(targetId);
+
+      const block: Blocks = this.blockRepository.create({
+        sourceId: user.userId,
         targetId,
       });
-      await this.blockRepository.save(blocks);
-    }
-    if (this.userSocketStore.isFollowing(client.user, targetId)) {
-      await this.friendChanged(client, targetId, false, server);
+      await this.blockRepository.save(block);
     }
   }
 
-  async friendChanged(
-    client: SocketInstance,
-    targetId: number,
-    isFollowing: boolean,
-    server: Server,
-  ) {
-    if (isFollowing == true) {
-      this.userSocketStore.addFollow(client.user, targetId);
-      const follows = this.followRepository.create({
-        sourceId: client.user.userId,
-        targetId,
-      });
-      // this.logger.debug('follow', client.user);
-      await this.followRepository.save(follows);
-      if (this.userSocketStore.isBlocking(client.user, targetId)) {
-        this.userSocketStore.deleteBlock(client.user, targetId);
-        // this.logger.debug('cancel block for follow', client.user);
-        await this.blockRepository.delete({
-          sourceId: client.user.userId,
-          targetId,
-        });
-      }
-    } else if (this.userSocketStore.isFollowing(client.user, targetId)) {
-      this.userSocketStore.deleteFollow(client.user, targetId);
-      // this.logger.debug('unfollow for blocking', client.user);
+  isFollowing(follows: number[], targetId: number) {
+    return this.userSocketStore.isFollowing(follows, targetId);
+  }
+
+  async unfollow(user: UserDto, targetId: number) {
+    const followIdx = user.follows.indexOf(targetId);
+
+    if (followIdx !== -1) {
       await this.followRepository.delete({
-        sourceId: client.user.userId,
+        sourceId: user.userId,
         targetId,
       });
+      user.follows.slice(followIdx);
     } else {
-      // todo: conflict exception handling
-      throw new ConflictException(['you are already unfollowing him']);
+      throw new BadRequestException();
     }
-    server
-      .to('room:user:' + client.user.userId.toString())
-      .emit('user:friendChanged', {
-        userId: client.user.userId,
+  }
+
+  async follow(user: UserDto, targetId: number) {
+    const blockIdx = user.blocks.indexOf(targetId);
+
+    if (blockIdx !== -1) {
+      await this.blockRepository.delete({
+        sourceId: user.userId,
         targetId,
-        isFollowing,
       });
+      user.blocks.slice(blockIdx);
+    }
+
+    const follow = this.followRepository.create({
+      sourceId: user.userId,
+      targetId,
+    });
+    await this.followRepository.save(follow);
+
+    user.follows.push(targetId);
   }
 }

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmpty,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export const ACCESS_LAYER = {
   PUBLIC: 'public',
@@ -9,8 +15,13 @@ export const ACCESS_LAYER = {
 export type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 
 export class MutedUser {
+  @IsNotEmpty()
+  @IsNumber()
   userId: number;
-  expiredAt: Date;
+
+  @IsNotEmpty()
+  @IsNumber()
+  expiredAt: number;
 }
 
 export interface Matcher {
@@ -20,34 +31,40 @@ export interface Matcher {
   // score: number;
 }
 
-export class ChannelInfoDto {
-  channelIdx: number;
-  channelKey: string;
+export interface ChannelPublicDto {
   adminId: number;
-  channelName: string;
+  ownerId: number;
+  channelIdx: number;
   accessLayer: ACCESS_LAYER;
+  channelName: string;
   score: number;
+  onGame: boolean;
+}
+
+export interface ChannelPrivateDto {
+  users: number[];
+  waiter: number[];
+  matcher: Matcher[];
 }
 
 export class ChannelDto {
-  channelInfo: ChannelInfoDto;
+  channelPublic: ChannelPublicDto;
+  channelPrivate: ChannelPrivateDto;
   password?: string;
-  users: number[];
-  waiter: number[];
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
-  matcher: Matcher[];
-  onGame: boolean;
+  invited: number[];
 }
 
 export class ChannelCreateDto {
   @IsNotEmpty()
-  adminId: number;
+  @IsNumber()
+  ownerId: number;
 
   @IsNotEmpty()
+  @IsString()
   channelName: string;
 
-  @MinLength(4)
   password?: string;
 
   @IsNotEmpty()
@@ -55,13 +72,24 @@ export class ChannelCreateDto {
   accessLayer: ACCESS_LAYER;
 
   @IsNotEmpty()
+  @IsNumber()
   score: number;
 }
 
-export interface ChannelUpdateDto {
-  adminId?: number;
+export class ChannelUpdateDto {
+  @IsEmpty()
+  @IsString()
   channelName?: string;
+
+  @IsEmpty()
+  @IsString()
   password?: string;
+
+  @IsEmpty()
+  @IsString()
   accessLayer?: ACCESS_LAYER;
+
+  @IsEmpty()
+  @IsNumber()
   score?: number;
 }

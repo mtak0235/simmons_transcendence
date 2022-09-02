@@ -37,6 +37,13 @@ export const envConfig = () => ({
     secret: process.env.FT_API_SECRET,
     redirectUri: process.env.FT_API_REDIRECT,
   },
+  awsConfig: {
+    bucket: process.env.AWS_S3_BUCKET_NAME,
+    uid: process.env.AWS_ACCESS_UID,
+    secret: process.env.AWS_ACCESS_SECRET,
+    region: process.env.AWS_REGION,
+    defaultProfileUrl: process.env.AWS_DEFAULT_PROFILE_URL,
+  },
   smtpConfig: {
     user: process.env.SMTP_USER,
     uid: process.env.SMTP_UID,
@@ -46,6 +53,7 @@ export const envConfig = () => ({
   authConfig: {
     jwt: process.env.JWT_SECRET,
     session: process.env.SESSION_SECRET,
+    crypto: process.env.CRYPTO_SECRET,
   },
   dbConfig: {
     username: process.env.DATABASE_USERNAME,

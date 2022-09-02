@@ -21,7 +21,7 @@ export default class UserAchievements {
   @Column('integer')
   achievementId: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
   @ManyToOne(() => Users, (users) => users.userAchievements, {

@@ -8,4 +8,12 @@ export default class UserAchievementRepository extends Repository<UserAchievemen
   constructor(private readonly dataSource: DataSource) {
     super(UserAchievements, dataSource.createEntityManager());
   }
+
+  findById(userId: number) {
+    return this.createQueryBuilder('ua')
+      .select('ua.id')
+      .innerJoinAndSelect('ua.achievements', 'ac')
+      .where('ua.userId = :userId', { userId: userId })
+      .getMany();
+  }
 }

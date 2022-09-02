@@ -16,7 +16,7 @@ export default class Blocks {
   @PrimaryColumn()
   targetId: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
   @ManyToOne(() => Users, (users) => users.blockSourceUsers)
