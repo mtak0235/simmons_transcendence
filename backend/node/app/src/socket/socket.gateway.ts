@@ -367,7 +367,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('group:channel:sendMsg', {
         sourceId: client.user.userId,
         message: message,
-      });
+      })
   }
   //todo: interceptor에서 block 확인
 
