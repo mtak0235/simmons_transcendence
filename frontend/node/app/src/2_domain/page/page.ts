@@ -1,15 +1,15 @@
 import React from "react";
-import { LocalPath } from "../core/type";
+import { Label, LocalPath } from "../core/type";
 
 type PageConstructorParam = {
   filePath: LocalPath;
-  label: string;
+  label: Label;
   routePath: LocalPath;
 };
 
 class Page {
   readonly component: React.LazyExoticComponent<React.ComponentType<any>>;
-  readonly label: string;
+  readonly label: Label;
   readonly to: string;
 
   private constructor(param: PageConstructorParam) {

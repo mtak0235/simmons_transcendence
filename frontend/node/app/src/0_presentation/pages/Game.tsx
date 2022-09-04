@@ -49,6 +49,7 @@ const WaitingUser = styled.div`
 const ChattingScreen = styled.div`
   display: flex;
   flex-grow: 1;
+  max-width: 300px;
   background-color: yellow;
   height: calc(100vh - 100px);
   justify-content: space-between;
@@ -73,8 +74,38 @@ const UserBoxInfo = styled.div`
   font-weight: 400;
 `;
 
+const DialogueWindow = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  background-color: green;
+  height: 100%;
+  width: 100%;
+`;
+
+const MessageBox = styled.div`
+  display: inline-block;
+  position: relative;
+  width: 200px;
+  height: auto;
+  background-color: lightyellow;
+`;
+
+const Message = styled.div`
+  padding: 1em;
+  text-align: left;
+  line-height: 1.5em;
+`;
+
 function Game() {
   const gameLogs = useGameLogs();
+  const messageList: string[] = [];
+  const inputValue = "";
+  const addMessage = () => {
+    if (inputValue !== "" && inputValue != null) messageList.push(inputValue);
+    console.log(messageList);
+  };
 
   return (
     <Wrapper>
@@ -119,12 +150,22 @@ function Game() {
             초대
           </Radio.Button>
         </Radio.Group>
+        <DialogueWindow>
+          <MessageBox>
+            <Message></Message>
+          </MessageBox>
+        </DialogueWindow>
         <Input.Group compact>
           <Input
             style={{ width: "calc(100% - 100px)" }}
             placeholder="입력해주세요."
+            value={inputValue}
           />
-          <Button type="primary" style={{ width: "100px" }}>
+          <Button
+            type="primary"
+            style={{ width: "100px" }}
+            onClick={() => addMessage()}
+          >
             Submit
           </Button>
         </Input.Group>

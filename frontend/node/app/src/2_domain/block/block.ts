@@ -6,7 +6,7 @@ type BlocksParam = {
   createdAt: Date;
   updatedAt: Date;
   users: User[];
-}
+};
 export default class Blocks {
   sourceId: number;
   targetId: number;
@@ -29,6 +29,6 @@ export default class Blocks {
       createdAt: json["createdAt"],
       updatedAt: json["updatedAt"],
       users: json["users"],
-    })
-  }
+    });
+  };
 }
