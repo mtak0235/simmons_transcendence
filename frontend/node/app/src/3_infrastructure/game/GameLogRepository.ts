@@ -7,8 +7,6 @@ class GameLogRepository implements IGameLogRepository {
       playerAId: "playerAId",
       playerBId: "playerBId",
       result: "result",
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
       playerA: "mtak",
       playerB: "seonkim",
     });
