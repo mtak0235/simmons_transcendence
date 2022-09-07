@@ -3,8 +3,10 @@ import Home from "./0_presentation/pages/Home";
 import NotFound from "./0_presentation/pages/core/NotFound";
 import Header from "./0_presentation/components/Header";
 import Game from "./0_presentation/pages/Game";
-import Chat from "./0_presentation/pages/Chat";
+import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
+import Test1 from "@presentation/pages/Test1";
+import Test2 from "@presentation/pages/Test2";
 
 const Wrapper = styled.div`
   position: relative;
@@ -21,6 +23,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/game/:id" element={<Game />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/test1" element={<Test1 />} />
+          <Route path="/test2" element={<Test2 />} />
         </Routes>
       </Wrapper>
     </Router>

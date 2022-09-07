@@ -24,6 +24,8 @@ function Home() {
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>
       <Box whileHover={{ scale: 1.2 }} transition={{ delay: 0.5 }}></Box>
+      <Link to={"/test1"}>test1</Link>
+      <Link to={"/test2"}>test2</Link>
     </Row>
   );
 }
