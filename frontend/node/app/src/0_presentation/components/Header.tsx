@@ -1,5 +1,6 @@
 import { Link, useMatch } from "react-router-dom";
 import styled from "styled-components";
+import { useLogin } from "../../1_application/user/useUser";
 
 const Nav = styled.nav`
   display: flex;
@@ -47,8 +48,17 @@ const Item = styled.li`
   }
 `;
 
+const LoginButton = styled.button`
+  color: black;
+  width: 100px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+`;
+
 function Header() {
   const chatMatch = useMatch("chat");
+  const userLogin = useLogin();
   return (
     <Nav>
       <Col>
@@ -61,7 +71,9 @@ function Header() {
           </Item>
         </Items>
       </Col>
-      <Col></Col>
+      <Col>
+        <LoginButton onClick={() => userLogin}>Login</LoginButton>
+      </Col>
     </Nav>
   );
 }
