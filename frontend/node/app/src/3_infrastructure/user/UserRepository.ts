@@ -3,16 +3,16 @@ import User from "../../2_domain/user/user";
 import axios from "axios";
 
 class UserRepository implements IUserRepository {
-  getUserProfile(id: number): Promise<User> {
-    throw new Error("Method not implemented.");
+  async getUserProfile(id: number): Promise<User> {
+    return User.initial();
   }
-  login(): String {
-    axios
-      .get("/auth/login")
-      .then((response) => {
-        return "response";
+  async login(): Promise<String> {
+    await axios
+      .get("/v0/auth/login")
+      .then(() => {
+        return "success";
       })
-      .catch((error) => {
+      .catch(() => {
         return "error";
       });
     return "done";

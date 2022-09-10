@@ -58,7 +58,6 @@ const LoginButton = styled.button`
 
 function Header() {
   const chatMatch = useMatch("chat");
-  const userLogin = useLogin();
   return (
     <Nav>
       <Col>
@@ -72,7 +71,7 @@ function Header() {
         </Items>
       </Col>
       <Col>
-        <LoginButton onClick={() => userLogin}>Login</LoginButton>
+        <LoginButton onClick={useLogin}>Login</LoginButton>
       </Col>
     </Nav>
   );
