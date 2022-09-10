@@ -8,7 +8,7 @@ class UserRepository implements IUserRepository {
   }
   login(): String {
     axios
-      .get("/auth/login")
+      .get("/v0/auth/login")
       .then((response) => {
         return "response";
       })
