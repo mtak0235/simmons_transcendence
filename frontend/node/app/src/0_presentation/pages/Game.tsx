@@ -8,6 +8,7 @@ import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
 import { useRecoilState } from "recoil";
 import { useState } from "react";
+import ChatRoom from "./ChatRoom";
 
 const Wrapper = styled.div`
   display: flex;
@@ -172,6 +173,7 @@ function Game() {
         </Radio.Group>
         <DialogueWindow>
           <MessageBox>
+            {/*<ChatRoom></ChatRoom>*/}
             <Message></Message>
           </MessageBox>
         </DialogueWindow>
