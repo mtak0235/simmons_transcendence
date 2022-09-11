@@ -2,7 +2,12 @@ import { Button, Input, Radio } from "antd";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import useGameLogs from "../../1_application/game/useGame";
+import { useUserInfo } from "../../1_application/user/useUser";
+import User from "../../2_domain/user/user";
+import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
+import { useRecoilState } from "recoil";
+import { useState } from "react";
 import ChatRoom from "./ChatRoom";
 
 const Wrapper = styled.div`
@@ -108,6 +113,21 @@ function Game() {
     console.log(messageList);
   };
 
+  // Modal
+  const { showModal } = useModal();
+  const [idx, setIdx] = useState(0);
+  const userInfo = useUserInfo(idx);
+
+  const handleClickUserInfoModal = () => {
+    showModal({
+      modalType: "RoomInfoModal",
+      modalProps: {
+        // userInfo: userInfo,
+        message: "Success!",
+      },
+    });
+  };
+
   return (
     <Wrapper>
       <GameScreen>
@@ -144,7 +164,7 @@ function Game() {
           <Radio.Button value="large" onClick={() => console.log("채팅")}>
             채팅
           </Radio.Button>
-          <Radio.Button value="default" onClick={() => console.log("유저목록")}>
+          <Radio.Button value="default" onClick={handleClickUserInfoModal}>
             유저목록
           </Radio.Button>
           <Radio.Button value="small" onClick={() => console.log("초대")}>

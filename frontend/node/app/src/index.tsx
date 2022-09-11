@@ -6,6 +6,7 @@ import { RecoilRoot } from "recoil";
 import { ThemeProvider, createGlobalStyle } from "styled-components";
 import { theme } from "./theme";
 import "antd/dist/antd.min.css";
+import GlobalModal from "./0_presentation/components/GlobalModal";
 
 const GlobalStyle = createGlobalStyle`
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
@@ -82,6 +83,7 @@ root.render(
   <React.StrictMode>
     <RecoilRoot>
       <ThemeProvider theme={theme}>
+        <GlobalModal />
         <GlobalStyle />
         <App />
       </ThemeProvider>

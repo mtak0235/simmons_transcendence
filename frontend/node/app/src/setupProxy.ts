@@ -1,9 +1,9 @@
-import { createProxyMiddleware } from "http-proxy-middleware";
-module.exports = (app) => {
+export const proxy = require("http-proxy-middleware");
+
+module.exports = function (app) {
   app.use(
-    "/auth",
-    createProxyMiddleware({
-      target: "http://52.79.220.250:3001",
+    proxy("/v0", {
+      target: "http://52.79.220.250:3001/v0",
       changeOrigin: true,
     })
   );
