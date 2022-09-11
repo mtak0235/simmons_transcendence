@@ -8,7 +8,6 @@ import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
 import { useRecoilState } from "recoil";
 import { useState } from "react";
-import ChatRoom from "./ChatRoom";
 
 const Wrapper = styled.div`
   display: flex;
@@ -104,14 +103,60 @@ const Message = styled.div`
   line-height: 1.5em;
 `;
 
+function ChatRoom(nickName) {
+  const [messages] = useState([]);
+
+  return (
+    <>
+      {messages.map((message) => (
+        <MessageItem item={message} />
+      ))}
+      <MessageCreator />
+    </>
+  );
+}
+
+function MessageCreator() {
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState([]);
+
+  const addItem = () => {
+    setMessages([...messages, inputValue]);
+    setInputValue("");
+  };
+
+  const onChange = ({ target: { value } }) => {
+    setInputValue(value);
+  };
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={inputValue}
+        onChange={onChange}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            addItem();
+          }
+          console.log(messages);
+        }}
+      />
+      <button onClick={addItem}>Send</button>
+    </div>
+  );
+}
+
+function MessageItem({ item: message }) {
+  return (
+    <div>
+      <input type="text" value={message.text} />
+    </div>
+  );
+}
+
 function Game() {
   const gameLogs = useGameLogs();
-  const messageList: string[] = [];
-  const inputValue = "";
-  const addMessage = () => {
-    if (inputValue !== "" && inputValue != null) messageList.push(inputValue);
-    console.log(messageList);
-  };
 
   // Modal
   const { showModal } = useModal();
@@ -171,14 +216,15 @@ function Game() {
             초대
           </Radio.Button>
         </Radio.Group>
-        <DialogueWindow>
+        {/* <DialogueWindow>
           <MessageBox>
-            {/*<ChatRoom></ChatRoom>*/}
+            <ChatRoom></ChatRoom>
             <Message></Message>
           </MessageBox>
-        </DialogueWindow>
-        <Input.Group compact>
-          <Input
+        </DialogueWindow> */}
+        {/* <Input.Group compact> */}
+        <ChatRoom nickname={"ts"}></ChatRoom>
+        {/* <Input
             style={{ width: "calc(100% - 100px)" }}
             placeholder="입력해주세요."
             value={inputValue}
@@ -189,8 +235,8 @@ function Game() {
             onClick={() => addMessage()}
           >
             Submit
-          </Button>
-        </Input.Group>
+          </Button> */}
+        {/* </Input.Group> */}
       </ChattingScreen>
     </Wrapper>
   );
