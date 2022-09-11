@@ -111,6 +111,7 @@ function ChatRoom(nickName) {
       {messages.map((message) => (
         <MessageItem item={message} />
       ))}
+      <MessageItem item={"asdflkjasjdflkajsdfl"}></MessageItem>
       <MessageCreator />
     </>
   );
@@ -148,11 +149,7 @@ function MessageCreator() {
 }
 
 function MessageItem({ item: message }) {
-  return (
-    <div>
-      <input type="text" value={message.text} />
-    </div>
-  );
+  return <div style={{ color: "red" }}>{message.text}</div>;
 }
 
 function Game() {
