@@ -6,6 +6,8 @@ import { useUserInfo } from "../../1_application/user/useUser";
 import User from "../../2_domain/user/user";
 import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
+import { useRecoilState } from "recoil";
+import { useState } from "react";
 
 const Wrapper = styled.div`
   display: flex;
@@ -112,14 +114,14 @@ function Game() {
 
   // Modal
   const { showModal } = useModal();
-  const userInfo = useUserInfo();
-  console.log(userInfo);
+  const [idx, setIdx] = useState(0);
+  const userInfo = useUserInfo(idx);
 
   const handleClickUserInfoModal = () => {
     showModal({
-      modalType: "UserInfoModal",
+      modalType: "RoomMakeModal",
       modalProps: {
-        userInfo: userInfo,
+        // userInfo: userInfo,
         message: "Success!",
       },
     });

@@ -4,6 +4,7 @@ import User from "../../2_domain/user/user";
 import Get from "../../lib/di/get";
 
 interface UserInfoSelectorParamInterface {
+  id: number;
   repo: IUserRepository;
 }
 
@@ -14,18 +15,18 @@ interface UserInfoSelectorParams extends UserInfoSelectorParamInterface {
 export const userInfoSelector = selectorFamily<User, UserInfoSelectorParams>({
   key: "UserInfoSelectorKey",
   get: (param) => async () => {
-    const userInfo = await param.repo.getUserProfile(0);
+    const userInfo = await param.repo.getUserProfile(param.id);
     return userInfo;
   },
 });
 
-export const useUserInfo = () => {
-  const repo = Get.get<IUserRepository>("IUserRepository");
-  const userInfo = useRecoilValue(userInfoSelector({ repo: repo }));
-  return userInfo;
-};
+const repo = () => Get.get<IUserRepository>("IUserRepository");
 
-export const useLogin = async () => {
-  const repo = Get.get<IUserRepository>("IUserRepository");
-  await repo.login();
-};
+// Methods
+export const useUserInfo = (id: number) =>
+  useRecoilValue(userInfoSelector({ id: id, repo: repo() }));
+
+export const useLogin = async () => await repo().login();
+
+class UserController {}
+export default UserController;

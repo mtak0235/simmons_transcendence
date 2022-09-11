@@ -2,6 +2,7 @@ import { Avatar, Dialog, FormControlLabel, Switch } from "@mui/material";
 import styled from "styled-components";
 import User from "../../../2_domain/user/user";
 import useModal from "./hooks";
+import { userInfo } from "os";
 
 export interface UserInfoModalProps {
   message: string;
@@ -100,10 +101,13 @@ const UserInfoModal = ({
         <UserInfoSetting>
           <ExitButton onClick={onConfirm}>X</ExitButton>
           <FormControlLabel
-            control={<Switch />}
+            control={
+              <Switch
+              // checked={userInfo.twoFactor}
+              />
+            }
             label="2단계 인증"
             labelPlacement="start"
-            onChange={(event) => console.log("checked!")}
           />
         </UserInfoSetting>
       </Wrapper>
