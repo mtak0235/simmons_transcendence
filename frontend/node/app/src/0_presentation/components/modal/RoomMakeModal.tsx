@@ -3,14 +3,11 @@ import {
   Dialog,
   FormControl,
   FormControlLabel,
-  FormLabel,
   Radio,
   RadioGroup,
   TextField,
 } from "@mui/material";
-import React from "react";
 import styled from "styled-components";
-
 import useModal from "./hooks";
 
 export interface RoomMakeModalProps {
