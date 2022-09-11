@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import useGameLogs from "../../1_application/game/useGame";
 import { SizedBox } from "../components/TSDesign";
+import ChatRoom from "./ChatRoom";
 
 const Wrapper = styled.div`
   display: flex;
@@ -152,6 +153,7 @@ function Game() {
         </Radio.Group>
         <DialogueWindow>
           <MessageBox>
+            {/*<ChatRoom></ChatRoom>*/}
             <Message></Message>
           </MessageBox>
         </DialogueWindow>
