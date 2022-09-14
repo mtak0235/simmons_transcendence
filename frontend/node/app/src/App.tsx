@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./0_presentation/pages/Home";
-import NotFound from "./0_presentation/pages/core/NotFound";
-import Header from "./0_presentation/components/Header";
-import Game from "./0_presentation/pages/Game";
+import Home from "@presentation/home/Home";
+import NotFound from "@presentation/pages/core/NotFound";
+import Header from "@presentation/components/Header";
+import Game from "@presentation/pages/Game";
 import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
 import Test1 from "@presentation/pages/Test1";

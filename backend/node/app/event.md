@@ -18,14 +18,14 @@ Headers
 <h3 class="red">Request</h3>
 
 ```ts
-socket.emit('', data);
+client.emit('', data);
 ``` -->
 
-# Socket Events
+# client Events
 
 ## handleConnection
 
-- socket에 userDto 가지고 다님
+- client에 userDto 가지고 다님
 - status를 확인해서 offline아닌데 재접속인 경우는 본인인지 확신할 수 없는 소켓이 접속한 것이므로 에러 던짐.
 - status는 ['online', 'offline', 'inGame'] 3개로만 구분 됨
 
@@ -41,7 +41,7 @@ socket.emit('', data);
 <h3 class="green">Response</h3>
 
 ```ts
-socket.emit('connected', data);
+client.emit('single:user:connected', data);
 
 data {
   me: {
@@ -66,24 +66,25 @@ data {
   ],
   channels: [
     {
-      channelIdx: 1,
-      channelRoomId: 'room:channel:1',
       adminId: 3,
-      channelName: 'taeskim과 신나는 게임 한판',
+      channelIdx: 1,
       accessLayer: 'public',
-      score: 11
+      channelName: 'taeskim과 신나는 게임 한판',
+      score: 11,
+      onGame: true
     },
     ...
   ]
 }
 
-socket.broadcast.emit('connectUser', data);
+client.broadcast.emit('broad:user:connected', data);
 
 data: {
   userId: 1,
   username: 'seonkim',
   status: 'online'
 }
+
 ```
 
 <br>
@@ -92,33 +93,73 @@ data: {
 
 - [Exception-1](#exception-1) JWT 인증 실패 (만료, 비정상 토큰 등)
 - [Exception-2](#exception-2) 이미 접속중인데 추가로 접속하는 경우 (보안 강화 목적)
-
+- [Exception-3](#exception-3) clientException일 경우
 <br>
 
 ### Sequence Diagram
 
 ```mermaid
 sequenceDiagram
+
 participant c as Client
 participant f as Filter
 participant ga as Server
-participant ms as MainService
-participant us as UserService
-participant ss as UserStore
+participant us as UserSocketService
+participant ms as MainSocketService
+participant cs as ChannelSocketService
+participant js as JwtService
+
+participant css as ChannelSocketStore
+participant uss as UserSocketStore
 participant rt as RoomTable
 
+participant rep as Repository
+
+
 c->>ga: <<connection>>
-ga->>ms: verifyUser(token, secret);
+ga->>ms: verifyUser(token);
+ms->>ConfigService:  get('authConfig.jwt')
+ConfigService-->>ms: secret
+ms->>js: verifyUser(token, secret)
+js-->ms: payload{id:{type:'Buffer',data:[number, ...]}, type:'dev', iat:number, exp:number}
+alt type === 'dev'
+ms->>ms: userId
+else
+ms->>EncryptionService: decrypt(payload.id)
+EncryptionService-->ms: userId
+end
 ms->>ms: Exception-1
-ms-->>ga: UserEntity
-ga->>ms: setClient(UserEntity);
-ms->>ms: Exception-2
-ms->>us: connect(UserEntity | UserDto);
-us->>ss: save(UserDto);
+ms->>rep: findUser(userId)
+rep-->ms: Users
+ms-->ga: Users
+ga->>ms: setClient(Users);
+ms->>uss: find(userId)
+uss-->ms: UserDto
+ms->>uss:findAllInfo(userId)
+uss-->ms: UserInfoDto
+ms->>css: findAllInfo
+css->>ms: ChannelPublicDto[]
+alt UserDto && UserDto.status != offline && process.env.NODE_ENV !== 'local'
+ms->>f: new SocketException('Forbidden')
+end
+ms->>us: connect(UserDto|Users)
+alt Users
+us->>rep: findFolloweeList(userId) :follows
+us->>rep: findBlockList(userId) : blocks
+us->>uss: save(userId, username, follows{id}, blocks{id});
+us-->ms:UserDto{userId, username, follows, blocks}
+
+end
+us->>rep: findFolloweeList(usreId) :follows
+us->>us: switchStatus(UserDto, status('online'))
+us->>uss: update(UserDto, status)
+us-->ms:UserDto{follows}
 us-->>ga: MainPageDto
-ga->>rt: socket.join('room:user:${userId}')
-ga-->>c: socket.emit('connected', data);
-ga-->>c: socket.broadcast.emit('connectUser', data);
+ga->>ga: client.user = UserDto
+ga->>rt: client.join('room:user:${userId}')
+ga-->>c: client.emit('connected', MainPageDto);
+ga-->>c: client.broadcast.emit('connectUser', {userId, username, status});
+ms->>ms: Exception-2
 ```
 
 <br>
@@ -130,7 +171,7 @@ ga-->>c: socket.broadcast.emit('connectUser', data);
 <h3 class="green">Response</h3>
 
 ```ts
-socket.broadcast.emit('disconnectUser', data);
+client.broadcast.emit('broad:user:disconnected', data);
 
 data: {
   userId: 1,
@@ -146,8 +187,15 @@ data: {
 sequenceDiagram
 participant c as Client
 participant ga as Server
-participant us as UserService
-participant ss as UserStore
+participant us as UserSocketService
+participant ms as MainSocketService
+participant cs as ChannelSocketService
+
+participant css as ChannelSocketStore
+participant uss as UserSocketStore
+
+participant rep as Repository
+
 participant rt as RoomTable
 
 c->>ga: <<disconnection>>
@@ -161,7 +209,7 @@ ga->>us: switchStatus(UserDto, 'STATUS_LAYER')
 us->>ss: save()
 ga->>us: leaveRoomTable(RoomDto)
 us->>rt: Exit all room
-ga-->>c: socket.broadcast.emit('disconnectuser', data)
+ga-->>c: client.broadcast.emit('disconnectuser', data)
 ```
 
 <br>
@@ -699,11 +747,10 @@ c->>ga: <<ping>>(client, position)
 sequenceDiagram
 participant c as Client
 participant f as Filter
-participant ms as MainService
 
 ms-->>f: throw Error('UnAuthorized')
-f-->>c: socket.emit('error', err);
-f->>f: socket.disconnect();
+f-->>c: client.emit('error', err);
+f->>f: client.disconnect();
 ```
 
 <br>
@@ -716,9 +763,27 @@ f->>f: socket.disconnect();
 sequenceDiagram
 participant c as Client
 participant f as Filter
-participant ms as MainService
 
 ms-->>f: throw Error('UnAuthorized')
-f-->>c: socket.emit('error', err);
-f->>f: socket.disconnect();
+f-->>c: client.emit('error', err);
+f->>f: client.disconnect();
+```
+
+## Exception-3
+
+> clientException
+
+```mermaid
+sequenceDiagram
+participant c as Client
+participant f as Filter
+
+participant ga as Gateway
+
+ga->>f: throw clientException()
+ga-->c: client.emit('single:user:error', {
+          error: 'server',
+          message: 'unKnown',
+        })
+ga->c: client.disconnect()
 ```

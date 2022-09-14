@@ -1,5 +1,15 @@
 services:
+  nginx:
+    depends_on:
+      - "api"
+    image: nginx:stable-alpine
+    container_name: nginx
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - 80:80
   api:
+    container_name: api
     depends_on:
       - "redis"
     build:
@@ -26,8 +36,6 @@ services:
     #  - .env
     # Run a command against the development stage of the image
     command: npm start
-    ports:
-      - 80:3000
   redis:
     image: redis:7.0-alpine
     command: redis-server --port 6379
