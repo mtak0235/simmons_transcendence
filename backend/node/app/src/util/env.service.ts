@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 export const envValidation = () =>
   Joi.object({
     NODE_ENV: Joi.string()
-      .valid('local', 'development', 'production', 'test')
+      .valid('local', 'development', 'production', 'test', 'deploy')
       .required(),
     // PORT: Joi.string().required(), // todo: 주석 해제 해야 함
     // API_URL: Joi.string().required(),
