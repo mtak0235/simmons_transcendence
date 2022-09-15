@@ -6,7 +6,10 @@ import { Request } from "@domain/connection/request";
 type ResponseBody = Record<string, string | object>;
 
 export abstract class IConnection {
-  public abstract connect(request: Request): Promise<AxiosPromise>;
+  // public abstract connect(request: Request): Promise<AxiosPromise>;
+  // public abstract interceptor(request: Request): Promise<AxiosPromise>;
+  public abstract refreshToken(): Promise<void>;
+  public abstract access(): Promise<void>;
   public abstract get(request: Request): Promise<ResponseBody>;
   public abstract post(request: Request): AxiosPromise;
   public abstract delete(request: Request): AxiosPromise;
