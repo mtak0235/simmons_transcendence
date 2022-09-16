@@ -7,6 +7,7 @@ import {
   useRecoilState,
 } from "recoil";
 import { Cookies } from "react-cookie";
+import queryString from "query-string";
 import Get from "@root/lib/di/get";
 import { IAuthRepository } from "@domain/auth/IAuthRepository";
 import Test3 from "@presentation/pages/Test3";
@@ -24,7 +25,7 @@ const cookies = new Cookies();
 export const loginState: RecoilState<number> = atom<number>({
   key: "loginState",
   default: 0,
-  // effects_UNSTABLE: [recoilPersist().persistAtom],
+  effects_UNSTABLE: [recoilPersist().persistAtom],
 });
 
 export const getLoginState: RecoilValueReadOnly<number> = selector({
@@ -50,24 +51,29 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
   const socket: ISocket<any, any> = Get.get("ISocket");
 
   useEffect(() => {
-    async function checkToken() {
-      await conn.checkToken().then((flag) => {
-        if (flag) {
-          setIsLoggedIn(1);
-          // socket.connect();
-        } else {
-          setIsLoggedIn(2);
-        }
-      });
+    const token = queryString.parse(window.location.search);
+    if (Object.keys(token).length) {
+      for (const key in token) cookies.set(key, token[key]);
+      window.location.href = "http://localhost:3000";
     }
-    checkToken().then();
+    // async function checkToken() {
+    //   await conn.checkToken().then((flag) => {
+    //     if (flag) {
+    //       setIsLoggedIn(1);
+    //       // socket.connect();
+    //     } else {
+    //       setIsLoggedIn(2);
+    //     }
+    //   });
+    // }
+    // checkToken().then();
   }, []);
 
   useEffect(() => {
-    if (cookies.get("access_token") !== undefined) {
+    if (cookies.get("accessToken") !== undefined) {
       setIsLoggedIn(1);
     } else {
-      setIsLoggedIn(0);
+      setIsLoggedIn(2);
     }
   }, [window.location.href]);
 

@@ -68,7 +68,10 @@ function Header() {
       <Col>
         {/*<LoginButton onClick={useLogin}>Login</LoginButton>*/}
         <LoginButton>
-          <a href={"http://52.79.220.250:3001/v0/auth/login"}>Login</a>
+          <Link to={"/test1"}>TEST</Link>
+        </LoginButton>
+        <LoginButton>
+          <a href={process.env.REACT_APP_API_URL + "/auth/login"}>Login</a>
         </LoginButton>
       </Col>
     </Nav>

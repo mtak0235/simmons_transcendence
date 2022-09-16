@@ -65,24 +65,24 @@ function App() {
 
   return (
     <Router>
-      {/* <LoginHandler>
-        <SocketHandler> */}
-      <Header />
-      <Wrapper>
-        {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
-        {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
-        {/*</div>*/}
-        <Routes>
-          <Route path="*" element={<NotFound />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/game/:id" element={<Game />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/test1" element={<Test1 />} />
-          <Route path="/test2" element={<Test2 />} />
-        </Routes>
-      </Wrapper>
-      {/* </SocketHandler>
-      </LoginHandler> */}
+      <LoginHandler>
+        {/*  <SocketHandler>*/}
+        <Header />
+        <Wrapper>
+          {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
+          {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
+          {/*</div>*/}
+          <Routes>
+            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/game/:id" element={<Game />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/test1" element={<Test1 />} />
+            <Route path="/test2" element={<Test2 />} />
+          </Routes>
+        </Wrapper>
+        {/*  </SocketHandler>*/}
+      </LoginHandler>
     </Router>
   );
 }

@@ -12,6 +12,7 @@ export abstract class IHttp {
   public abstract refreshToken(): Promise<void>;
   public abstract firstAccess(value: any): Promise<void>;
   public abstract twoFactor(value: number): Promise<void>;
+  public abstract login(): Promise<void>;
   public abstract logout(): Promise<void>;
   public abstract getUserProfile(value: number): Promise<any>;
   public abstract getUserAchievement(value: number): Promise<any>;
