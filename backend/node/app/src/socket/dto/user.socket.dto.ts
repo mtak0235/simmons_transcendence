@@ -15,7 +15,7 @@ export class UserInfoDto {
 }
 
 export class UserDto extends UserInfoDto {
-  follows: Array<number>;
+  follows: Array<number>; //username 정보도 들어가야 함.
   blocks: Array<number>;
 }
 

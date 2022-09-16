@@ -1,6 +1,10 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { EncryptionService } from '@util/encryption.service';
@@ -31,19 +35,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     if (
       (req.url !== '/v0/auth/login/access' && payload.type === 'sign') ||
-      (req.url === '/v0/auth/login/access' && payload.type === 'access')
+      (req.url === '/v0/auth/login/access' && payload.type !== 'sign')
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     if (req.url !== '/v0/auth/token' && now > payload.exp) {
       if (req.url === '/v0/auth/login/access')
         await this.authService.expireFirstAccess(payload.id);
       throw new UnauthorizedException();
     }
-
     if (
       req.url === '/v0/auth/token' &&
-      req.cookies['refresh_token'] !==
+      req.headers['refresh_token'] !==
         (await this.redisService.get(payload.id.toString()))
     ) {
       throw new UnauthorizedException();

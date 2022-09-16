@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "extends": "./tsconfig.paths.json",
     "target": "es5",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
@@ -15,9 +16,16 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "plugins": [{ "name": "typescript-plugin-css-modules" }]
+    "plugins": [{ "name": "typescript-plugin-css-modules" }],
+    "baseUrl": "./",
+    "paths": {
+      "@root/*": ["./src/*"],
+      "@presentation/*": ["./src/0_presentation/*"],
+      "@application/*": ["./src/1_application/*"],
+      "@domain/*": ["./src/2_domain/*"],
+      "@infrastructure/*": ["./src/3_infrastructure/*"],
+      "@lib/*": ["./src/lib"]
+    }
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

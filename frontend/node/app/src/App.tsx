@@ -1,33 +1,85 @@
-import React, { Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
-import Layout from "./0_presentation/components/layouts/Layout";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "@presentation/home/Home";
+import NotFound from "@presentation/pages/core/NotFound";
+import Header from "@presentation/components/Header";
+import Game from "@presentation/pages/Game";
+import Chat from "@presentation/pages/Chat";
+import styled from "styled-components";
+import Test1 from "@presentation/pages/Test1";
+import Test2 from "@presentation/pages/Test2";
+import LoginHandler from "@presentation/components/LoginHandler";
+import Login from "@presentation/pages/Login";
+import ErrorHandler from "@presentation/components/ErrorHandler";
+import SocketHandler from "@presentation/components/SocketHandler";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { SOCKET_EVENT } from "./1_application/socket";
+import NicknameForm from "./0_presentation/pages/NicknameForm";
+import ChatRoom from "./0_presentation/pages/ChatRoom";
+import ISocket from "@domain/socket/ISocket";
+import Get from "@root/lib/di/get";
 
-const NotFound = React.lazy(
-  () => import("./0_presentation/pages/core/NotFound")
-);
-const About = React.lazy(() => import("./0_presentation/pages/About"));
-const Setting = React.lazy(() => import("./0_presentation/pages/Setting"));
-const Main = React.lazy(() => import("./0_presentation/pages/Main"));
-const Login = React.lazy(() => import("./0_presentation/pages/Login"));
-const Game = React.lazy(() => import("./0_presentation/game/Game"));
-const Profile = React.lazy(() => import("./0_presentation/profile/Profile"));
+const Wrapper = styled.div`
+  position: relative;
+  top: 100px;
+`;
 
-const App: React.FC = () => {
+function handleSingleUserConnected(data) {}
+
+function App() {
+  const socket: ISocket<any, any> = Get.get("ISocket");
+
+  //todo: remove
+  const prevNickname = useRef(null); // prevNickname 변경은 컴포넌트를 리렌더링 하지않습니다.
+
+  // useEffect(() => {
+  //   socket.on(SOCKET_EVENT.SINGLE_USER_CONNECTED, handleSingleUserConnected);
+  //   return () => {
+  //     // socket.disconnect();
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   if (prevNickname.current) {
+  //     socket.emit(SOCKET_EVENT.UPDATE_NICKNAME, {
+  //       // 서버에는 이전 닉네임과 바뀐 닉네임을 전송해줍니다.
+  //       prevNickname: prevNickname.current,
+  //       nickname,
+  //     });
+  //   } else {
+  //     socket.emit(SOCKET_EVENT.JOIN_ROOM, { nickname });
+  //   }
+  // }, [nickname]);
+
+  // const handleSubmitNickname = useCallback(
+  //   (newNickname) => {
+  //     prevNickname.current = nickname;
+  //     setNickname(newNickname);
+  //   },
+  //   [nickname]
+  // );
+
   return (
-    <Layout>
-      <Suspense fallback={<div>Loading Page...</div>}>
-        <Routes>
-          <Route path="*" element={<NotFound></NotFound>}></Route>
-          <Route path="/" element={<Login></Login>}></Route>
-          <Route path="/main" element={<Main></Main>}></Route>
-          <Route path="/game" element={<Game></Game>}></Route>
-          <Route path="/profile" element={<Profile></Profile>}></Route>
-          <Route path="/about" element={<About></About>}></Route>
-          <Route path="/setting" element={<Setting></Setting>}></Route>
-        </Routes>
-      </Suspense>
-    </Layout>
+    <Router>
+      <LoginHandler>
+        <SocketHandler>
+          <Header />
+          <Wrapper>
+            {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
+            {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
+            {/*</div>*/}
+            <Routes>
+              <Route path="*" element={<NotFound />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/game/:id" element={<Game />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/test1" element={<Test1 />} />
+              <Route path="/test2" element={<Test2 />} />
+            </Routes>
+          </Wrapper>
+        </SocketHandler>
+      </LoginHandler>
+    </Router>
   );
-};
+}
 
 export default App;

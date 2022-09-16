@@ -39,7 +39,9 @@ export class ClientInstance extends Socket {
   channel: ChannelDto;
 }
 
-@WebSocketGateway(4000)
+@WebSocketGateway(4000, {
+  cors: { origin: 'http://localhost:3000', credentials: true },
+})
 @UseFilters(SocketExceptionFilter)
 @UsePipes(new ValidationPipe())
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -108,7 +110,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /* ============================================= */
   /*              #2 Channel Gateway               */
-
   /* ============================================= */
 
   @UseInterceptors(
@@ -195,6 +196,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('single:channel:outChannel', {
       channelId: client.channel.channelPublic.channelIdx,
     });
+
+    // todo: add: broad user도 추가해줘야 할까?
 
     if (channelStatus.userExist) {
       if (channelStatus.ownerChange || channelStatus.adminChange)
@@ -367,7 +370,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('group:channel:sendMsg', {
         sourceId: client.user.userId,
         message: message,
-      })
+      });
   }
   //todo: interceptor에서 block 확인
 

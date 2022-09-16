@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 
 import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
@@ -73,6 +77,8 @@ export class UserService {
   }
 
   async firstAccess(user: Users, userAccessDto: UserAccessDto) {
+    if (!user.firstAccess) throw new ForbiddenException();
+
     userAccessDto.firstAccess = false;
 
     await this.userRepository.updateFirstAccess(user.id, userAccessDto);

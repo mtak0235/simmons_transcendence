@@ -5,7 +5,7 @@
   
 </style>
 
-<!-- <h3 class="red">Request</h3>
+<!-- <h3 class="red">HttpRequest</h3>
 
 ```json
 
@@ -15,14 +15,14 @@ Headers
 
 ```
 
-<h3 class="red">Request</h3>
+<h3 class="red">HttpRequest</h3>
 
 ```ts
 client.emit('', data);
 ``` -->
 # handleConnection
 
-<h3 class="red">Request</h3>
+<h3 class="red">HttpRequest</h3>
 
 ```json
 // Headers
@@ -87,7 +87,7 @@ data : {
 ```
 
 # handleDisconnect
-<h3 class="red">Request</h3>
+<h3 class="red">HttpRequest</h3>
 
 ```json
 none
@@ -105,7 +105,7 @@ none
  }
 ```
 # createChannel
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 ```json
 {channel: {
   ownerId: 1234,
@@ -150,7 +150,7 @@ client.broadcast.emit(
 ```
 
 # modifyGame
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 channel: {
@@ -171,7 +171,7 @@ this.server.emit(
 ```
 
 # inChannel
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {channelId: 432,password:"addc" | opt}
@@ -186,7 +186,7 @@ client
 ```
 
 # outChannel
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 none
@@ -212,7 +212,7 @@ server.emit(
 ```
 
 # inviteUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {userId:5342}
@@ -228,7 +228,7 @@ client.to(`room:user:543`).emit('single:channel:inviteUser', {
 ```
 
 # setAdmin
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {userId:5342}
@@ -245,7 +245,7 @@ this.server.emit('broad:channel:setAdmin', {
 ```
 
 # kickOutUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {userId:5342}
@@ -261,7 +261,7 @@ this.server.emit('broad:channel:setAdmin', {
 ```
 
 # muteUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {muteUser: data
@@ -283,7 +283,7 @@ server
 
 
 # waitingGame
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 none
@@ -302,7 +302,7 @@ server
 
 
 # readyGame
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 none
@@ -327,7 +327,7 @@ server
 ```
 
 # sendMSG
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {message:"would you join game next time"}
@@ -345,7 +345,7 @@ server
 ```
 
 # sendDM
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {targetId: 5342, message: "would you join game next time"}
@@ -364,7 +364,7 @@ server
 ```
 
 # blockUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {targetId:5342}
@@ -377,7 +377,7 @@ client.emit('single:user:blockUser', { targetId:5342 });
 ```
 
 # followUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {targetId: 5342}
@@ -397,7 +397,7 @@ client.to(`room:user:5342`).emit('followedUser', {
 ```
 
 # unfollowUser
-<h3 class='red'>Request</h3>
+<h3 class='red'>HttpRequest</h3>
 
 ```json
 {targetId: 5342}

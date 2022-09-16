@@ -10,12 +10,14 @@ import { Response } from 'express';
 import { RedisService } from '@util/redis.service';
 import { AuthService } from '@auth/auth.service';
 import { AuthResponseDto } from '@auth/auth.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TokenInterceptor implements NestInterceptor {
   constructor(
     private readonly authService: AuthService,
     private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
   ) {}
 
   async intercept(
@@ -39,10 +41,16 @@ export class TokenInterceptor implements NestInterceptor {
           await this.redisService.set(userId.toString(), refreshToken);
         }
 
-        res.status(result.status).json({
-          status: result.status,
-          message: result.message,
-        });
+        res.status(result.status);
+
+        if (result.status === 302) {
+          res.redirect(this.configService.get('serverConfig.clientUrl'));
+        } else {
+          return {
+            status: result.status,
+            message: result.message,
+          };
+        }
       }),
     );
   }
