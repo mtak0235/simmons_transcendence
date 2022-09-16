@@ -5,7 +5,7 @@
   
 </style>
 
-<!-- <h3 class="red">Request</h3>
+<!-- <h3 class="red">HttpRequest</h3>
 
 ```json
 
@@ -15,7 +15,7 @@ Headers
 
 ```
 
-<h3 class="red">Request</h3>
+<h3 class="red">HttpRequest</h3>
 
 ```ts
 client.emit('', data);
@@ -29,7 +29,7 @@ client.emit('', data);
 - status를 확인해서 offline아닌데 재접속인 경우는 본인인지 확신할 수 없는 소켓이 접속한 것이므로 에러 던짐.
 - status는 ['online', 'offline', 'inGame'] 3개로만 구분 됨
 
-<h3 class="red">Request</h3>
+<h3 class="red">HttpRequest</h3>
 
 ```json
 // Headers

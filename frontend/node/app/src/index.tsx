@@ -7,6 +7,8 @@ import { ThemeProvider, createGlobalStyle } from "styled-components";
 import { theme } from "./theme";
 import "antd/dist/antd.min.css";
 import GlobalModal from "./0_presentation/components/GlobalModal";
+import ISocket from "@domain/socket/ISocket";
+import Get from "@root/lib/di/get";
 
 const GlobalStyle = createGlobalStyle`
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
@@ -79,14 +81,16 @@ const root = ReactDOM.createRoot(
 
 dependencyInject();
 
+export const socket: ISocket<any, any> = Get.get("ISocket");
+
 root.render(
-  <React.StrictMode>
-    <RecoilRoot>
-      <ThemeProvider theme={theme}>
-        <GlobalModal />
-        <GlobalStyle />
-        <App />
-      </ThemeProvider>
-    </RecoilRoot>
-  </React.StrictMode>
+  // <React.StrictMode>
+  <RecoilRoot>
+    <ThemeProvider theme={theme}>
+      <GlobalModal />
+      <GlobalStyle />
+      <App />
+    </ThemeProvider>
+  </RecoilRoot>
+  // </React.StrictMode>
 );

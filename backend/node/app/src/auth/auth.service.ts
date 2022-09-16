@@ -25,7 +25,10 @@ export class AuthService {
 
   async generateToken(id: number): Promise<TokenType> {
     return {
-      accessToken: this.jwtService.sign({ id: id, type: 'access' }),
+      accessToken: this.jwtService.sign(
+        { id: id, type: 'access' },
+        { expiresIn: '1m' },
+      ),
       refreshToken: this.jwtService.sign({}, { expiresIn: '14d' }),
     };
   }
@@ -40,6 +43,7 @@ export class AuthService {
     const payload = {
       id: id,
       code: await this.encryptionService.hash(code),
+      type: 'code',
     };
 
     return this.jwtService.sign(payload);

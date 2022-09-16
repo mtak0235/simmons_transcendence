@@ -10,8 +10,6 @@ type UserConstructorParam = {
   email: string;
   imagePath: string;
   twoFactor: boolean;
-  createdAt: Date;
-  updatedAt: Date;
   follows: Follows[];
   blocks: Blocks[];
   gameLogPlayerA: GameLogs[];
@@ -26,8 +24,6 @@ class User {
   email: string;
   imagePath: string;
   twoFactor: boolean;
-  createdAt: Date;
-  updatedAt: Date;
   follows: Follows[];
   blocks: Blocks[];
   gameLogPlayerA: GameLogs[];
@@ -41,8 +37,6 @@ class User {
     this.email = param.email;
     this.imagePath = param.imagePath;
     this.twoFactor = param.twoFactor;
-    this.createdAt = param.createdAt;
-    this.updatedAt = param.updatedAt;
     this.follows = param.follows;
     this.blocks = param.blocks;
     this.gameLogPlayerA = param.gameLogPlayerA;
@@ -58,8 +52,6 @@ class User {
       email: "sr9872@naver.com",
       imagePath: "https://picsum.photos/id/237/200/300",
       twoFactor: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       follows: [],
       blocks: [],
       gameLogPlayerA: [],
@@ -76,8 +68,6 @@ class User {
       email: json["email"],
       imagePath: json["imagePath"],
       twoFactor: json["twoFactor"],
-      createdAt: json["createdAt"],
-      updatedAt: json["updatedAt"],
       follows: json["follows"],
       blocks: json["blocks"],
       gameLogPlayerA: json["gameLogPlayerA"],

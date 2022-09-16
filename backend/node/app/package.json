@@ -12,6 +12,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:deploy": "cross-env NODE_ENV=deploy NODE_OPTIONS=--max-old-space-size=2048 pm2 start dist/main.js",
+    "start:deploy-watch": "cross-env NODE_ENV=deploy NODE_OPTIONS=--max-old-space-size=2048 nest start --watch",
     "start:local": "cross-env NODE_ENV=local nest start --watch",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -24,7 +25,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@types/node": "^16.0.0",
     "@nestjs-modules/mailer": "^1.8.1",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
@@ -37,6 +37,7 @@
     "@nestjs/swagger": "^6.0.5",
     "@nestjs/typeorm": "^9.0.1",
     "@nestjs/websockets": "^9.0.9",
+    "@types/node": "^16.0.0",
     "aws-sdk": "^2.1204.0",
     "bcryptjs": "^2.4.3",
     "cache-manager": "^4.1.0",

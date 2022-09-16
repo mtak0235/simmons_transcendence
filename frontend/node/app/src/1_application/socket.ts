@@ -1,13 +1,8 @@
 import { createContext } from "react";
 import socketIo from "socket.io-client";
 import dayjs from "dayjs";
-
-export const socket = socketIo(String(process.env.REACT_APP_BACK_URL), {
-  withCredentials: true,
-});
-
-export const SocketContext = createContext(socket);
-export const UserContext = createContext({});
+import Get from "@root/lib/di/get";
+import ISocket from "@domain/socket/ISocket";
 
 export const SOCKET_EVENT = {
   SINGLE_USER_CONNECTED: "single:user:connected",
@@ -41,14 +36,6 @@ export const SOCKET_EVENT = {
   SEND_MESSAGE: "SEND_MESSAGE",
   RECEIVE_MESSAGE: "RECEIVE_MESSAGE",
 };
-
-socket.on("connect", () => {
-  console.log("<<socket server connected.>>");
-});
-
-socket.on("disconnect", () => {
-  console.log("<<socket server disconnected.>>");
-});
 
 export const makeMessage = (pongData) => {
   const { prevNickname, nickname, content, type, time } = pongData;

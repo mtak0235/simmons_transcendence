@@ -1,15 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./0_presentation/pages/Home";
-import NotFound from "./0_presentation/pages/core/NotFound";
-import Header from "./0_presentation/components/Header";
-import Game from "./0_presentation/pages/Game";
-import Chat from "./0_presentation/pages/Chat";
+import Home from "@presentation/home/Home";
+import NotFound from "@presentation/pages/core/NotFound";
+import Header from "@presentation/components/Header";
+import Game from "@presentation/pages/Game";
+import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
+import Test1 from "@presentation/pages/Test1";
+import Test2 from "@presentation/pages/Test2";
+import LoginHandler from "@presentation/components/LoginHandler";
+import Login from "@presentation/pages/Login";
+import ErrorHandler from "@presentation/components/ErrorHandler";
+import SocketHandler from "@presentation/components/SocketHandler";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { socket, SOCKET_EVENT, UserContext } from "./1_application/socket";
-import { SocketContext } from "./1_application/socket";
+import { SOCKET_EVENT } from "./1_application/socket";
 import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
+import ISocket from "@domain/socket/ISocket";
+import Get from "@root/lib/di/get";
 
 const Wrapper = styled.div`
   position: relative;
@@ -19,17 +26,17 @@ const Wrapper = styled.div`
 function handleSingleUserConnected(data) {}
 
 function App() {
-  const user = useContext(UserContext);
+  const socket: ISocket<any, any> = Get.get("ISocket");
 
   //todo: remove
   const prevNickname = useRef(null); // prevNickname 변경은 컴포넌트를 리렌더링 하지않습니다.
 
-  useEffect(() => {
-    socket.on(SOCKET_EVENT.SINGLE_USER_CONNECTED, handleSingleUserConnected);
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  // useEffect(() => {
+  //   socket.on(SOCKET_EVENT.SINGLE_USER_CONNECTED, handleSingleUserConnected);
+  //   return () => {
+  //     // socket.disconnect();
+  //   };
+  // }, []);
 
   // useEffect(() => {
   //   if (prevNickname.current) {
@@ -52,22 +59,26 @@ function App() {
   // );
 
   return (
-    <SocketContext.Provider value={socket}>
-      <Router>
-        <Header />
-        <Wrapper>
-          {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
-          {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
-          {/*</div>*/}
-          <Routes>
-            <Route path="*" element={<NotFound />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/game/:id" element={<Game />} />
-            <Route path="/chat" element={<Chat />} />
-          </Routes>
-        </Wrapper>
-      </Router>
-    </SocketContext.Provider>
+    <Router>
+      <LoginHandler>
+        <SocketHandler>
+          <Header />
+          <Wrapper>
+            {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
+            {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
+            {/*</div>*/}
+            <Routes>
+              <Route path="*" element={<NotFound />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/game/:id" element={<Game />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/test1" element={<Test1 />} />
+              <Route path="/test2" element={<Test2 />} />
+            </Routes>
+          </Wrapper>
+        </SocketHandler>
+      </LoginHandler>
+    </Router>
   );
 }
 

@@ -196,7 +196,7 @@ paths:
               properties:
                 displayName:
                   type: "string"
-                  example: "seongsu  // 중복시 400 Bad Request"
+                  example: "seongsu  // 중복시 400 Bad HttpRequest"
                 email:
                   type: "string"
                   example: "test@teest.com  // 이메일 양식 검사함"
@@ -557,7 +557,7 @@ components:
                 example: 400
               message:
                 type: "string"
-                example: "Bad Request"
+                example: "Bad HttpRequest"
 
     Unauthorized:
       description: <h2>사용자 인증 실패</h2><br>`존재하지 않는 사용자, JWT 만료, 비정상 토큰`

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "extends": "./tsconfig.paths.json",
     "target": "es5",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -15,7 +16,16 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "plugins": [{ "name": "typescript-plugin-css-modules" }]
+    "plugins": [{ "name": "typescript-plugin-css-modules" }],
+    "baseUrl": "./",
+    "paths": {
+      "@root/*": ["./src/*"],
+      "@presentation/*": ["./src/0_presentation/*"],
+      "@application/*": ["./src/1_application/*"],
+      "@domain/*": ["./src/2_domain/*"],
+      "@infrastructure/*": ["./src/3_infrastructure/*"],
+      "@lib/*": ["./src/lib"]
+    }
   },
   "include": ["src"]
 }
