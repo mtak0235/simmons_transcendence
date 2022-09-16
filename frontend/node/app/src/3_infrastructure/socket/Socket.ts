@@ -18,7 +18,7 @@ class Socket<
   socket?: io.Socket;
 
   public connect(): void {
-    this.socket = io.connect("http://localhost:4000", {
+    this.socket = io.connect(process.env.REACT_APP_SOCKET_URL, {
       withCredentials: true,
       extraHeaders: {
         access_token: this.cookies.get("access_token"),

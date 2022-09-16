@@ -21,7 +21,7 @@ const Login = () => {
           fontWeight: "bold",
           lineHeight: "25px",
         }}
-        href={"http://localhost:3001/v0/auth/login"}
+        href={process.env.REACT_APP_API_URL + "/auth/login"}
       >
         로그인
       </a>

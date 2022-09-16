@@ -40,7 +40,7 @@ export class ClientInstance extends Socket {
 }
 
 @WebSocketGateway(4000, {
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: { origin: process.env.CLIENT_URL, credentials: true },
 })
 @UseFilters(SocketExceptionFilter)
 @UsePipes(new ValidationPipe())

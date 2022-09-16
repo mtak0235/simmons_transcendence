@@ -115,7 +115,7 @@ const Test1 = () => {
         {/*<h1>{count}</h1>*/}
       </div>
       <div>
-        <a href={"http://localhost:3001/v0/auth/login"}>로그인</a>
+        <a href={process.env.REACT_APP_API_URL + "/auth/login"}>로그인</a>
         <button
           onClick={async () => {
             setIsLoggedIn(0);

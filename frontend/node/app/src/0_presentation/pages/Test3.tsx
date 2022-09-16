@@ -21,7 +21,7 @@ const Test3 = () => {
     <div style={{ marginTop: "100px" }}>
       <div>
         <h1>Test3</h1>
-        <a href={"http://localhost:3001/v0/auth/login"}>로그인</a>
+        <a href={process.env.REACT_APP_API_URL + "/auth/login"}>로그인</a>
       </div>
       <div>
         <input
