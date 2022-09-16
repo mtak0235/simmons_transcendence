@@ -41,15 +41,15 @@ export class TokenInterceptor implements NestInterceptor {
           await this.redisService.set(userId.toString(), refreshToken);
         }
 
+        res.status(result.status);
+
         if (result.status === 302) {
-          res
-            .status(result.status)
-            .redirect(this.configService.get('serverConfig.clientUrl'));
+          res.redirect(this.configService.get('serverConfig.clientUrl'));
         } else {
-          res.status(result.status).json({
+          return {
             status: result.status,
             message: result.message,
-          });
+          };
         }
       }),
     );

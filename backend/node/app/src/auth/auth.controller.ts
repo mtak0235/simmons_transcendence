@@ -43,12 +43,12 @@ export class AuthController {
     const user: Users = req.user;
 
     if (user.firstAccess) {
-      return { status: 201, message: '회원가입 완료', firstAccess: true };
+      return { status: 302, message: '회원가입 완료', firstAccess: true };
     } else {
-      if (!user['requireTwoFactor']) {
-        return { status: 200, message: 'OK', token: true };
+      if (!user.twoFactor) {
+        return { status: 302, message: 'OK', token: true };
       } else {
-        return { status: 202, message: '2단계 인증 필요', twoFactor: true };
+        return { status: 302, message: '2단계 인증 필요', twoFactor: true };
       }
     }
   }
@@ -67,9 +67,9 @@ export class AuthController {
     if (file) await this.userService.uploadImage(user.id, file);
 
     if (!userAccessDto.twoFactor) {
-      return { status: 302, message: 'OK', token: true };
+      return { status: 200, message: 'OK', token: true };
     } else {
-      return { status: 302, message: '2단계 인증 필요', twoFactor: true };
+      return { status: 202, message: '2단계 인증 필요', twoFactor: true };
     }
   }
 
@@ -78,6 +78,13 @@ export class AuthController {
   @UseInterceptors(TokenInterceptor)
   async verifyMailCode(): Promise<AuthResponseDto> {
     return { status: 200, message: 'OK', token: true };
+  }
+
+  @Get('/token/check')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TokenInterceptor)
+  checkToken(): AuthResponseDto {
+    return { status: 200, message: 'OK' };
   }
 
   @Get('token')
@@ -92,7 +99,7 @@ export class AuthController {
   async logout(@Req() req) {
     const user: Users = req.user;
 
-    this.authService.logout(user.id);
+    await this.authService.logout(user.id);
     return { status: 200, message: 'OK' };
   }
 

@@ -5,6 +5,7 @@ interface IUserRepository {
   getUserProfile(userId: number): Promise<User>;
   textState(): RecoilState<number>;
   charCountState(): RecoilValueReadOnly<number>;
+  test(): void;
 }
 
 export default IUserRepository;

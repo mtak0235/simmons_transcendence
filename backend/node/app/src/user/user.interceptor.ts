@@ -5,6 +5,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
+import { Response } from 'express';
 
 import { UserResponseDto } from '@user/user.dto';
 
@@ -13,12 +14,12 @@ export class UserResponseInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
     next: CallHandler<any>,
-  ): Observable<any> | Promise<Observable<any>> {
+  ): Observable<any> {
     return next.handle().pipe(
       map((result: UserResponseDto) => {
-        const res = context.switchToHttp().getResponse();
+        context.switchToHttp().getResponse().status(result.status);
 
-        res.status(result.status).json(result.body);
+        return result.body;
       }),
     );
   }

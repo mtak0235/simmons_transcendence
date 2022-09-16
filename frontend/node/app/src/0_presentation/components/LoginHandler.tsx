@@ -1,31 +1,83 @@
 import React, { useEffect, useState } from "react";
-import { atom, useRecoilState } from "recoil";
+import {
+  atom,
+  RecoilState,
+  RecoilValueReadOnly,
+  selector,
+  useRecoilState,
+} from "recoil";
 import { Cookies } from "react-cookie";
 import Get from "@root/lib/di/get";
 import { IAuthRepository } from "@domain/auth/IAuthRepository";
 import Test3 from "@presentation/pages/Test3";
+import { recoilPersist } from "recoil-persist";
+import { IHttp } from "@domain/http/IHttp";
+import Login from "@presentation/pages/Login";
+import ISocket from "@domain/socket/ISocket";
 
-interface LoginCheckerProps {
+interface LoginHandlerProps {
   children: React.ReactNode;
 }
-//
-// const loginState = atom<boolean>({
-//   key: `loginState`,
-//   default: false,
-// });
-//
-// const cookies = new Cookies();
 
-const LoginChecker = ({ children }: LoginCheckerProps) => {
-  // const authRepo: IAuthRepository = Get.get("IAuthRepository");
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  // const;
+const cookies = new Cookies();
+
+export const loginState: RecoilState<number> = atom<number>({
+  key: "loginState",
+  default: 0,
+  // effects_UNSTABLE: [recoilPersist().persistAtom],
+});
+
+export const getLoginState: RecoilValueReadOnly<number> = selector({
+  key: "loginState1",
+  get: ({ get }) => get(loginState),
+});
+
+// charCountState(): RecoilValueReadOnly<number> {
+//   return selector({
+//     key: "textState111",
+//     get: ({ get }) => {
+//       return get(this.textState());
+//
+//       // return text;
+//     },
+//   });
+// }
+
+const LoginHandler = ({ children }: LoginHandlerProps) => {
+  const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
+  const [socketConn, setSocketConn] = useState(null);
+  const conn: IHttp = Get.get("IHttp");
+  const socket: ISocket<any, any> = Get.get("ISocket");
 
   useEffect(() => {
-    console.log();
+    async function checkToken() {
+      await conn.checkToken().then((flag) => {
+        if (flag) {
+          setIsLoggedIn(1);
+          // socket.connect();
+        } else {
+          setIsLoggedIn(2);
+        }
+      });
+    }
+    checkToken().then();
   }, []);
 
-  return isLoggedIn ? <>{children}</> : <Test3 />;
+  useEffect(() => {
+    if (cookies.get("access_token") !== undefined) {
+      setIsLoggedIn(1);
+    } else {
+      setIsLoggedIn(0);
+    }
+  }, [window.location.href]);
+
+  return isLoggedIn === 0 ? (
+    <h1>로딩중</h1>
+  ) : isLoggedIn === 1 ? (
+    <>{children}</>
+  ) : (
+    <Login />
+  );
 };
 
-export default LoginChecker;
+export default LoginHandler;

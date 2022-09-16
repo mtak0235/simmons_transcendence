@@ -1,42 +1,50 @@
 import IUserRepository from "@domain/user/IUserRepository";
 import User from "@domain/user/user";
 import Get from "@root/lib/di/get";
-import { IConnection } from "@domain/connection/IConnection";
-import { atom, RecoilState, RecoilValueReadOnly, selector } from "recoil";
+import { IHttp } from "@domain/http/IHttp";
+import {
+  atom,
+  RecoilState,
+  RecoilValueReadOnly,
+  selector,
+  useRecoilValue,
+} from "recoil";
+import { Cookies } from "react-cookie";
+import { HttpRequest } from "@domain/http/HttpRequest";
 
-export const textState1: RecoilState<number> = atom({
-  key: "textState111",
-  default: 0,
-});
+// export const textState1: RecoilState<number> = atom({
+//   key: "textState111",
+//   default: 0,
+// });
 class UserRepository implements IUserRepository {
-  private readonly connection = Get.get<IConnection>("IConnection");
+  private readonly connection = Get.get<IHttp>("IHttp");
+  private cookie = new Cookies();
 
   async getUserProfile(userId: number): Promise<User> {
-    return User.fromJson(
-      await this.connection.get({
-        path: `/users/${userId}/profile`,
-        token: "token", // todo: get token to context API
-        headers: {},
-      })
-    );
+    return User.fromJson(await this.connection.getUserProfile(85274));
   }
 
   textState(): RecoilState<number> {
     return atom({
-      key: "textState11",
+      key: "textState111",
       default: 0,
     });
   }
 
   charCountState(): RecoilValueReadOnly<number> {
     return selector({
-      key: "textState",
+      key: "textState111",
       get: ({ get }) => {
         return get(this.textState());
 
         // return text;
       },
     });
+  }
+
+  test() {
+    console.log(localStorage.getItem("accessToken"));
+    console.log(this.cookie.get("access_token"));
   }
 }
 

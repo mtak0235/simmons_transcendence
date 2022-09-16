@@ -36,8 +36,6 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
       });
     }
 
-    if (user.twoFactor) user['requireTwoFactor'] = true;
-
     return user;
   }
 }

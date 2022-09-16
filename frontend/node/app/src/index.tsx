@@ -79,12 +79,14 @@ const root = ReactDOM.createRoot(
 dependencyInject();
 
 root.render(
-  <React.StrictMode>
-    <RecoilRoot>
-      <ThemeProvider theme={theme}>
-        <GlobalStyle />
-        <App />
-      </ThemeProvider>
-    </RecoilRoot>
-  </React.StrictMode>
+  // todo: 이친구때메 컴포넌트 두번 랜더링 됨
+  // todo: 이유는 어플리케이션 내의 잠재적 문제를 알아내기 위한 도구로, 개발용에서만 활성화 됨
+  // <React.StrictMode>
+  <RecoilRoot>
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <App />
+    </ThemeProvider>
+  </RecoilRoot>
+  // </React.StrictMode>
 );

@@ -7,6 +7,10 @@ import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
 import Test1 from "@presentation/pages/Test1";
 import Test2 from "@presentation/pages/Test2";
+import LoginHandler from "@presentation/components/LoginHandler";
+import Login from "@presentation/pages/Login";
+import ErrorHandler from "@presentation/components/ErrorHandler";
+import SocketHandler from "@presentation/components/SocketHandler";
 
 const Wrapper = styled.div`
   position: relative;
@@ -16,17 +20,26 @@ const Wrapper = styled.div`
 function App() {
   return (
     <Router>
-      <Header />
-      <Wrapper>
-        <Routes>
-          <Route path="*" element={<NotFound />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/game/:id" element={<Game />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/test1" element={<Test1 />} />
-          <Route path="/test2" element={<Test2 />} />
-        </Routes>
-      </Wrapper>
+      <LoginHandler>
+        {/*<ErrorHandler>*/}
+        {/*<CustomErrorBoundary>*/}
+        <SocketHandler>
+          <Header />
+          <Wrapper>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/game/:id" element={<Game />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/test1" element={<Test1 />} />
+              <Route path="/test2" element={<Test2 />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Wrapper>
+        </SocketHandler>
+        {/*</CustomErrorBoundary>*/}
+        {/*</ErrorHandler>*/}
+      </LoginHandler>
     </Router>
   );
 }
