@@ -23,7 +23,7 @@ export default class GameLogs {
   @Column('smallint')
   result: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
   @ManyToOne(() => Users, (users) => users.gameLogPlayerA, { nullable: false })

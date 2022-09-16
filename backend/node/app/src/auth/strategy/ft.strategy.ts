@@ -1,16 +1,16 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-42';
 import { ConfigService } from '@nestjs/config';
 
-import { AuthService } from '@auth/auth.service';
-import { UserType } from '@user/user.service';
+import { UserService } from '@user/user.service';
+import Users from '@entity/user.entity';
 
 @Injectable()
 export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
   constructor(
-    private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {
     super({
       clientID: configService.get('ftConfig.uid'),
@@ -19,12 +19,23 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: any) {
-    const user: UserType = await this.authService.verifyUser(
-      profile['username'],
-    );
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: any,
+  ): Promise<Users | null> {
+    const user = await this.userService.findUserByUsername(profile['username']);
 
-    if (!user) throw new ForbiddenException();
+    if (!user) {
+      return await this.userService.createUser({
+        id: profile._json['id'],
+        username: profile._json['login'],
+        displayName: profile._json['login'],
+        email: profile._json['email'],
+        imagePath: profile._json['image_url'],
+      });
+    }
+
     if (user.twoFactor) user['requireTwoFactor'] = true;
 
     return user;

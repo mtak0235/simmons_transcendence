@@ -20,10 +20,10 @@ export default class Achievements {
   @Column('varchar', { length: 50 })
   content: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ select: false })
   updatedAt: Date;
 
   @OneToMany(

@@ -8,6 +8,7 @@ import { EncryptionService } from '@util/encryption.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import entities from '@entity/index';
 import repositories from '@util/repository';
+import { ImageService } from '@util/image.service';
 
 @Global()
 @Module({
@@ -21,6 +22,8 @@ import repositories from '@util/repository';
           ? '.env.dev'
           : process.env.NODE_ENV === 'production'
           ? '.env.prod'
+          : process.env.NODE_ENV === 'deploy'
+          ? '.env.deploy'
           : '.env.test',
       load: [envConfig],
       validationSchema: envValidation(),
@@ -54,7 +57,13 @@ import repositories from '@util/repository';
       }),
     }),
   ],
-  providers: [RedisService, EncryptionService, ...repositories],
-  exports: [ConfigModule, RedisService, EncryptionService, ...repositories],
+  providers: [RedisService, EncryptionService, ImageService, ...repositories],
+  exports: [
+    ConfigModule,
+    RedisService,
+    EncryptionService,
+    ImageService,
+    ...repositories,
+  ],
 })
 export class UtilModule {}

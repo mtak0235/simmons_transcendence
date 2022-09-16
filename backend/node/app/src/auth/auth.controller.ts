@@ -3,95 +3,113 @@ import {
   Get,
   UseGuards,
   Req,
-  Res,
   Post,
   UseInterceptors,
   Param,
+  UploadedFile,
+  Delete,
 } from '@nestjs/common';
-import { Response } from 'express';
 
 import { FtAuthGuard } from '@auth/guard/ft.guard';
 import { JwtAuthGuard } from '@auth/guard/jwt.guard';
 import { EmailAuthGuard } from '@auth/guard/email.guard';
 import { TokenInterceptor } from '@auth/auth.interceptor';
+import { UserService } from '@user/user.service';
+import { AuthService } from '@auth/auth.service';
+import { UserAccessDto } from '@user/user.dto';
+import { AuthResponseDto } from '@auth/auth.dto';
+import Users from '@entity/user.entity';
 
 // todo: delete: 테스트용 imports
-import { JwtService } from '@nestjs/jwt';
-import { EncryptionService } from '@util/encryption.service';
 import { InternalServerErrorException } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly encryptionService: EncryptionService,
-  ) {} // todo: delete: 개발용 Constructor
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Get('login')
   @UseGuards(FtAuthGuard)
-  async login(@Req() req) {
-    return req.user;
+  login(): AuthResponseDto {
+    return { status: 200, message: 'OK' };
   }
 
   @Get('login/callback')
   @UseGuards(FtAuthGuard)
   @UseInterceptors(TokenInterceptor)
-  async loginCallback(@Req() req, @Res({ passthrough: true }) res: Response) {
-    if (!req.user.requireTwoFactor) res.status(200).send('로그인 성공');
-    else {
-      req.user.requireTwoFactor = false;
-      res.status(201).send('2단계 인증 필요');
+  async loginCallback(@Req() req): Promise<AuthResponseDto> {
+    const user: Users = req.user;
+
+    if (user.firstAccess) {
+      return { status: 201, message: '회원가입 완료', firstAccess: true };
+    } else {
+      if (!user['requireTwoFactor']) {
+        return { status: 200, message: 'OK', token: true };
+      } else {
+        return { status: 202, message: '2단계 인증 필요', twoFactor: true };
+      }
+    }
+  }
+
+  @Post('login/access')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TokenInterceptor)
+  async firstAccess(
+    @Req() req,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<AuthResponseDto> {
+    const user: Users = req.user;
+    const userAccessDto: UserAccessDto = req.body;
+
+    await this.userService.firstAccess(user, userAccessDto);
+    if (file) await this.userService.uploadImage(user.id, file);
+
+    if (!userAccessDto.twoFactor) {
+      return { status: 200, message: 'OK', token: true };
+    } else {
+      return { status: 202, message: '2단계 인증 필요', twoFactor: true };
     }
   }
 
   @Get('email-verify')
   @UseGuards(EmailAuthGuard)
   @UseInterceptors(TokenInterceptor)
-  async verifyMailCode(@Req() req, @Res() res) {
-    res.status(200).send('이메일 인증 성공');
+  async verifyMailCode(): Promise<AuthResponseDto> {
+    return { status: 200, message: 'OK', token: true };
   }
 
-  @Post('token')
+  @Get('token')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(TokenInterceptor)
-  async refreshAccessToken(@Req() req, @Res() res) {
-    res.status(200).send('Access, Refresh 토큰 재발행 성공');
+  async refreshAccessToken(): Promise<AuthResponseDto> {
+    return { status: 200, message: 'OK', token: true };
   }
 
-  // @Get('test') // todo: delete: 개발용 토큰 발급 API Controller
-  // async testGenerator(@Res() res) {
-  //   if (process.env.NODE_ENV !== 'local')
-  //     throw new InternalServerErrorException();
-  //
-  //   const encryptId = await this.encryptionService.encrypt(String(2269));
-  //   const accessToken = this.jwtService.sign(
-  //     { id: encryptId, type: 'dev' },
-  //     { expiresIn: '365d' },
-  //   );
-  //   const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });
-  //
-  //   res.cookie('access_token', accessToken);
-  //   res.cookie('refresh_token', refreshToken);
-  //
-  //   res.status(200).json({});
-  // }
-  @Get('test/:id') // todo: delete: 개발용 토큰 발급 API Controller
-  async testGenerator2(@Res() res, @Param('id') id: number) {
-    if (process.env.NODE_ENV !== 'local')
+  @Delete('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req) {
+    const user: Users = req.user;
+
+    this.authService.logout(user.id);
+    return { status: 200, message: 'OK' };
+  }
+
+  // todo: delete: 개발용 토큰 발급 API Controller
+  @Get('test/:id')
+  @UseInterceptors(TokenInterceptor)
+  async testGenerator(
+    @Req() req,
+    @Param('id') id: number,
+  ): Promise<AuthResponseDto> {
+    if (!id) id = 85274;
+
+    req.user = await this.userService.findUserById(id);
+
+    if (process.env.NODE_ENV !== 'local' || !req.user)
       throw new InternalServerErrorException();
 
-    if (!id) id = 2269;
-
-    const encryptId = await this.encryptionService.encrypt(String(id));
-    const accessToken = this.jwtService.sign(
-      { id: id, type: 'dev' },
-      { expiresIn: '365d' },
-    );
-    const refreshToken = this.jwtService.sign({}, { expiresIn: '365d' });
-
-    res.cookie('access_token', accessToken);
-    res.cookie('refresh_token', refreshToken);
-
-    res.status(200).json({});
+    return { status: 200, message: 'OK', token: true };
   }
 }
