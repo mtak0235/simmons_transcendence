@@ -7,7 +7,7 @@ import User from "../../2_domain/user/user";
 import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
 import { useRecoilState } from "recoil";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 const Wrapper = styled.div`
   display: flex;
@@ -103,26 +103,26 @@ const Message = styled.div`
   line-height: 1.5em;
 `;
 
-// function ChatRoom(nickName) {
-//   const [messages] = useState([]);
-
-//   return (
-//     <>
-//       {messages.map((message) => (
-//         <MessageItem item={message} />
-//       ))}
-//       <MessageCreator />
-//     </>
-//   );
-// }
-
 function ChatRoom(nickName) {
+  const [messages] = useState([]);
+
+  return (
+    <>
+      {messages.map((message) => (
+        <MessageItem item={message} />
+      ))}
+      <MessageItem item={"asdflkjasjdflkajsdfl"}></MessageItem>
+      <MessageCreator />
+    </>
+  );
+}
+
+function MessageCreator() {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
-  let idx = useRef(0);
+
   const addItem = () => {
-    console.log("here");
-    setMessages((prev) => [...prev, inputValue]);
+    setMessages([...messages, inputValue]);
     setInputValue("");
   };
 
@@ -132,9 +132,6 @@ function ChatRoom(nickName) {
 
   return (
     <div>
-      {messages.map((message) => (
-        <MessageItem key={idx.current++} item={message} />
-      ))}
       <input
         type="text"
         value={inputValue}
@@ -143,6 +140,7 @@ function ChatRoom(nickName) {
           if (event.key === "Enter") {
             addItem();
           }
+          console.log(messages);
         }}
       />
       <button onClick={addItem}>Send</button>
@@ -151,7 +149,7 @@ function ChatRoom(nickName) {
 }
 
 function MessageItem({ item: message }) {
-  return <div style={{ color: "red" }}>{message}</div>;
+  return <div style={{ color: "red" }}>{message.text}</div>;
 }
 
 function Game() {
