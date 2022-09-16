@@ -13,8 +13,9 @@ WORKDIR /usr/src/app
 COPY ./app/ .
 
 # Install app dependencies using the `npm ci` command instead of `npm install`
-#RUN npm install -g @nestjs/cli
+RUN npm i -g cross-env @nestjs/cli @nestjs/common @nestjs/config @nestjs/typeorm @types/node
 RUN yarn
+
 # Bundle app source
 #COPY --chown=node:node ../app .
 

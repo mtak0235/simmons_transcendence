@@ -1,0 +1,8 @@
+.room {
+    background: #c291e2;
+    flex-grow: 1;
+    width: 15vh;
+    max-width: 15vh;
+    margin-left: 1vw;
+    margin-top: 1vh;
+}

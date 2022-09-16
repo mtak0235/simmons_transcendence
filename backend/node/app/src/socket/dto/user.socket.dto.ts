@@ -1,5 +1,7 @@
 export const STATUS_LAYER = {
   inGame: 'inGame',
+  waitingGame: 'waitingGame',
+  watchingGame: 'watchingGame',
   online: 'online',
   offline: 'offline',
 } as const;
