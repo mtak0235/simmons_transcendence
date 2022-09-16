@@ -18,7 +18,7 @@ export class HttpRequest {
   constructor(param: HttpRequestParam) {
     this.path = param.path;
     this.method = param.method ? param.method : "get";
-    this.token = param.token ? param.token : "access_token";
+    this.token = param.token ? param.token : "accessToken";
     this.headers = param.headers ? param.headers : {};
     this.data = param.data ? param.data : {};
     this.params = param.params ? param.params : {};

@@ -21,7 +21,7 @@ class Socket<
     this.socket = io.connect(process.env.REACT_APP_SOCKET_URL, {
       withCredentials: true,
       extraHeaders: {
-        access_token: this.cookies.get("access_token"),
+        access_token: this.cookies.get("accessToken"),
       },
     });
     console.log(this.socket);

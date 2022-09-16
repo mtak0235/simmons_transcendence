@@ -84,8 +84,8 @@ const Test1 = () => {
 
   const test2 = async () => {
     await conn.refreshToken();
-    // console.log(cookies.get("access_token"));
-    // console.log(cookies.get("refresh_token"));
+    console.log(cookies.get("accessToken"));
+    console.log(cookies.get("refreshToken"));
   };
 
   const test3 = () => {
@@ -115,7 +115,10 @@ const Test1 = () => {
         {/*<h1>{count}</h1>*/}
       </div>
       <div>
-        <a href={process.env.REACT_APP_API_URL + "/auth/login"}>로그인</a>
+        {/*<a href={process.env.REACT_APP_API_URL + "/auth/login"}>로그인</a>*/}
+        <button>
+          <a href={process.env.REACT_APP_API_URL + "/auth/login"}>로그인</a>
+        </button>
         <button
           onClick={async () => {
             setIsLoggedIn(0);

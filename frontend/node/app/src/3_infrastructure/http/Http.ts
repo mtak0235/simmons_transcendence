@@ -3,6 +3,7 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { Cookies } from "react-cookie";
+import HttpToken from "@domain/http/HttpToken";
 
 // todo: 통신 관련 오류 Filter 만들어서 직접 처리 하는걸로
 // todo: 집갔다와서 Socket도 빠르게 만들어버리자
@@ -16,7 +17,8 @@ class Http extends IHttp {
     )}`;
     request.headers["Access-Control-Allow-Origin"] = "*";
 
-    return axios({
+    console.log(request);
+    const response = await axios({
       url: process.env.REACT_APP_API_URL + request.path,
       method: request.method,
       headers: request.headers,
@@ -24,6 +26,13 @@ class Http extends IHttp {
       params: request.params,
       withCredentials: true,
     });
+
+    if (response.data.token) {
+      const httpToken = new HttpToken(response.data.token);
+      for (const key in httpToken)
+        if (httpToken[key].length) this.cookies.set(key, httpToken[key]);
+    }
+    return response;
 
     // todo: multipart/form-data 구현 생각
 
@@ -66,7 +75,7 @@ class Http extends IHttp {
     const request = new HttpRequest({
       path: "/auth/token",
       headers: {
-        refresh_token: this.cookies.get("refresh_token"),
+        refresh_token: this.cookies.get("refreshToken"),
       },
     });
     await this.connect(request);
@@ -109,6 +118,18 @@ class Http extends IHttp {
     this.cookies.remove("code");
   }
 
+  public async login(): Promise<void> {
+    const request = new HttpRequest({
+      path: "/auth/login",
+    });
+    try {
+      const result = await this.connect(request);
+      console.log(result);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   public async logout(): Promise<void> {
     const request = new HttpRequest({
       path: "/auth/logout",
@@ -119,8 +140,8 @@ class Http extends IHttp {
     } catch (err: any) {
       throw err;
     } finally {
-      this.cookies.remove("access_token");
-      this.cookies.remove("refresh_token");
+      this.cookies.remove("accessToken");
+      this.cookies.remove("refreshToken");
     }
   }
 
