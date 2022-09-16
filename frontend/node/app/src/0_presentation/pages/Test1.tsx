@@ -39,13 +39,7 @@ const testRecoilAtom = atom<testRecoilInterface[]>({
 const testRecoilSelector = selector({
   key: "testRecoilSelector",
   get: ({ get }) => get(testRecoilAtom),
-  set: ({ set }, value) =>
-    set(testRecoilAtom, (newVal) => {
-      console.log(value);
-      console.log(newVal);
-      newVal = value;
-      return newVal;
-    }),
+  // set: ({ set }, value) => set(testRecoilAtom, value),
 });
 
 const Test1 = () => {
@@ -54,9 +48,10 @@ const Test1 = () => {
   // const [cls, setCls] = useRecoilState(classState());
   const [code, setCode] = useState("");
   const [number, setNumber] = useRecoilState(repo.textState());
+  const [number1, setNumber1] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
   const [errorState, setErrorState] = useRecoilState(setError);
-  const [testRecoil, setTestRecoil] = useRecoilState(testRecoilSelector);
+  const [testRecoil, setTestRecoil] = useRecoilState(testRecoilAtom);
   // const []
   const [num, setNum] = useState(0);
   const conn: IHttp = Get.get("IHttp");
@@ -90,13 +85,14 @@ const Test1 = () => {
   };
 
   const test3 = () => {
+    console.log("dd", testRecoil);
+    setNumber1(number1 + 1);
+    const arg: testRecoilInterface = {
+      a: number1,
+      b: "2",
+    };
+    setTestRecoil((prev) => [...prev, arg]);
     console.log(testRecoil);
-    setTestRecoil([
-      {
-        a: 1,
-        b: "2",
-      },
-    ]);
   };
 
   // useEffect(() => {
