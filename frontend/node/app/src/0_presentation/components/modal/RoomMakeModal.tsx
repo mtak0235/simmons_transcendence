@@ -120,7 +120,7 @@ const RoomMakeModal = ({
           <TSButton variant="contained" onClick={() => console.log("방생성")}>
             {confirmText}
           </TSButton>
-          <TSButton variant="outlined" onClick={() => console.log("취소")}>
+          <TSButton variant="outlined" onClick={onClose}>
             {cancelText}
           </TSButton>
         </Row>

@@ -3,7 +3,6 @@ import { Radio } from "antd";
 import styled from "styled-components";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import Scrollbar from "perfect-scrollbar";
 import { SizedBox } from "../components/TSDesign";
 import {
   List,
@@ -17,6 +16,7 @@ import {
   ListItem,
 } from "@mui/material";
 import useModal from "../components/modal/hooks";
+import { useUserInfo } from "@root/1_application/user/useUser";
 
 const Wrapper = styled.div`
   display: flex;
@@ -101,18 +101,6 @@ const TSRow = styled.div`
   width: 100%;
 `;
 
-const LinkStyle = styled(Link)`
-  display: flex;
-  width: 100%;
-  justify-content: center;
-`;
-
-const PaginationRow = styled.div`
-  width: 300px;
-  height: 50px;
-  background-color: red;
-`;
-
 function Pagination({ total, limit, page, setPage }) {
   const [pageCount] = useState(Math.ceil(total / limit));
 
@@ -143,47 +131,58 @@ function Pagination({ total, limit, page, setPage }) {
 }
 
 function Content({ visible, users, friends }) {
+  const { showModal } = useModal();
+  const userInfo = useUserInfo(0);
+
+  const handleUserInfoModal = () => {
+    showModal({
+      modalType: "UserInfoModal",
+      modalProps: {
+        userInfo: userInfo,
+        message: "Success!",
+      },
+    });
+  };
   return (
-    <ContentStyle style={{ overflow: "scroll" }} key={1}>
+    <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
         users.map(({ userId, username }) => (
-          <LinkStyle to={`/user/${userId}`} key={userId}>
-            <List>
-              <ListItem disablePadding>
-                <ListItemButton
-                  style={{
-                    width: 180,
-                    display: "flex",
-                    textAlign: "center",
-                    background: "lightgrey",
-                  }}
-                >
-                  <ListItemText>{username}</ListItemText>
-                </ListItemButton>
-              </ListItem>
-            </List>
-          </LinkStyle>
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>{username}</ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
         ))}
       {!visible &&
         friends.map(({ userId, username, status }) => (
-          <LinkStyle to={`/user/${userId}`}>
-            <List>
-              <ListItem disablePadding>
-                <ListItemButton
-                  style={{
-                    width: 180,
-                    display: "flex",
-                    textAlign: "center",
-                    background: "lightgrey",
-                  }}
-                >
-                  <ListItemText>
-                    {username} | {status}
-                  </ListItemText>
-                </ListItemButton>
-              </ListItem>
-            </List>
-          </LinkStyle>
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                key={userId}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>
+                  {username} | {status}
+                </ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
         ))}
     </ContentStyle>
   );
@@ -258,7 +257,6 @@ function Home() {
     showModal({
       modalType: "RoomMakeModal",
       modalProps: {
-        // userInfo: userInfo,
         message: "Success!",
       },
     });
@@ -335,7 +333,7 @@ function Home() {
                   </Grid>
                 )
               )}
-            <SizedBox height={20} />
+            <SizedBox width={100} height={25} />
             <TSRow>
               <SizedBox width={25}></SizedBox>
               <Pagination
