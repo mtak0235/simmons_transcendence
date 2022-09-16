@@ -30,6 +30,7 @@
     "patch-package": "^6.4.7",
     "perfect-scrollbar": "^1.5.5",
     "prettier": "^2.7.1",
+    "query-string": "^7.1.1",
     "react": "^18.2.0",
     "react-cookie": "^4.1.1",
     "react-dom": "^18.2.0",

@@ -131,18 +131,18 @@ function Pagination({ total, limit, page, setPage }) {
 }
 
 function Content({ visible, users, friends }) {
-  const { showModal } = useModal();
-  const userInfo = useUserInfo(0);
+  // const { showModal } = useModal();
+  // const userInfo = useUserInfo(0);
 
-  const handleUserInfoModal = () => {
-    showModal({
-      modalType: "UserInfoModal",
-      modalProps: {
-        userInfo: userInfo,
-        message: "Success!",
-      },
-    });
-  };
+  // const handleUserInfoModal = () => {
+  //   showModal({
+  //     modalType: "UserInfoModal",
+  //     modalProps: {
+  //       userInfo: userInfo,
+  //       message: "Success!",
+  //     },
+  //   });
+  // };
   return (
     <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
@@ -156,7 +156,7 @@ function Content({ visible, users, friends }) {
                   textAlign: "center",
                   background: "lightgrey",
                 }}
-                onClick={handleUserInfoModal}
+                // onClick={handleUserInfoModal}
               >
                 <ListItemText>{username}</ListItemText>
               </ListItemButton>
@@ -175,7 +175,7 @@ function Content({ visible, users, friends }) {
                   background: "lightgrey",
                 }}
                 key={userId}
-                onClick={handleUserInfoModal}
+                // onClick={handleUserInfoModal}
               >
                 <ListItemText>
                   {username} | {status}
