@@ -21,7 +21,7 @@ const Login = () => {
           fontWeight: "bold",
           lineHeight: "25px",
         }}
-        href={"http://localhost:3001/v0/auth/login"}
+        href={"http://10.19.230.83:3001/v0/auth/login"}
       >
         로그인
       </a>
