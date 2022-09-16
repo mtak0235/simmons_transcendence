@@ -8,23 +8,29 @@ import {
   ReservedOrUserListener,
 } from "@socket.io/component-emitter";
 import ISocket from "@domain/socket/ISocket";
+import { IHttp } from "@domain/http/IHttp";
+import Get from "@root/lib/di/get";
 
 class Socket<
   ListenEvents extends EventsMap,
   EmitEvents extends EventsMap,
   ReservedEvents extends EventsMap = {}
 > extends ISocket<any, any> {
+  private readonly http: IHttp = Get.get("IHttp");
   private readonly cookies = new Cookies();
   socket?: io.Socket;
 
-  public connect(): void {
+  public async connect(): Promise<void> {
+    if (!(await this.http.checkToken())) {
+      await this.http.refreshToken();
+    }
+
     this.socket = io.connect(process.env.REACT_APP_SOCKET_URL, {
       withCredentials: true,
       extraHeaders: {
         access_token: this.cookies.get("accessToken"),
       },
     });
-    console.log(this.socket);
   }
 
   public on<Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>>(

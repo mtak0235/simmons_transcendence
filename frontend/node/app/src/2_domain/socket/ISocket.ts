@@ -14,7 +14,7 @@ abstract class ISocket<
 > {
   abstract socket?: io.Socket;
 
-  public abstract connect(): void;
+  public abstract connect(): Promise<void>;
 
   public abstract on<
     Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>
