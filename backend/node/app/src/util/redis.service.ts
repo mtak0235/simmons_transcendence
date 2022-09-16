@@ -12,4 +12,8 @@ export class RedisService {
   async get(key: string): Promise<string> {
     return (await this.cacheManager.get(key)) as string;
   }
+
+  async delete(key: string) {
+    await this.cacheManager.del(key);
+  }
 }

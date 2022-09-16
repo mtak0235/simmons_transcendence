@@ -16,7 +16,7 @@ export default class Follows {
   @PrimaryColumn()
   targetId: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
   @ManyToOne(() => Users, (users) => users.followSourceUsers)
