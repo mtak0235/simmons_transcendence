@@ -1,9 +1,22 @@
 import { motion } from "framer-motion";
-import { Radio, Popover } from "antd";
+import { Radio } from "antd";
 import styled from "styled-components";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import Scrollbar from "perfect-scrollbar";
+import { SizedBox } from "../components/TSDesign";
+import {
+  List,
+  Box,
+  Card,
+  Grid,
+  ListItemButton,
+  ListItemText,
+  CardContent,
+  Typography,
+  ListItem,
+} from "@mui/material";
+import useModal from "../components/modal/hooks";
+import { useUserInfo } from "@root/1_application/user/useUser";
 
 const Wrapper = styled.div`
   display: flex;
@@ -14,28 +27,18 @@ const Wrapper = styled.div`
 const ChannelScreen = styled.div`
   display: flex;
   flex-grow: 3;
-  background-color: blue;
+  background-color: lightyellow;
   height: calc(100vh - 100px);
   justify-content: center;
   align-items: center;
   flex-direction: column;
   width: 70%;
-  padding: 20px;
-`;
-
-const ChannelScreenControl = styled.div`
-  display: flex;
-  flex-flow: row wrap;
-  justify-content: center;
-  align-content: center;
-  height: 100%;
+  padding: 10px;
 `;
 
 const PaginationStyle = styled.div`
   display: flex;
-  width: 50%;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: center;
   flex-direction: row;
 `;
 
@@ -72,61 +75,55 @@ const SideS = styled.div`
   display: flex;
   flex-grow: 1;
   max-width: 300px;
-  background-color: yellow;
   height: calc(100vh - 100px);
   justify-content: space-between;
   flex-flow: column nowrap;
   align-items: center;
   padding: 20px;
   width: 30%;
+  background-color: white;
 `;
 const ContentStyle = styled.div`
-  height: 100%;
+  height: calc(100vh - 100px);
   width: 100%;
   overflow: auto;
 `;
-const Card = styled(motion.div)`
+const TSCard = styled(motion.div)`
   width: 90%;
   background-color: red;
   flex-basis: auto;
   font-size: 6px;
 `;
 
-const Box = styled(motion.div)`
-  background-color: red;
-  width: 20vw;
-  height: 20vh;
-  flex-basis: auto;
-  font-size: 6px;
-`;
-
-// const Nav = styled.nav`
-//   display: flex;
-//   justify-content: center;
-//   align-items: center;
-//   gap: 4px;
-//   margin: 16px;
-// `;
-
-const LinkStyle = styled(Link)`
+const TSRow = styled.div`
   display: flex;
+  justify-content: space-between;
   width: 100%;
-  justify-content: center;
 `;
 
 function Pagination({ total, limit, page, setPage }) {
-  const numPages = Math.ceil(total / limit);
+  const [pageCount] = useState(Math.ceil(total / limit));
+
   return (
     <PaginationStyle>
-      <Button onClick={() => setPage(page - 1)} disabled={page === 1}>
+      <Button
+        onClick={() => {
+          console.log(pageCount);
+          setPage(page - 1);
+        }}
+        disabled={page === 1}
+      >
         &lt;
       </Button>
-      {Array(numPages).map((_, i) => (
-        <Button key={i + 1} onClick={() => setPage(i + 1)}>
-          {i + 1}
-        </Button>
-      ))}
-      <Button onClick={() => setPage(page + 1)} disabled={page === numPages}>
+      <SizedBox width={20} />
+      {/* <PaginationRow>
+        {Array(pageCount).map((_, i) => (
+          <Button key={i + 1} onClick={() => setPage(i + 1)}>
+            {i + 1}
+          </Button>
+        ))}
+      </PaginationRow> */}
+      <Button onClick={() => setPage(page + 1)} disabled={page === pageCount}>
         &gt;
       </Button>
     </PaginationStyle>
@@ -134,32 +131,58 @@ function Pagination({ total, limit, page, setPage }) {
 }
 
 function Content({ visible, users, friends }) {
+  const { showModal } = useModal();
+  const userInfo = useUserInfo(0);
+
+  const handleUserInfoModal = () => {
+    showModal({
+      modalType: "UserInfoModal",
+      modalProps: {
+        userInfo: userInfo,
+        message: "Success!",
+      },
+    });
+  };
   return (
-    <ContentStyle>
+    <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
         users.map(({ userId, username }) => (
-          <LinkStyle to={`/user/${userId}`}>
-            <Card
-              key={userId}
-              whileHover={{ scale: 1.2 }}
-              transition={{ delay: 0.5 }}
-            >
-              {username}
-            </Card>
-          </LinkStyle>
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>{username}</ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
         ))}
       {!visible &&
         friends.map(({ userId, username, status }) => (
-          <LinkStyle to={`/user/${userId}`}>
-            <Card
-              key={userId}
-              whileHover={{ scale: 1.2 }}
-              transition={{ delay: 0.5 }}
-            >
-              {username}
-              {status}
-            </Card>
-          </LinkStyle>
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                key={userId}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>
+                  {username} | {status}
+                </ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
         ))}
     </ContentStyle>
   );
@@ -201,7 +224,7 @@ function Side() {
     <>
       <Radio.Group size={"large"}>
         <Radio.Button
-          value={"tot"}
+          value={"total"}
           onClick={() => {
             setVisible(false);
             console.log(visible);
@@ -228,6 +251,17 @@ function Home() {
   const [limit] = useState(6);
   const [page, setPage] = useState(1);
   const offset = (page - 1) * limit;
+  const { showModal } = useModal();
+
+  const handleClickUserMakeModal = () => {
+    showModal({
+      modalType: "RoomMakeModal",
+      modalProps: {
+        message: "Success!",
+      },
+    });
+  };
+
   // const channels = useChannel();
   useEffect(() => {
     fetch("https://jsonplaceholder.typicode.com/posts")
@@ -249,42 +283,74 @@ function Home() {
   return (
     <Wrapper>
       <ChannelScreen>
-        <ChannelScreenControl>
-          {posts
-            .slice(offset, offset + limit)
-            .map(
-              ({
-                adminId,
-                channelIdx,
-                accessLayer,
-                channelName,
-                score,
-                onGame,
-              }) => (
-                <Link to={`/game/${channelIdx}`}>
-                  <Box
-                    key={channelIdx}
-                    whileHover={{ scale: 1.2 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <h3>{channelName}</h3>
-                    <p>adminId:{adminId}</p>
-                    <p>score:{score}</p>
-                    <p>accessLayer:{accessLayer}</p>
-                    <p>onGame:{onGame}</p>
-                  </Box>
-                </Link>
-              )
-            )}
-          <footer>
-            <Pagination
-              total={posts.length}
-              limit={limit}
-              page={page}
-              setPage={setPage}
-            />
-          </footer>
-        </ChannelScreenControl>
+        <Box sx={{ flexGrow: 1, overflow: "scroll" }}>
+          <Grid
+            container
+            spacing={{ xs: 2, md: 3 }}
+            columns={{ xs: 1, sm: 3, md: 8 }}
+          >
+            {posts
+              .slice(offset, offset + limit)
+              .map(
+                ({
+                  adminId,
+                  channelIdx,
+                  accessLayer,
+                  channelName,
+                  score,
+                  onGame,
+                }) => (
+                  <Grid item xs={4} sm={4} md={4} key={channelIdx}>
+                    <Link to={`/game/${channelIdx}`}>
+                      <Card sx={{ maxWidth: 500 }}>
+                        <CardContent>
+                          <Typography
+                            sx={{ fontSize: 14 }}
+                            color="text.secondary"
+                            gutterBottom
+                            component={"span"}
+                          >
+                            <h3>{channelName}</h3>
+                          </Typography>
+                          <Typography variant="h5" component={"span"}>
+                            <p>adminId:{adminId}</p>
+                          </Typography>
+                          <Typography
+                            sx={{ mb: 1.5 }}
+                            color="text.secondary"
+                            component={"span"}
+                          >
+                            <p>score:{score}</p>
+                          </Typography>
+                          <Typography variant="body2" component={"span"}>
+                            <p>accessLayer:{accessLayer}</p>
+                            <br />
+                            <p>onGame:{onGame}</p>
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </Grid>
+                )
+              )}
+            <SizedBox width={100} height={25} />
+            <TSRow>
+              <SizedBox width={25}></SizedBox>
+              <Pagination
+                total={posts.length}
+                limit={limit}
+                page={page}
+                setPage={setPage}
+              />
+              <Button
+                style={{ backgroundColor: "#24a0ed" }}
+                onClick={handleClickUserMakeModal}
+              >
+                만들기
+              </Button>
+            </TSRow>
+          </Grid>
+        </Box>
       </ChannelScreen>
       <SideS>
         <Side></Side>

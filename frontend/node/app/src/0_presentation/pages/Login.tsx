@@ -22,6 +22,7 @@ const Login = () => {
           lineHeight: "25px",
         }}
         href={process.env.REACT_APP_API_URL + "/auth/login"}
+
       >
         로그인
       </a>

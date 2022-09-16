@@ -64,11 +64,6 @@ function Header() {
         <Logo>
           <Link to="/">트렌센더스</Link>
         </Logo>
-        <Items>
-          <Item style={{ fontWeight: chatMatch ? "600" : "100" }}>
-            <Link to="/chat">Chat</Link>
-          </Item>
-        </Items>
       </Col>
       <Col>
         {/*<LoginButton onClick={useLogin}>Login</LoginButton>*/}

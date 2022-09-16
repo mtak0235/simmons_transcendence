@@ -164,9 +164,9 @@ function Game() {
 
   const handleClickUserInfoModal = () => {
     showModal({
-      modalType: "RoomInfoModal",
+      modalType: "UserInfoModal",
       modalProps: {
-        // userInfo: userInfo,
+        userInfo: userInfo,
         message: "Success!",
       },
     });
