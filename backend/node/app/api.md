@@ -1,30 +1,10 @@
-<style type='text/css'>
-  [class*="red"] { color: red; }
-  [class*="green"] {color: green; }
-  [class*="yellow"] {color: yellow; }
-  
-</style>
+<br>
 
-<!-- <h3 class="red">HttpRequest</h3>
-
-```json
-
-Headers
-{
-}
-
-```
-
-<h3 class="red">HttpRequest</h3>
-
-```ts
-client.emit('', data);
-``` -->
 # handleConnection
 
 <h3 class="red">HttpRequest</h3>
 
-```json
+```ts
 // Headers
 {
   "access_token": "발급 받은 Access Token"
@@ -34,8 +14,7 @@ client.emit('', data);
 <h3 class="green">Response</h3>
 
 ```ts
-client.emit('single:user:connected', data);
-
+socket.emit('single:user:connected', data);
 data {
   me: {
     userId: 1,
@@ -70,8 +49,7 @@ data {
   ]
 }
 
-client.broadcast.emit('broad:user:connected', data);
-
+socket.emit('broad:user:changeStauts', data);
 data: {
   userId: 1,
   username: 'seonkim',
@@ -79,127 +57,173 @@ data: {
 }
 
 
-client.emit('single:user:error', data);
+socket.emit('single:user:error', data);
 data : {
-          error: 'server',
-          message: 'unKnown',
-        }
+  error: 'server',
+  message: 'unKnown',
+}
 ```
 
 # handleDisconnect
-<h3 class="red">HttpRequest</h3>
-
-```json
-none
-```
 
 <h3 class="green">Response</h3>
 
 ```ts
- client.broadcast.emit('broad:user:disconnected', data);
- data: {
-  {
-        userId: 13342,
-        status: "inGame" | "waitingGame" | "watchingGame" | "online" | "offline",
-      }
- }
+socket.emit('broad:user:changeStatus', data);
+data: {
+    userId: 1,
+    username: 'seonkim',
+    status: 'offline',
+}
 ```
-# createChannel
+
+# changeStatus
+
 <h3 class='red'>HttpRequest</h3>
-```json
-{channel: {
+
+```ts
+{
+  status: 'online' | 'offline' | 'watchingGame' | 'waitingGame' | 'inGame'
+}
+```
+
+# createChannel
+
+<h3 class='red'>HttpRequest</h3>
+
+```ts
+{
   ownerId: 1234,
   channelName: "드가자",
-  password: "1234" | opt
+  password?: "1234" | opt
   accessLayer: 'public' | 'private' | 'protected'
   score: 12
-}}
+}
 ```
 
 <h3 class='green'>Response</h3>
 
 ```ts
-client.emit('single:channel:createChannel', data);
 
-data:{
-      channelPublic: channelPublic,
-      channelPrivate: channelPrivate,
-    }
-
-channelPublic: {
+channelPublicDto: {
   adminId: 124,
   ownerId: 42,
   channelIdx: 43,
-  accessLayer:'public' | 'private' | 'protected',
-  channelName:"드가자",
+  accessLayer: 'public' | 'private' | 'protected',
+  channelName: '드가자',
   score: 12,
   onGame: true | false
 }
 
-channelPrivate: {
-  users: [213, 1234,],
-  waiter: [5213, 1234,],
-  mathcer: {
-    userId: 23,
-    isReady: true | false
-  }
+channelPrivateDto: {
+  users: [ 213, 1234 ],
+  waiter: [ 5213, 1234 ],
+  mathcer: [
+    {
+      userId: 23,
+      isReady: false
+    },
+    {
+      userId: 45,
+      isReady: true
+    },
+  ]
 }
-client.broadcast.emit(
-      'broad:channel:createdChannel', channelPublic,
-    );
+
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online'
+}
+
+socket.emit('single:channel:createChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  channelPrivate: channelPrivateDto,
+}
+
+socket.emit('broad:channel:createdChannel', data);
+data: {
+  ...channelPublicDto
+}
 ```
 
 # modifyGame
+
 <h3 class='red'>HttpRequest</h3>
 
-```json
+```ts
 channel: {
-  channelName:"드가자",
-password: "vdasdf" | opt,
-accessLayer:'public' | 'private' | 'protected',
-score: 12
+  channelName?: '드가자',
+  password?: 'vdasdf',
+  accessLayer?: 'public' | 'private' | 'protected',
+  score?: 12
 }
 ```
 
 <h3 class='green'>Response</h3>
 
 ```ts
-this.server.emit(
-      'broad:channel:updateChannel',
-      channelPublic,
-    );
+socket.emit('broad:channel:updateChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  passwordChanged: true | false // 이거 굳이 필요한가?
+}
 ```
 
 # inChannel
+
 <h3 class='red'>HttpRequest</h3>
 
-```json
-{channelId: 432,password:"addc" | opt}
+```ts
+{
+  channelId: 432,
+  password?: "addc"
+}
 ```
+
 <h3 class='green'>Response</h3>
 
 ```ts
-client.emit('single:channel:inChannel', channelPrivate);
-client
-.to(`room:channel:423`)
-.emit('group:channel:inChannel', 125);
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'watching'
+}
+
+socket.emit('single:channel:inChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  channelPrivate: channelPrivateDto,
+}
+
+socket.emit('group:channel:inChannel', data);
+data: {
+  userId: 1
+}
 ```
 
 # outChannel
-<h3 class='red'>HttpRequest</h3>
-
-```json
-none
-```
 
 <h3 class=' green'> Response</h3>
 
 ``` ts
-client.emit('single:channel:outChannel', {
-      channelId: 13432,
-    });
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online'
+}
 
-server.emit('broad:channel:setAdmin', {
+socket.emit('single:channel:outChannel', data);
+data: {
+  channelId: 13432,
+}
+
+// Admin 또는 Owner 변경 시 emit 될 이벤트
+socket.emit('broad:channel:setAdmin', {
           channelId: 432,
           ownerId: 43,
           adminId: 4321,
