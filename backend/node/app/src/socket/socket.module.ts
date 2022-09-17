@@ -8,6 +8,7 @@ import { UserSocketService } from '@socket/service/user.socket.service';
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { ChannelInterceptors } from '@socket/interceptor/channel.socket.interceptor';
+import { MainSocketStore } from '@socket/storage/main.socket.store';
 
 @Module({
   imports: [JwtModule],
@@ -18,6 +19,7 @@ import { ChannelInterceptors } from '@socket/interceptor/channel.socket.intercep
     ChannelSocketService,
     UserSocketStore,
     ChannelSocketStore,
+    MainSocketStore,
     ...ChannelInterceptors,
   ],
 })

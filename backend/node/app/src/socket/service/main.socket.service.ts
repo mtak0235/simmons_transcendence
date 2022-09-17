@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -10,6 +14,8 @@ import { UserSocketStore } from '@socket/storage/user.socket.store';
 import { SocketException } from '@socket/socket.exception';
 import { MainPageDto } from '@socket/dto/main.socket.dto';
 import { ChannelSocketStore } from '@socket/storage/channel.socket.store';
+import { MainSocketStore } from '@socket/storage/main.socket.store';
+import { ClientInstance } from '@socket/socket.gateway';
 
 @Injectable()
 export class MainSocketService {
@@ -21,6 +27,7 @@ export class MainSocketService {
     private readonly userSocketService: UserSocketService,
     private readonly userSocketStore: UserSocketStore,
     private readonly channelSocketStore: ChannelSocketStore,
+    private readonly mainSocketStore: MainSocketStore,
   ) {}
 
   async verifyUser(token: any): Promise<Users> {
@@ -53,5 +60,19 @@ export class MainSocketService {
       !mainPageDto.me ? userInfo : mainPageDto.me,
     );
     return mainPageDto;
+  }
+
+  setSocketInstance(userId: number, client: ClientInstance): void {
+    this.mainSocketStore.set(userId, client);
+  }
+
+  getSocketInstance(userId: number): ClientInstance {
+    if (!this.mainSocketStore.has(userId)) throw new NotFoundException();
+    return this.mainSocketStore.get(userId);
+  }
+
+  deleteSocketInstance(userId: number): void {
+    if (!this.mainSocketStore.has(userId)) throw new NotFoundException();
+    this.mainSocketStore.delete(userId);
   }
 }

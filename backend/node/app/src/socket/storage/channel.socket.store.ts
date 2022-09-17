@@ -15,7 +15,7 @@ export class ChannelSocketStore {
   constructor(private readonly encryptionService: EncryptionService) {
     this.channels.set(0, {
       channelPublic: {
-        channelIdx: this.channelIdx,
+        channelId: this.channelIdx,
         accessLayer: 'public',
         channelName: '성수와 잼나는 겜 한판 하실 분!!',
         score: 11,
@@ -58,7 +58,7 @@ export class ChannelSocketStore {
 
     const channel: ChannelDto = {
       channelPublic: {
-        channelIdx: this.channelIdx,
+        channelId: this.channelIdx,
         accessLayer: channelCreateDto.accessLayer,
         channelName: channelCreateDto.channelName,
         score: channelCreateDto.score,
@@ -67,7 +67,7 @@ export class ChannelSocketStore {
         onGame: false,
       },
       channelPrivate: {
-        users: [],
+        users: [channelCreateDto.ownerId],
         waiter: [],
         matcher: [],
       },

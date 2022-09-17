@@ -45,6 +45,10 @@ export class UserSocketService {
     }
   }
 
+  find(userId: number) {
+    return this.userSocketStore.find(userId);
+  }
+
   switchStatus(user: UserDto, status: STATUS_LAYER) {
     this.userSocketStore.update(user, { status: status });
   }

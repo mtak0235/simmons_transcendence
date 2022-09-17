@@ -35,8 +35,6 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
       };
     }
 
-    if (exception.stack) console.error(exception.stack);
-
     client.emit('customError', error);
   }
 }

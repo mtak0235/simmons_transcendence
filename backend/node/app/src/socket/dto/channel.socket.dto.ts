@@ -34,7 +34,7 @@ export interface Matcher {
 export interface ChannelPublicDto {
   adminId: number;
   ownerId: number;
-  channelIdx: number;
+  channelId: number;
   accessLayer: ACCESS_LAYER;
   channelName: string;
   score: number;
@@ -80,10 +80,6 @@ export class ChannelUpdateDto {
   @IsEmpty()
   @IsString()
   channelName?: string;
-
-  @IsEmpty()
-  @IsString()
-  password?: string;
 
   @IsEmpty()
   @IsString()
