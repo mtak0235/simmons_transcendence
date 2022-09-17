@@ -13,6 +13,8 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
   const socket: ISocket<any, any> = Get.get("ISocket");
   const loggedIn = useRecoilValue(getLoginState);
 
+  // todo: 내일 할 거: 백엔드 응답값 통일 (ex. 사용자 상태 변경), 명세 수정 해야함 (정확히... 제발)
+
   // todo: update: socket response data type to Dto
   useEffect(() => {
     // connection
@@ -27,6 +29,9 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
         });
         // todo: Main Page
         socket.on("broad:user:connected", (data: any) => {
+          console.log(data);
+        });
+        socket.on("single:user:error", (data: any) => {
           console.log(data);
         });
 

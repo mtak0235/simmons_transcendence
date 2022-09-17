@@ -68,3 +68,33 @@ export interface MainPageDto {
   users: UserInfoDto[];
   channels: ChannelPublicDto[];
 }
+
+export interface SocketErrorDto {
+  error: string;
+  message: string;
+}
+
+export interface ChannelPublic {
+  adminId: number;
+  ownerId: number;
+  channelIdx: number;
+  accessLayer: ACCESS_LAYER;
+  channelName: string;
+  score: number;
+  onGame: boolean;
+}
+
+export interface ChannelPrivateDto {
+  users: number[];
+  waiter: number[];
+  matcher: Matcher[];
+}
+
+export class ChannelDto {
+  channelPublic: ChannelPublicDto;
+  channelPrivate: ChannelPrivateDto;
+  password?: string;
+  kickedOutUsers: number[];
+  mutedUsers: MutedUser[];
+  invited: number[];
+}
