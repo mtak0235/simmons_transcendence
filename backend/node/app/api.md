@@ -2,7 +2,7 @@
 
 # handleConnection
 
-<h3 class="red">HttpRequest</h3>
+<h3 class="red">Request</h3>
 
 ```ts
 // Headers
@@ -79,7 +79,7 @@ data: {
 
 # changeStatus
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -87,9 +87,21 @@ data: {
 }
 ```
 
+<h3 class='green'>Response</h3>
+
+```ts
+
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online' | 'offline' | 'watchingGame' | 'waitingGame' | 'inGame'
+}
+```
+
 # createChannel
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -153,7 +165,7 @@ data: {
 
 # modifyGame
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -178,7 +190,7 @@ data: {
 
 # inChannel
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -211,7 +223,7 @@ data: {
 
 # outChannel
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('broad:user:changeStauts', data);
@@ -248,7 +260,7 @@ data: {
 
 # inviteUser
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -256,7 +268,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:channel:inviteUser', data);
@@ -269,7 +281,7 @@ data: {
 
 # setAdmin
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -277,7 +289,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('broad:channel:setAdmin', data);
@@ -290,7 +302,7 @@ data: {
 
 # kickOutUser
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -298,7 +310,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:channel:kickOut');
@@ -310,7 +322,7 @@ data: {
 ```
 
 # muteUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -318,7 +330,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('group:channel:muteUser', data);
@@ -331,7 +343,7 @@ data: {
 
 # waitingGame
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('group:channel:waitingGame', data);
@@ -353,7 +365,7 @@ data: {
 
 # readyGame
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('group:channel:readyGame', data);
@@ -375,7 +387,7 @@ socket.emit('group:channel:startGame');
 
 # endGame
 ## 게임 이벤트 명세 나중에 게임 구현하면서 같이 작업
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -385,7 +397,7 @@ socket.emit('group:channel:startGame');
 
 # sendMessage
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -393,7 +405,7 @@ socket.emit('group:channel:startGame');
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('group:channel:sendMessage', data);
@@ -405,7 +417,7 @@ data: {
 
 # sendDirectMessage
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -414,7 +426,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:channel:sendDm', data);
@@ -426,7 +438,7 @@ data: {
 ```
 
 # blockUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -434,7 +446,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:user:blockUser', data);
@@ -445,7 +457,7 @@ data: {
 
 # followUser
 
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -453,7 +465,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:user:followUser', data);
@@ -468,7 +480,7 @@ data: {
 ```
 
 # unfollowUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
 ```ts
 {
@@ -476,7 +488,7 @@ data: {
 }
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
 socket.emit('single:user:followUser', data);
