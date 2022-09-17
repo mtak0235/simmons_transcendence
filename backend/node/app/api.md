@@ -1,30 +1,10 @@
-<style type='text/css'>
-  [class*="red"] { color: red; }
-  [class*="green"] {color: green; }
-  [class*="yellow"] {color: yellow; }
-  
-</style>
+<br>
 
-<!-- <h3 class="red">HttpRequest</h3>
-
-```json
-
-Headers
-{
-}
-
-```
-
-<h3 class="red">HttpRequest</h3>
-
-```ts
-client.emit('', data);
-``` -->
 # handleConnection
 
-<h3 class="red">HttpRequest</h3>
+<h3 class="red">Request</h3>
 
-```json
+```ts
 // Headers
 {
   "access_token": "발급 받은 Access Token"
@@ -34,8 +14,7 @@ client.emit('', data);
 <h3 class="green">Response</h3>
 
 ```ts
-client.emit('single:user:connected', data);
-
+socket.emit('single:user:connected', data);
 data {
   me: {
     userId: 1,
@@ -68,346 +47,474 @@ data {
     },
     ...
   ]
+};
+
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online'
+};
+
+
+socket.emit('single:user:error', data);
+data : {
+  error: 'server',
+  message: 'unKnown',
+};
+```
+
+# handleDisconnect
+
+<h3 class="green">Response</h3>
+
+```ts
+socket.emit('broad:user:changeStatus', data);
+data: {
+    userId: 1,
+    username: 'seonkim',
+    status: 'offline',
+};
+```
+
+# changeStatus
+
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  status: 'online' | 'offline' | 'watchingGame' | 'waitingGame' | 'inGame'
+}
+```
+
+<h3 class='green'>Response</h3>
+
+```ts
+
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online' | 'offline' | 'watchingGame' | 'waitingGame' | 'inGame'
+}
+```
+
+# createChannel
+
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  channel: {
+    ownerId: 1234,
+    channelName: "드가자",
+    password?: "1234" | opt
+    accessLayer: 'public' | 'private' | 'protected'
+    score: 12
+  }
+}
+```
+
+<h3 class='green'>Response</h3>
+
+```ts
+
+channelPublicDto: {
+  adminId: 124,
+  ownerId: 42,
+  channelIdx: 43,
+  accessLayer: 'public' | 'private' | 'protected',
+  channelName: '드가자',
+  score: 12,
+  onGame: true | false
 }
 
-client.broadcast.emit('broad:user:connected', data);
+channelPrivateDto: {
+  users: [ 213, 1234 ],
+  waiter: [ 5213, 1234 ],
+  mathcer: [
+    {
+      userId: 23,
+      isReady: false
+    },
+    {
+      userId: 45,
+      isReady: true
+    },
+  ]
+}
 
+socket.emit('broad:user:changeStauts', data);
 data: {
   userId: 1,
   username: 'seonkim',
   status: 'online'
 }
 
-
-client.emit('single:user:error', data);
-data : {
-          error: 'server',
-          message: 'unKnown',
-        }
-```
-
-# handleDisconnect
-<h3 class="red">HttpRequest</h3>
-
-```json
-none
-```
-
-<h3 class="green">Response</h3>
-
-```ts
- client.broadcast.emit('broad:user:disconnected', data);
- data: {
-  {
-        userId: 13342,
-        status: "inGame" | "waitingGame" | "watchingGame" | "online" | "offline",
-      }
- }
-```
-# createChannel
-<h3 class='red'>HttpRequest</h3>
-```json
-{channel: {
-  ownerId: 1234,
-  channelName: "드가자",
-  password: "1234" | opt
-  accessLayer: 'public' | 'private' | 'protected'
-  score: 12
-}}
-```
-
-<h3 class='green'>Response</h3>
-
-```ts
-client.emit('single:channel:createChannel', data);
-
-data:{
-      channelPublic: channelPublic,
-      channelPrivate: channelPrivate,
-    }
-
-channelPublic: {
-  adminId: 124,
-  ownerId: 42,
-  channelIdx: 43,
-  accessLayer:'public' | 'private' | 'protected',
-  channelName:"드가자",
-  score: 12,
-  onGame: true | false
+socket.emit('single:channel:createChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  channelPrivate: channelPrivateDto,
 }
 
-channelPrivate: {
-  users: [213, 1234,],
-  waiter: [5213, 1234,],
-  mathcer: {
-    userId: 23,
-    isReady: true | false
-  }
-}
-client.broadcast.emit(
-      'broad:channel:createdChannel', channelPublic,
-    );
+socket.emit('broad:channel:createdChannel', data);
+data: {
+  ...channelPublicDto
+};
 ```
 
 # modifyGame
-<h3 class='red'>HttpRequest</h3>
 
-```json
-channel: {
-  channelName:"드가자",
-password: "vdasdf" | opt,
-accessLayer:'public' | 'private' | 'protected',
-score: 12
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  channel: {
+    channelName?: '드가자',
+    password?: 'vdasdf',
+    accessLayer?: 'public' | 'private' | 'protected',
+    score?: 12
+  }
 }
 ```
 
 <h3 class='green'>Response</h3>
 
 ```ts
-this.server.emit(
-      'broad:channel:updateChannel',
-      channelPublic,
-    );
+socket.emit('broad:channel:updateChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  passwordChanged: true | false // 이거 굳이 필요한가?
+};
 ```
 
 # inChannel
-<h3 class='red'>HttpRequest</h3>
 
-```json
-{channelId: 432,password:"addc" | opt}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  channelId: 432,
+  password?: "addc"
+}
 ```
+
 <h3 class='green'>Response</h3>
 
 ```ts
-client.emit('single:channel:inChannel', channelPrivate);
-client
-.to(`room:channel:423`)
-.emit('group:channel:inChannel', 125);
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'watching'
+};
+
+socket.emit('single:channel:inChannel', data);
+data: {
+  channelPublic: channelPublicDto,
+  channelPrivate: channelPrivateDto,
+};
+
+socket.emit('group:channel:inChannel', data);
+data: {
+  userId: 1
+};
 ```
 
 # outChannel
-<h3 class='red'>HttpRequest</h3>
 
-```json
-none
-```
-
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-client.emit('single:channel:outChannel', {
-      channelId: 13432,
-    });
+socket.emit('broad:user:changeStauts', data);
+data: {
+  userId: 1,
+  username: 'seonkim',
+  status: 'online'
+};
 
-server.emit('broad:channel:setAdmin', {
-          channelId: 432,
-          ownerId: 43,
-          adminId: 4321,
-        });
+socket.emit('single:channel:outChannel', data);
+data: {
+  channelId: 13432,
+};
 
-server.emit(
-        'broad:channel:deleteChannel',
-        543,
-      );
+// Admin 또는 Owner 변경 시 emit 될 이벤트
+socket.emit('broad:channel:setAdmin', data);
+data: {
+  channelId: 432,
+  ownerId: 43,
+  adminId: 4321,
+};
+
+socket.emit('group:channel:outChannel', data);
+data: {
+  userId: 123
+};
+
+// 채널에 모든 유저가 나간 경우 emit 될 이벤트
+socket.emit('broad:channel:deleteChannel', data);
+data: {
+  channelId: 10
+};
 ```
 
 # inviteUser
-<h3 class='red'>HttpRequest</h3>
 
-```json
-{userId:5342}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  userId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-client.to(`room:user:543`).emit('single:channel:inviteUser', {
-      channelId: 52,
-      channelName: "드가자",
-    });
+socket.emit('single:channel:inviteUser', data);
+data: {
+  userId: 1,
+  channelId: 52,
+  channelName: "드가자",
+};
 ```
 
 # setAdmin
-<h3 class='red'>HttpRequest</h3>
 
-```json
-{userId:5342}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  userId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-this.server.emit('broad:channel:setAdmin', {
-      channelId: 543,
-      ownerId: 64,
-      adminId: 326,
-    });
+socket.emit('broad:channel:setAdmin', data);
+data: {
+  channelId: 543,
+  ownerId: 64,
+  adminId: 326,
+};
 ```
 
 # kickOutUser
-<h3 class='red'>HttpRequest</h3>
 
-```json
-{userId:5342}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  userId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
- client.to(`room:user:${userId}`).emit('single:channel:kickOut');
-    client
-      .to(`room:channel:5341`)
-      .emit('group:channel:kickOut', { userId:542 });
+socket.emit('single:channel:kickOut');
+
+socket.emit('group:channel:kickOut', data);
+data: {
+  userId: 542
+};
 ```
 
 # muteUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
-```json
-{muteUser: data
+```ts
+{
+  userId: 1
 }
 ```
 
-data: {
-  userId: 1234,
-  expiredAt: 543151234123
-}
-
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-server
-      .to(`room:channel:52`)
-      .emit('group:channel:muteUser', { muteUser: data});
+socket.emit('group:channel:muteUser', data);
+data: {
+  userId: 1,
+  expiredAt: 1668823412
+};
 ```
 
 
 # waitingGame
-<h3 class='red'>HttpRequest</h3>
 
-```json
-none
-```
-
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-server
-      .to(`room:channel:542`)
-      .emit('group:channel:getGameParticipants', {
-        matcher: [{userId:5342, isReady: false}, {userId:5342, isReady: true}, ...],
-        waiter: [34, 1325],
-      });
+socket.emit('group:channel:waitingGame', data);
+data: {
+  matcher: [
+    {
+      userId: 5342,
+      isReady: false
+    },
+    {
+      userId: 2222,
+      isReady: true
+     }
+  ],
+  waiter: [ 34, 1325 ]
+};
 ```
 
 
 # readyGame
-<h3 class='red'>HttpRequest</h3>
 
-```json
-none
-```
-
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-server
-        .to(`room:channel:523`)
-        .emit('group:channel:readyGame', {
-          matcher: [{userId:5342, isReady: false}, {userId:5342, isReady: true}, ...],
-        });
+socket.emit('group:channel:readyGame', data);
+data: {
+  matcher: [
+    {
+      userId: 5342,
+      isReady: false
+    },
+    {
+      userId: 5342,
+      isReady: true
+    }
+  ]
+};
 
-server
-      .to(`room:channel:523`)
-      .emit('group:channel:startGame', {
-        matcher: c[{userId:5342, isReady: flase}, {userId:5342, isReady: true}, ...],
-        score: 12,
-      });
-
+socket.emit('group:channel:startGame');
 ```
 
-# sendMSG
-<h3 class='red'>HttpRequest</h3>
+# leaveGame - 게임 대기열 빠져나가는 이벤트 (채널 나가는 이벤트 아님)
 
-```json
-{message:"would you join game next time"}
+<h3 class=' green'>Response</h3>
+
+```ts
+socket.emit('group:channel:leaveGame', data);
+data: {
+  matcher: [
+    {
+      userId: 5342,
+      isReady: false
+    },
+    {
+      userId: 2222,
+      isReady: true
+     }
+  ],
+  waiter: [ 34, 1325 ]
+}
 ```
 
-<h3 class=' green'> Response</h3>
+# endGame
+## 게임 이벤트 명세 나중에 게임 구현하면서 같이 작업
+
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  userId?:
+}
+```
+
+# sendMessage
+
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  message: '안녕하세요'
+}
+```
+
+<h3 class=' green'>Response</h3>
 
 ``` ts
-server
-      .to(`room:channel:32`)
-      .emit('group:channel:sendMsg', {
-        sourceId: 3452,
-        message: "would you join game next time",
-      });
+socket.emit('group:channel:sendMessage', data);
+data: {
+  sourceId: 3452,
+  message: '안녕하세요',
+}
 ```
 
-# sendDM
-<h3 class='red'>HttpRequest</h3>
+# sendDirectMessage
 
-```json
-{targetId: 5342, message: "would you join game next time"}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  targetId: 5342,
+  message: '안녕하세요'
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-server
-      .to([`room:user:5342`, `room:user:34`])
-      .emit('single:channel:sendDm', {
-        sourceId: 34,
-        targetId: 5432,
-        message: "would you join game next time",
-      });
+socket.emit('single:channel:sendDm', data);
+data: {
+  sourceId: 34,
+  targetId: 5432,
+  message: "안녕하세요",
+}
 ```
 
 # blockUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
-```json
-{targetId:5342}
+```ts
+{
+  userId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-client.emit('single:user:blockUser', { targetId:5342 });
+socket.emit('single:user:blockUser', data);
+data: {
+  userId: 5342
+};
 ```
 
 # followUser
-<h3 class='red'>HttpRequest</h3>
 
-```json
-{targetId: 5342}
+<h3 class='red'>Request</h3>
+
+```ts
+{
+  userId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-client.emit('single:user:followUser', {
-      sourceId: 52,
-    });
+socket.emit('single:user:followUser', data);
+data: {
+  userId: 52
+};
 
-client.to(`room:user:5342`).emit('followedUser', {
-  sourceId: 52,
-  targetId:5342,
-});
+socket.emit('followedUser', data);
+data: {
+  userId: 52,
+};
 ```
 
 # unfollowUser
-<h3 class='red'>HttpRequest</h3>
+<h3 class='red'>Request</h3>
 
-```json
-{targetId: 5342}
+```ts
+{
+  targetId: 5342
+}
 ```
 
-<h3 class=' green'> Response</h3>
+<h3 class=' green'>Response</h3>
 
 ``` ts
-client.emit('single:user:followUser', {
-      sourceId: 52,
-      targetId: 5342,
-    });
+socket.emit('single:user:followUser', data);
+data: {
+  userId: 52,
+}
 ```
