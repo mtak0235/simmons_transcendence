@@ -385,8 +385,30 @@ data: {
 socket.emit('group:channel:startGame');
 ```
 
+# leaveGame - 게임 대기열 빠져나가는 이벤트 (채널 나가는 이벤트 아님)
+
+<h3 class=' green'>Response</h3>
+
+```ts
+socket.emit('group:channel:leaveGame', data);
+data: {
+  matcher: [
+    {
+      userId: 5342,
+      isReady: false
+    },
+    {
+      userId: 2222,
+      isReady: true
+     }
+  ],
+  waiter: [ 34, 1325 ]
+}
+```
+
 # endGame
 ## 게임 이벤트 명세 나중에 게임 구현하면서 같이 작업
+
 <h3 class='red'>Request</h3>
 
 ```ts
