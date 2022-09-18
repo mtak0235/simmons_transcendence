@@ -16,7 +16,6 @@ import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
-  MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import { Server, Socket } from 'socket.io';
 import {
@@ -73,7 +72,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.changeStatus(client, 'online');
 
       client.join(`room:user:${client.user.userId}`);
-      client.emit('single:user:connected', { ...mainPageDto });
+      client.emit('single:user:connected', mainPageDto);
     } catch (err) {
       // todo: 예외 분기 정확히 작성해야 함
       if (err instanceof SocketException) {
@@ -111,7 +110,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
     this.userSocketService.switchStatus(client.user, status);
 
-    client.broadcast.emit('broad:user:changeStatus', { ...userInfo });
+    client.broadcast.emit('broad:user:changeStatus', userInfo);
   }
 
   // todo: delete: 개발용 코드
@@ -158,9 +157,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
     });
-    client.broadcast.emit('broad:channel:createdChannel', {
-      ...client.channel.channelPublic,
-    });
+    client.broadcast.emit(
+      'broad:channel:createdChannel',
+      client.channel.channelPublic,
+    );
   }
 
   @UseInterceptors(
@@ -180,9 +180,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       password,
     );
 
-    this.server.emit('broad:channel:updateChannel', {
-      channelPublic: client.channel.channelPublic,
-    });
+    this.server.emit(
+      'broad:channel:updateChannel',
+      client.channel.channelPublic,
+    );
   }
 
   @UseInterceptors(
@@ -239,9 +240,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(`room:channel:${client.channel.channelPublic.channelId}`)
         .emit('group:channel:outChannel', { userId: client.user.userId });
     } else {
-      this.server.emit('broad:channel:deleteChannel', {
-        channelId: client.channel.channelPublic.channelId,
-      });
+      this.server.emit(
+        'broad:channel:deleteChannel',
+        client.channel.channelPublic.channelId,
+      );
       this.channelSocketService.deleteChannel(
         client.channel.channelPublic.channelId,
       );
@@ -301,7 +303,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(`room:user:${userId}`).emit('single:channel:kickOut');
     client
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
-      .emit('group:channel:kickOut', { userId });
+      .emit('group:channel:kickOut', userId);
   }
 
   @UseInterceptors(
@@ -320,7 +322,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.server
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
-      .emit('group:channel:muteUser', { ...mutedUser });
+      .emit('group:channel:muteUser', mutedUser);
   }
 
   @UseInterceptors(new ChannelAuthInterceptor())
@@ -347,18 +349,17 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (readyCount !== 2) {
       this.server
         .to(`room:channel:${client.channel.channelPublic.channelId}`)
-        .emit('group:channel:readyGame', {
-          matcher: client.channel.channelPrivate.matcher,
-        });
+        .emit('group:channel:readyGame', client.channel.channelPrivate.matcher);
       return;
     }
     this.server
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
       .emit('group:channel:startGame');
 
-    this.server.emit('broad:channel:startGame', {
-      channelId: client.channel.channelPublic.channelId,
-    });
+    this.server.emit(
+      'broad:channel:startGame',
+      client.channel.channelPublic.channelId,
+    );
   }
 
   @UseInterceptors(new ChannelAuthInterceptor())
@@ -446,7 +447,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.user.follows.indexOf(userId) !== -1)
       await this.unfollowUser(client, userId);
 
-    client.emit('single:user:blockUser', { userId });
+    client.emit('single:user:blockUser', userId);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
@@ -457,11 +458,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.follow(client.user, userId);
 
-    client.emit('single:user:followUser', { userId });
+    client.emit('single:user:followUser', userId);
 
-    client
-      .to(`room:user:${userId}`)
-      .emit('followedUser', { userId: client.user.userId });
+    client.to(`room:user:${userId}`).emit('followedUser', client.user.userId);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
@@ -472,6 +471,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.unfollow(client.user, userId);
 
-    client.emit('single:user:unfollowUser', { userId });
+    client.emit('single:user:unfollowUser', userId);
   }
 }

@@ -31,7 +31,6 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
       error = {
         status: 500,
         message: 'Internal Server Error',
-        stack: exception.stack,
       };
     }
 
