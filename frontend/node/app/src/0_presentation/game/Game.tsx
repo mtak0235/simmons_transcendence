@@ -1,6 +1,7 @@
 import { Button, Col, Input, Layout, Radio, Row } from "antd";
 import styled from "styled-components";
 import useGameLogs from "../../1_application/game/useGame";
+import { SizedBox } from "../components/TSDesign";
 
 const { Sider } = Layout;
 
@@ -17,11 +18,6 @@ const TSRow = styled(Row)`
 `;
 
 const TSColumn = styled(Col)``;
-
-const SizedBox = styled.div`
-  width: ${(props: { width: String }) => props.width};
-  height: ${(props: { height: String }) => props.height};
-`;
 
 const MainSider = styled(Sider)`
   height: 100vh;
@@ -64,7 +60,7 @@ function Game() {
                 <TSColumn>
                   <TSRow>Player 1</TSRow>
                   <TSRow>{gameLogs.playerA}</TSRow>
-                  <SizedBox height="20px" />
+                  <SizedBox height={20} />
                   <Button type="primary" onClick={() => console.log("clicked")}>
                     Ready
                   </Button>
@@ -74,7 +70,7 @@ function Game() {
                 <TSColumn>
                   <TSRow>Player 2</TSRow>
                   <TSRow>{gameLogs.playerB}</TSRow>
-                  <SizedBox height="20px" />
+                  <SizedBox height={20} />
                   <Button type="primary" onClick={() => console.log("clicked")}>
                     Ready
                   </Button>

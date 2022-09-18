@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  BrowserRouter,
-} from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "@presentation/home/Home";
 import NotFound from "@presentation/pages/core/NotFound";
 import Header from "@presentation/components/Header";
@@ -16,7 +11,14 @@ import LoginHandler from "@presentation/components/LoginHandler";
 import Login from "@presentation/pages/Login";
 import ErrorHandler from "@presentation/components/ErrorHandler";
 import SocketHandler from "@presentation/components/SocketHandler";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { SOCKET_EVENT } from "./1_application/socket";
 import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
@@ -64,26 +66,28 @@ function App() {
   // );
 
   return (
-    <Router>
-      <LoginHandler>
-        <SocketHandler>
-          <Header />
-          <Wrapper>
-            {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
-            {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
-            {/*</div>*/}
-            <Routes>
-              <Route path="*" element={<NotFound />} />
-              <Route path="/" element={<Home />} />
-              <Route path="/game/:id" element={<Game />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/test1" element={<Test1 />} />
-              <Route path="/test2" element={<Test2 />} />
-            </Routes>
-          </Wrapper>
-        </SocketHandler>
-      </LoginHandler>
-    </Router>
+    <BrowserRouter>
+      <Suspense fallback={<h2>Loading posts...</h2>}>
+        {/* <LoginHandler> */}
+        {/* <SocketHandler> */}
+        <Header />
+        <Wrapper>
+          {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
+          {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
+          {/*</div>*/}
+          <Routes>
+            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/game/:id" element={<Game />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/test1" element={<Test1 />} />
+            <Route path="/test2" element={<Test2 />} />
+          </Routes>
+        </Wrapper>
+        {/* </SocketHandler>
+      </LoginHandler> */}
+      </Suspense>
+    </BrowserRouter>
   );
 }
 

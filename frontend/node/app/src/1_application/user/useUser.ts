@@ -22,7 +22,7 @@ export const userInfoSelector = selectorFamily<User, UserInfoSelectorParams>({
 
 const repo = () => Get.get<IUserRepository>("IUserRepository");
 
-// Methods
+// Methods : read
 export const useUserInfo = (id: number) =>
   useRecoilValue(userInfoSelector({ id: id, repo: repo() }));
 
@@ -30,4 +30,3 @@ export const useLogin = async () => await repo().login();
 
 class UserController {}
 export default UserController;
-

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import Get from "@root/lib/di/get";
 import ISocket from "@domain/socket/ISocket";
 import { MainPageDto } from "@presentation/components/SocketDto";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { getLoginState } from "@presentation/components/LoginHandler";
 
 interface SocketHandlerProps {
@@ -12,6 +12,8 @@ interface SocketHandlerProps {
 const SocketHandler = ({ children }: SocketHandlerProps) => {
   const socket: ISocket<any, any> = Get.get("ISocket");
   const loggedIn = useRecoilValue(getLoginState);
+  const [channels, setChannels] = useRecoilState(testFunc);
+  const channel = useRecoilValue(getTestFunc);
 
   // todo: update: socket response data type to Dto
   useEffect(() => {
@@ -24,6 +26,7 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
         // todo: Main Page
         socket.on("single:user:connected", (data: MainPageDto) => {
           console.log(data);
+          setChannels(data.channels);
         });
         // todo: Main Page
         socket.on("broad:user:connected", (data: any) => {
