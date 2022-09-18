@@ -158,9 +158,7 @@ data: {
 }
 
 socket.emit('broad:channel:createdChannel', data);
-data: {
-  ...channelPublicDto
-};
+data = channelPublicDto;
 ```
 
 # modifyGame
@@ -182,10 +180,7 @@ data: {
 
 ```ts
 socket.emit('broad:channel:updateChannel', data);
-data: {
-  channelPublic: channelPublicDto,
-  passwordChanged: true | false // 이거 굳이 필요한가?
-};
+data = channelPublicDto;
 ```
 
 # inChannel
@@ -216,9 +211,7 @@ data: {
 };
 
 socket.emit('group:channel:inChannel', data);
-data: {
-  userId: 1
-};
+data = 1;
 ```
 
 # outChannel
@@ -234,9 +227,7 @@ data: {
 };
 
 socket.emit('single:channel:outChannel', data);
-data: {
-  channelId: 13432,
-};
+data = 13432;
 
 // Admin 또는 Owner 변경 시 emit 될 이벤트
 socket.emit('broad:channel:setAdmin', data);
@@ -247,15 +238,11 @@ data: {
 };
 
 socket.emit('group:channel:outChannel', data);
-data: {
-  userId: 123
-};
+data = 123;
 
 // 채널에 모든 유저가 나간 경우 emit 될 이벤트
 socket.emit('broad:channel:deleteChannel', data);
-data: {
-  channelId: 10
-};
+data = 10;
 ```
 
 # inviteUser
@@ -316,9 +303,7 @@ data: {
 socket.emit('single:channel:kickOut');
 
 socket.emit('group:channel:kickOut', data);
-data: {
-  userId: 542
-};
+data = 542;
 ```
 
 # muteUser
@@ -472,9 +457,7 @@ data: {
 
 ``` ts
 socket.emit('single:user:blockUser', data);
-data: {
-  userId: 5342
-};
+data = 5342;
 ```
 
 # followUser
@@ -491,14 +474,10 @@ data: {
 
 ``` ts
 socket.emit('single:user:followUser', data);
-data: {
-  userId: 52
-};
+data = 52;
 
 socket.emit('followedUser', data);
-data: {
-  userId: 52,
-};
+data = 52;
 ```
 
 # unfollowUser
@@ -514,7 +493,5 @@ data: {
 
 ``` ts
 socket.emit('single:user:followUser', data);
-data: {
-  userId: 52,
-}
+data = 52;
 ```
