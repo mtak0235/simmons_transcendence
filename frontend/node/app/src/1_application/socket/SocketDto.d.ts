@@ -69,7 +69,15 @@ declare module "SocketDto" {
       invited: number[];
     }
 
-    interface ConnectedAt {
+    interface ChannelMessage {
+      sourceId: number;
+      targetId?: number;
+      username: string;
+      message: string;
+      time: string;
+    }
+
+    interface Connection {
       me: User;
       users: UserInfo[];
       channels: ChannelPublic[];

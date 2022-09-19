@@ -20,10 +20,10 @@ export class CustomError {
 
 const dependencyInject = () => {
   Get.put("IHttp", new Http());
+  Get.put("ISocket", new Socket());
   Get.put("IPageRepository", new PageRepository());
   Get.put("IGameLogRepository", new GameLogRepository());
   Get.put("IUserRepository", new UserRepository());
-  Get.put("ISocket", new Socket());
   // Get.put("CustomError", new CustomError());
 };
 

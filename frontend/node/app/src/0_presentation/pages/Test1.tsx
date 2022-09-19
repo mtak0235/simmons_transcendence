@@ -9,13 +9,14 @@ import {
 import Get from "@root/lib/di/get";
 import IUserRepository from "@domain/user/IUserRepository";
 import UserRepository from "@infrastructure/user/UserRepository";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IHttp } from "@domain/http/IHttp";
 import { Cookies } from "react-cookie";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
 import { setError } from "@presentation/components/ErrorHandler";
 import ISocket from "@domain/socket/ISocket";
+import { RecoilAtom } from "@application/socket/RecoilDto";
 
 const cookies = new Cookies();
 
@@ -39,7 +40,7 @@ const testRecoilAtom = atom<testRecoilInterface[]>({
 const testRecoilSelector = selector({
   key: "testRecoilSelector",
   get: ({ get }) => get(testRecoilAtom),
-  // set: ({ set }, value) => set(testRecoilAtom, value),
+  set: (param) => param.set(testRecoilAtom, param["value"]),
 });
 
 const textState = atom<number>({
@@ -47,8 +48,25 @@ const textState = atom<number>({
   default: 0,
 });
 
+const channelPublicSelector = selector({
+  key: "selector:single:channelPublic",
+  get: ({ get }) => get(RecoilAtom.channel.me.channelPublic),
+});
+
+const channelPrivateSelector = selector({
+  key: "selector:single:channelPrivate",
+  get: ({ get }) => get(RecoilAtom.channel.me.channelPrivate),
+});
+
+const userSelector = selector({
+  key: "selector:single:user",
+  get: ({ get }) => get(RecoilAtom.user.me),
+});
+
 const Test1 = () => {
   const repo: IUserRepository = Get.get("IUserRepository");
+  const conn: IHttp = Get.get("IHttp");
+  const socket: ISocket<any, any> = Get.get("ISocket");
 
   // const [cls, setCls] = useRecoilState(classState());
   const [code, setCode] = useState("");
@@ -59,8 +77,21 @@ const Test1 = () => {
   const [testRecoil, setTestRecoil] = useRecoilState(testRecoilAtom);
   // const []
   const [num, setNum] = useState(0);
-  const conn: IHttp = Get.get("IHttp");
-  const socket: ISocket<any, any> = Get.get("ISocket");
+  const channelPublic = useRecoilValue(channelPublicSelector);
+  const channelPrivate = useRecoilValue(channelPrivateSelector);
+  const user = useRecoilValue(userSelector);
+
+  useEffect(() => {
+    console.log(channelPublic);
+  }, [channelPublic]);
+
+  useEffect(() => {
+    console.log(channelPrivate);
+  }, [channelPrivate]);
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   // const count = useRecoilValue(repo.charCountState());
 
@@ -99,6 +130,22 @@ const Test1 = () => {
     console.log(testRecoil);
   };
 
+  const test4 = () => {
+    console.log("hello");
+    const channel = {
+      ownerId: user.userId,
+      channelName: "성수와 겜한판ㅋ",
+      accessLayer: "public",
+      score: 11,
+    };
+    socket.emit("createChannel", { channel });
+  };
+
+  const test5 = () => {
+    socket.emit("test1");
+  };
+
+  socket.on("test1", (data: any) => console.log(data));
   // useEffect(() => {
   //   // Get.put("number", number);
   // }, [number]);
@@ -135,6 +182,8 @@ const Test1 = () => {
       </div>
       <div>
         <button onClick={test3}>소켓 연결</button>
+        <button onClick={test4}>방 생성</button>
+        <button onClick={test5}>소켓 테스트</button>
       </div>
     </>
   );

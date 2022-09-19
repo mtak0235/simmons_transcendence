@@ -16,21 +16,18 @@ class Socket<
   EmitEvents extends EventsMap,
   ReservedEvents extends EventsMap = {}
 > extends ISocket<any, any> {
-  private readonly http: IHttp = Get.get("IHttp");
   private readonly cookies = new Cookies();
   socket?: io.Socket;
 
-  public async connect(): Promise<void> {
-    if (!(await this.http.checkToken())) {
-      await this.http.refreshToken();
-    }
-
+  public async connect() {
     this.socket = io.connect(process.env.REACT_APP_SOCKET_URL, {
       withCredentials: true,
       extraHeaders: {
         access_token: this.cookies.get("accessToken"),
       },
     });
+
+    return true;
   }
 
   public on<Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>>(
