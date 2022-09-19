@@ -27,10 +27,10 @@ export class ChannelAuthInterceptor implements NestInterceptor {
   // todo: 게임 중인 사람인지 확인하는 flag 세워야함
 
   constructor(param: ChannelAuthInterceptorParam = {}) {
-    this.hasChannel = param.hasChannel ? param.hasChannel : true;
-    this.admin = param.admin ? param.admin : false;
-    this.owner = param.owner ? param.owner : false;
-    this.matcher = param.matcher ? param.matcher : false;
+    this.hasChannel = param.hasChannel !== undefined ? param.hasChannel : true;
+    this.admin = param.admin !== undefined ? param.admin : false;
+    this.owner = param.owner !== undefined ? param.owner : false;
+    this.matcher = param.matcher !== undefined ? param.matcher : false;
   }
 
   async intercept(
@@ -47,20 +47,22 @@ export class ChannelAuthInterceptor implements NestInterceptor {
     }
 
     if (
-      client.channel.channelPublic.onGame ||
-      (this.admin &&
-        client.channel.channelPublic.adminId !== client.user.userId &&
-        client.channel.channelPublic.ownerId !== client.user.userId) ||
-      (this.owner &&
-        client.channel.channelPublic.ownerId !== client.user.userId) ||
-      (this.matcher &&
-        [
-          ...client.channel.channelPrivate.matcher.filter(
-            (user) => user.userId === client.user.userId,
-          ),
-        ].length !== 1)
-    )
+      this.hasChannel &&
+      (client.channel.channelPublic.onGame ||
+        (this.admin &&
+          client.channel.channelPublic.adminId !== client.user.userId &&
+          client.channel.channelPublic.ownerId !== client.user.userId) ||
+        (this.owner &&
+          client.channel.channelPublic.ownerId !== client.user.userId) ||
+        (this.matcher &&
+          [
+            ...client.channel.channelPrivate.matcher.filter(
+              (user) => user.userId === client.user.userId,
+            ),
+          ].length !== 1))
+    ) {
       throw new ForbiddenException();
+    }
 
     return next.handle();
   }

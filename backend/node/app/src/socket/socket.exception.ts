@@ -15,12 +15,14 @@ export class SocketException extends WsException {
   }
 }
 
+// todo: Custom Exception 만들자
 @Catch()
 export class SocketExceptionFilter extends BaseWsExceptionFilter {
   catch(exception: HttpException | any, host: ArgumentsHost) {
     const client: ClientInstance = host.switchToWs().getClient();
     let error: ErrorDto;
 
+    console.log(exception);
     if (exception instanceof HttpException) {
       error = {
         status: exception.getStatus(),
@@ -34,6 +36,6 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
       };
     }
 
-    client.emit('customError', error);
+    client.emit('single:user:error', error);
   }
 }

@@ -63,6 +63,7 @@ export class MainSocketService {
   }
 
   setSocketInstance(userId: number, client: ClientInstance): void {
+    if (this.mainSocketStore.has(userId)) return;
     this.mainSocketStore.set(userId, client);
   }
 
@@ -72,7 +73,7 @@ export class MainSocketService {
   }
 
   deleteSocketInstance(userId: number): void {
-    if (!this.mainSocketStore.has(userId)) throw new NotFoundException();
+    if (!this.mainSocketStore.has(userId)) return;
     this.mainSocketStore.delete(userId);
   }
 }

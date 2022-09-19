@@ -69,7 +69,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       client.user = mainPageDto.me;
       this.mainSocketService.setSocketInstance(userInfo.id, client);
-      this.changeStatus(client, 'online');
 
       client.join(`room:user:${client.user.userId}`);
       client.emit('single:user:connected', mainPageDto);
