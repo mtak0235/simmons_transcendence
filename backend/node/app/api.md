@@ -82,7 +82,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('changeStatue', data);
+data: {
   status: 'online' | 'offline' | 'watchingGame' | 'waitingGame' | 'inGame'
 }
 ```
@@ -104,7 +105,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('createChannel', data);
+data: {
   channel: {
     ownerId: 1234,
     channelName: "드가자",
@@ -148,7 +150,7 @@ socket.emit('broad:user:changeStauts', data);
 data: {
   userId: 1,
   username: 'seonkim',
-  status: 'online'
+  status: 'watchingGame'
 }
 
 socket.emit('single:channel:createChannel', data);
@@ -166,13 +168,14 @@ data = channelPublicDto;
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('modifyChannel', data);
+data: {
   channel: {
     channelName?: '드가자',
-    password?: 'vdasdf',
     accessLayer?: 'public' | 'private' | 'protected',
     score?: 12
-  }
+  },
+  password?: 'asdfasd';
 }
 ```
 
@@ -188,7 +191,8 @@ data = channelPublicDto;
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('inChannel', data);
+data: {
   channelId: 432,
   password?: "addc"
 }
@@ -201,7 +205,7 @@ socket.emit('broad:user:changeStauts', data);
 data: {
   userId: 1,
   username: 'seonkim',
-  status: 'watching'
+  status: 'watchingGame'
 };
 
 socket.emit('single:channel:inChannel', data);
@@ -216,7 +220,13 @@ data = 1;
 
 # outChannel
 
-<h3 class=' green'>Response</h3>
+<h3 class='red'>Request</h3>
+
+```ts
+socket.on('outChannel');
+```
+
+<h3 class='green'>Response</h3>
 
 ``` ts
 socket.emit('broad:user:changeStauts', data);
@@ -226,8 +236,7 @@ data: {
   status: 'online'
 };
 
-socket.emit('single:channel:outChannel', data);
-data = 13432;
+socket.emit('single:channel:outChannel');
 
 // Admin 또는 Owner 변경 시 emit 될 이벤트
 socket.emit('broad:channel:setAdmin', data);
@@ -250,9 +259,10 @@ data = 10;
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('inviteUser', data);
+data: {
   userId: 5342
-}
+};
 ```
 
 <h3 class=' green'>Response</h3>
@@ -271,7 +281,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('setAdmin', data);
+data: {
   userId: 5342
 }
 ```
@@ -292,7 +303,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('kickOutUser', data);
+data: {
   userId: 5342
 }
 ```
@@ -310,7 +322,8 @@ data = 542;
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('muteUser', data);
+data: {
   userId: 1
 }
 ```
@@ -327,6 +340,12 @@ data: {
 
 
 # waitingGame
+
+<h3 class='red'>Request</h3>
+
+```ts
+socket.on('waitingGame');
+```
 
 <h3 class=' green'>Response</h3>
 
@@ -350,6 +369,13 @@ data: {
 
 # readyGame
 
+
+<h3 class='red'>Request</h3>
+
+```ts
+socket.on('readyGame');
+```
+
 <h3 class=' green'>Response</h3>
 
 ``` ts
@@ -371,6 +397,13 @@ socket.emit('group:channel:startGame');
 ```
 
 # leaveGame - 게임 대기열 빠져나가는 이벤트 (채널 나가는 이벤트 아님)
+
+
+<h3 class='red'>Request</h3>
+
+```ts
+socket.on('leaveGame');
+```
 
 <h3 class=' green'>Response</h3>
 
@@ -407,7 +440,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('sendMessage', data);
+data: {
   message: '안녕하세요'
 }
 ```
@@ -427,7 +461,8 @@ data: {
 <h3 class='red'>Request</h3>
 
 ```ts
-{
+socket.on('sendDirectMessage', data);
+data: {
   targetId: 5342,
   message: '안녕하세요'
 }
