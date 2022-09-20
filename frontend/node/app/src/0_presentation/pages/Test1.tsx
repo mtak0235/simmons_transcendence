@@ -50,12 +50,12 @@ const textState = atom<number>({
 
 const channelPublicSelector = selector({
   key: "selector:single:channelPublic",
-  get: ({ get }) => get(RecoilAtom.channel.me.channelPublic),
+  get: ({ get }) => get(RecoilAtom.channel.channelPublic),
 });
 
 const channelPrivateSelector = selector({
   key: "selector:single:channelPrivate",
-  get: ({ get }) => get(RecoilAtom.channel.me.channelPrivate),
+  get: ({ get }) => get(RecoilAtom.channel.channelPrivate),
 });
 
 const userSelector = selector({

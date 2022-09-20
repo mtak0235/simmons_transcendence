@@ -16,6 +16,8 @@ declare module "SocketDto" {
       PROTECTED: "protected",
     } as const;
 
+    const MESSAGE_LAYER = {};
+
     type STATUS_LAYER = typeof STATUS_LAYER[keyof typeof STATUS_LAYER];
     type ACCESS_LAYER = typeof ACCESS_LAYER[keyof typeof ACCESS_LAYER];
 

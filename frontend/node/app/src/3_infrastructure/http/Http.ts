@@ -84,6 +84,13 @@ class Http extends IHttp {
     // if (response instanceof AxiosError) throw response; // todo: error handling
   }
 
+  public clearToken() {
+    this.cookies.remove("accessToken");
+    this.cookies.remove("refreshToken");
+    this.cookies.remove("sign");
+    this.cookies.remove("code");
+  }
+
   // todo: update: param type to userAccessDto
   // todo: multipart-form/data 처리
   /*

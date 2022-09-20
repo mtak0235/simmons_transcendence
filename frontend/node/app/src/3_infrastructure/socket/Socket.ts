@@ -30,6 +30,10 @@ class Socket<
     return true;
   }
 
+  public disconnect(): void {
+    this.socket.disconnect();
+  }
+
   public on<Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>>(
     ev: string,
     listener: ReservedOrUserListener<ReservedEvents, ListenEvents, Ev>

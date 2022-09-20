@@ -56,12 +56,12 @@ const refreshToken = async () => {
 
 const SocketHandler = ({ children }: SocketHandlerProps) => {
   const socket: ISocket<any, any> = Get.get("ISocket");
-  const {} = useAsync({
+  const http: IHttp = Get.get("IHttp");
+  const { error } = useAsync({
     promiseFn: refreshToken,
   });
 
   const me = useRecoilValue(connect);
-  // console.log(data, error, isLoading);
 
   useEffect(() => {
     socket.connect();
@@ -77,6 +77,13 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
   useEffect(() => {
     console.log(me);
   }, [me]);
+
+  if (error) {
+    console.log(error);
+    socket.disconnect();
+    http.clearToken();
+    window.location.href = process.env.REACT_APP_BASE_URL;
+  }
 
   return <>{children}</>;
 };

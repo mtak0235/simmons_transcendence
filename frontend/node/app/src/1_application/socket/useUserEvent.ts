@@ -22,9 +22,9 @@ const useUserEvent = () => {
   const handleDisconnect = () => {
     useResetRecoilState(RecoilAtom.user.me);
     useResetRecoilState(RecoilAtom.user.users);
-    useResetRecoilState(RecoilAtom.channel.me.channelPublic);
-    useResetRecoilState(RecoilAtom.channel.me.channelPrivate);
-    useResetRecoilState(RecoilAtom.channel.me.message);
+    useResetRecoilState(RecoilAtom.channel.channelPublic);
+    useResetRecoilState(RecoilAtom.channel.channelPrivate);
+    useResetRecoilState(RecoilAtom.channel.message);
     useResetRecoilState(RecoilAtom.channel.channels);
     useResetRecoilState(RecoilAtom.error);
     useResetRecoilState(RecoilAtom.alarm);
@@ -64,10 +64,17 @@ const useUserEvent = () => {
       });
     } else {
       setUsers((curr) => {
-        return curr.map((user) => {
-          if (user.userId === data.userId) user.status = data.status;
-          return user;
-        });
+        if (curr.findIndex((user) => user.userId === data.userId) === -1) {
+          curr.push(data);
+        } else {
+          curr.map((user, idx) => {
+            if (user.userId === data.userId) {
+              if (data.status === "offline") curr.slice(idx, 1);
+              else user.status = data.status;
+            }
+          });
+        }
+        return curr;
       });
     }
   };

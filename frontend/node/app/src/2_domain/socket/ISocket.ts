@@ -16,6 +16,8 @@ abstract class ISocket<
 
   public abstract connect(): void;
 
+  public abstract disconnect(): void;
+
   public abstract on<
     Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>
   >(

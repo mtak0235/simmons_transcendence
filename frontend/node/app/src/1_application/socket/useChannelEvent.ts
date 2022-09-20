@@ -19,13 +19,13 @@ const useChannelEvent = () => {
   const socket: ISocket<any, any> = Get.get("ISocket");
   const [users, setUsers] = useRecoilState(RecoilAtom.user.users);
   const [channelPublic, setChannelPublic] = useRecoilState(
-    RecoilAtom.channel.me.channelPublic
+    RecoilAtom.channel.channelPublic
   );
   const [, setChannelPrivate] = useRecoilState(
-    RecoilAtom.channel.me.channelPrivate
+    RecoilAtom.channel.channelPrivate
   );
   const [, setAlarm] = useRecoilState(RecoilAtom.alarm);
-  const [, setMessage] = useRecoilState(RecoilAtom.channel.me.message);
+  const [, setMessage] = useRecoilState(RecoilAtom.channel.message);
   const [, setChannels] = useRecoilState(RecoilAtom.channel.channels);
 
   const handleSingleCreateChannel = (data: SocketDto.ChannelSingle) => {
@@ -40,9 +40,10 @@ const useChannelEvent = () => {
   };
 
   const handleSingleOutChannel = () => {
-    useResetRecoilState(RecoilAtom.channel.me.channelPublic);
-    useResetRecoilState(RecoilAtom.channel.me.channelPrivate);
-    useResetRecoilState(RecoilAtom.channel.me.message);
+    useResetRecoilState(RecoilAtom.channel.channelPublic);
+    useResetRecoilState(RecoilAtom.channel.channelPrivate);
+    useResetRecoilState(RecoilAtom.channel.message);
+    // todo: 메인 페이지 리다이렉션 필요
   };
 
   const handleSingleInviteUser = (data: SocketDto.InviteUser) => {
@@ -87,6 +88,7 @@ const useChannelEvent = () => {
 
     setMessage({
       sourceId: data,
+      targetId: undefined,
       username: "System",
       message: `${sourceUser.username}님이 강제퇴장 되었습니다.`,
       time: getTime(),
@@ -133,6 +135,7 @@ const useChannelEvent = () => {
 
     setMessage({
       sourceId: sourceUser.userId,
+      targetId: undefined,
       username: sourceUser.username,
       message: data.message,
       time: getTime(),
