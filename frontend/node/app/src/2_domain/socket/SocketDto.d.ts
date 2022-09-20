@@ -1,5 +1,3 @@
-// todo: Domain으로 뺄 코드들 들어있는 공간임
-
 declare module "SocketDto" {
   namespace SocketDto {
     const STATUS_LAYER = {
@@ -16,6 +14,7 @@ declare module "SocketDto" {
       PROTECTED: "protected",
     } as const;
 
+    // todo: message type setting
     const MESSAGE_LAYER = {};
 
     type STATUS_LAYER = typeof STATUS_LAYER[keyof typeof STATUS_LAYER];
@@ -123,5 +122,6 @@ declare module "SocketDto" {
       ownerId: number;
     }
   }
+
   export default SocketDto;
 }

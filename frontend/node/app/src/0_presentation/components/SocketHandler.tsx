@@ -1,23 +1,19 @@
 import React, { useEffect } from "react";
-import Get from "@root/lib/di/get";
-import ISocket from "@domain/socket/ISocket";
-import SocketDto from "SocketDto";
-import {
-  selector,
-  useRecoilState,
-  useRecoilValue,
-  useResetRecoilState,
-} from "recoil";
-import { getLoginState } from "@presentation/components/LoginHandler";
-import useUserEvent from "@application/socket/useUserEvent";
-import { RecoilAtom } from "@application/socket/RecoilDto";
+import { selector, useRecoilValue } from "recoil";
 import { useAsync } from "react-async";
-import { IHttp } from "@domain/http/IHttp";
 import { Cookies } from "react-cookie";
 import axios, { AxiosError } from "axios";
+
+import Get from "@root/lib/di/get";
+import ISocket from "@domain/socket/ISocket";
+import useUserEvent from "@application/socket/useUserEvent";
+import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import HttpToken from "@domain/http/HttpToken";
 import useChannelEvent from "@application/socket/useChannelEvent";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
+import { Simulate } from "react-dom/test-utils";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 interface SocketHandlerProps {
   children: React.ReactNode;
@@ -40,18 +36,24 @@ const refreshToken = async () => {
     },
   });
 
-  const response = await axios({
+  await axios({
     url: process.env.REACT_APP_API_URL + request.path,
     method: request.method,
     headers: request.headers,
     data: request.data,
     params: request.params,
     withCredentials: true,
-  });
-
-  const httpToken = new HttpToken(response.data.token);
-  for (const key in httpToken)
-    if (httpToken[key].length) cookies.set(key, httpToken[key]);
+  })
+    .then((response) => {
+      const httpToken = new HttpToken(response.data.token);
+      for (const key in httpToken)
+        if (httpToken[key].length) cookies.set(key, httpToken[key]);
+    })
+    .catch(() => {
+      const http: IHttp = Get.get("IHttp");
+      http.clearToken();
+      window.location.href = process.env.REACT_APP_BASE_URL;
+    });
 };
 
 const SocketHandler = ({ children }: SocketHandlerProps) => {
@@ -61,12 +63,13 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
     promiseFn: refreshToken,
   });
 
-  const me = useRecoilValue(connect);
+  const me = useRecoilValue(RecoilSelector.user.me);
 
   useEffect(() => {
     socket.connect();
 
     return () => {
+      console.log("hello");
       socket.reRender();
     };
   }, []);

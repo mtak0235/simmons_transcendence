@@ -14,9 +14,8 @@ import { IHttp } from "@domain/http/IHttp";
 import { Cookies } from "react-cookie";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
-import { setError } from "@presentation/components/ErrorHandler";
 import ISocket from "@domain/socket/ISocket";
-import { RecoilAtom } from "@application/socket/RecoilDto";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 
 const cookies = new Cookies();
 
@@ -73,7 +72,6 @@ const Test1 = () => {
   const [number, setNumber] = useRecoilState(textState);
   const [number1, setNumber1] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
-  const [errorState, setErrorState] = useRecoilState(setError);
   const [testRecoil, setTestRecoil] = useRecoilState(testRecoilAtom);
   // const []
   const [num, setNum] = useState(0);

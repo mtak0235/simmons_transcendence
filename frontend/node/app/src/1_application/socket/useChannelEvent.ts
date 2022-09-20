@@ -1,9 +1,10 @@
-import SocketDto from "SocketDto";
-import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
-import { RecoilAtom } from "./RecoilDto";
 import { useEffect } from "react";
+import { useRecoilState, useResetRecoilState } from "recoil";
+
+import SocketDto from "SocketDto";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 
 export const getTime = () => {
   const date = new Date();
