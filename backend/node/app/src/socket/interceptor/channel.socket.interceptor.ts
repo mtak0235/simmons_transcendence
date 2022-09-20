@@ -81,7 +81,7 @@ export class ChannelMessageInterceptor implements NestInterceptor {
         if (user.expiredAt >= Math.floor(new Date().getTime() / 1000)) {
           throw new ForbiddenException();
         } else {
-          client.channel.mutedUsers.slice(idx, 1);
+          client.channel.mutedUsers.splice(idx, 1);
         }
       }
     });

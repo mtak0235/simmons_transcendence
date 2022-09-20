@@ -19,6 +19,7 @@ import {
 } from '@socket/dto/channel.socket.dto';
 import { Server, Socket } from 'socket.io';
 import {
+  HttpException,
   ParseIntPipe,
   UseFilters,
   UseInterceptors,
@@ -76,13 +77,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('single:user:connected', mainPageDto);
     } catch (err) {
       // todo: 예외 분기 정확히 작성해야 함
-      if (err instanceof SocketException) {
-        client.emit('error', err);
+      if (err instanceof HttpException) {
+        client.emit(
+          'error',
+          new SocketException(err.getStatus(), err.message, err.stack),
+        );
       } else {
-        client.emit('single:user:error', {
-          error: 'server',
-          message: 'unKnown',
-        });
+        client.emit(
+          'single:user:error',
+          new SocketException(500, 'Internal Server Error'),
+        );
       }
       client.disconnect();
     }
@@ -131,6 +135,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('test1')
   test1(@ConnectedSocket() client: ClientInstance) {
     client.emit('test1', { text: 'hello world!!' });
+  }
+
+  @SubscribeMessage('test2')
+  test2(@ConnectedSocket() client: ClientInstance) {
+    client.emit('test2', 'hello world!!');
   }
 
   /* ============================================= */

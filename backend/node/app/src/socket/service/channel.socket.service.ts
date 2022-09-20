@@ -128,12 +128,12 @@ export class ChannelSocketService {
   }
 
   leaveGame(channel: ChannelDto, userId: number) {
-    channel.channelPrivate.matcher.map((user, idx) => {
-      if (user.userId === userId) channel.channelPrivate.matcher.slice(idx, 1);
-    });
-    channel.channelPrivate.waiter.map((waiterId, idx) => {
-      if (waiterId === userId) channel.channelPrivate.waiter.slice(idx, 1);
-    });
+    channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
+      (user) => user.userId !== userId,
+    );
+    channel.channelPrivate.waiter = channel.channelPrivate.waiter.filter(
+      (id) => id !== userId,
+    );
   }
 
   // todo: 게임 개발되면서 사용자 나가는 것에 대한 예외처리 해야 함 (ex. 게임 중 나가면 다른 플레이어가 승리하며 게임 종료 된다던지..)

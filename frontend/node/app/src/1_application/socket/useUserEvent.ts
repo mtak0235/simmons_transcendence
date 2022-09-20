@@ -4,7 +4,7 @@ import { useRecoilState, useResetRecoilState } from "recoil";
 import SocketDto from "SocketDto";
 import Get from "@root/lib/di/get";
 import ISocket from "@domain/socket/ISocket";
-import { RecoilAtom } from "@application/socket/RecoilDto";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 
 const useUserEvent = () => {
   const socket: ISocket<any, any> = Get.get("ISocket");
@@ -69,7 +69,7 @@ const useUserEvent = () => {
         } else {
           curr.map((user, idx) => {
             if (user.userId === data.userId) {
-              if (data.status === "offline") curr.slice(idx, 1);
+              if (data.status === "offline") curr.splice(idx, 1);
               else user.status = data.status;
             }
           });

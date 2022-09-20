@@ -61,7 +61,7 @@ export class UserSocketStore {
   }
 
   deleteFollow(follows: number[], targetId: number) {
-    follows.slice(follows.indexOf(targetId));
+    follows.splice(follows.indexOf(targetId), 1);
   }
 
   isFollowing(follows: number[], targetId: number) {
@@ -75,6 +75,6 @@ export class UserSocketStore {
   }
 
   deleteBlock(blocks: number[], targetId: number) {
-    blocks.slice(blocks.indexOf(targetId));
+    blocks.splice(blocks.indexOf(targetId), 1);
   }
 }
