@@ -70,6 +70,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.user = mainPageDto.me;
       this.mainSocketService.setSocketInstance(userInfo.id, client);
 
+      this.changeStatus(client, 'online');
+
       client.join(`room:user:${client.user.userId}`);
       client.emit('single:user:connected', mainPageDto);
     } catch (err) {

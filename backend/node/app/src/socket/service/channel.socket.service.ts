@@ -136,6 +136,7 @@ export class ChannelSocketService {
     });
   }
 
+  // todo: 게임 개발되면서 사용자 나가는 것에 대한 예외처리 해야 함 (ex. 게임 중 나가면 다른 플레이어가 승리하며 게임 종료 된다던지..)
   outChannel(user: UserDto, channel: ChannelDto) {
     const result = {
       userExist: true,
