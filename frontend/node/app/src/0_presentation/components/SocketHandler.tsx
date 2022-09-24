@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { selector, useRecoilValue } from "recoil";
+import { atom, selector, useRecoilState, useRecoilValue } from "recoil";
 import { useAsync } from "react-async";
 import axios, { AxiosError } from "axios";
 
@@ -13,16 +13,41 @@ import useChannelEvent from "@application/socket/useChannelEvent";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 import { Simulate } from "react-dom/test-utils";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import SocketDto from "SocketDto";
+import { v1 } from "uuid";
+import { recoilPersist } from "recoil-persist";
+import { setRecoil } from "recoil-nexus";
+
+const socketFlag = true;
 
 interface SocketHandlerProps {
   children: React.ReactNode;
 }
 
-const connect = selector({
-  key: "ddd",
-  get: ({ get }) => {
-    return get(RecoilAtom.user.me);
+const { persistAtom } = recoilPersist({
+  key: "something",
+});
+
+export const userMe = atom<SocketDto.User>({
+  key: `broad:me/${v1()}`,
+  default: {
+    userId: 0,
+    username: "",
+    status: "offline",
+    follows: [],
+    blocks: [],
   },
+});
+
+export const recoilUsers = atom<SocketDto.UserInfo[]>({
+  key: `broad:users1/${v1()}`,
+  default: [],
+  // effects_UNSTABLE: [persistAtom],
+});
+
+export const recoilSelectUsers = selector({
+  key: `test/selector/${v1()}`,
+  get: ({ get }) => get(recoilUsers),
 });
 
 const refreshToken = async () => {
@@ -60,26 +85,36 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
   const { error } = useAsync({
     promiseFn: refreshToken,
   });
+  // const [users, setUsers] = useRecoilState(recoilUsers);
+  // const [me, setMe] = useRecoilState(userMe);
 
-
-  const me = useRecoilValue(RecoilSelector.user.me);
+  // const me = useRecoilValue(RecoilSelector.user.me);
+  // const users = useRecoilValue(RecoilSelector.user.users);
 
   useEffect(() => {
-    socket.connect();
-    console.log(socket);
+    console.log(socket.connected());
+    if (!socket.connected()) socket.connect();
 
-    return () => {
-      console.log("hello");
-      socket.reRender();
-    };
-  }, []);
+    // socket.on("broad:user:changeStatus", (data) => {
+    //   setRecoil(recoilUsers, (currVal) => {
+    //     console.log(currVal);
+    //     currVal.push(data);
+    //     return currVal;
+    //   });
+    // });
+
+    // return () => {
+    //   console.log("hello");
+    //   socket.reRender();
+    // };
+  }, [socket]);
 
   useUserEvent();
   useChannelEvent();
 
-  useEffect(() => {
-    console.log(me);
-  }, [me]);
+  // useEffect(() => {
+  //   console.log(me);
+  // }, [me]);
 
   if (error) {
     console.log(error);

@@ -6,12 +6,10 @@ import Game from "@root/0_presentation/game/Game";
 import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
 import Test1 from "@presentation/pages/Test1";
-import Test2 from "@presentation/pages/Test2";
 import LoginHandler from "@presentation/components/LoginHandler";
 import Login from "@presentation/pages/Login";
 import SocketHandler from "@presentation/components/SocketHandler";
 import {
-  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -23,6 +21,7 @@ import ChatRoom from "./0_presentation/pages/ChatRoom";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
 import GamePlay from "./0_presentation/game/GamePlay";
+import Test2 from "@presentation/pages/Test2";
 
 const Wrapper = styled.div`
   position: relative;
@@ -66,7 +65,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<h2>Loading posts...</h2>}>
         <LoginHandler>
           <SocketHandler>
             <Header />
@@ -86,7 +84,6 @@ function App() {
             </Wrapper>
           </SocketHandler>
         </LoginHandler>
-      </Suspense>
     </BrowserRouter>
   );
 }

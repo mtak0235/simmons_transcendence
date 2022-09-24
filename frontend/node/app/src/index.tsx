@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import dependencyInject from "./3_infrastructure/core/DependencyInject";
 import { RecoilRoot } from "recoil";
+import RecoilNexus from "recoil-nexus";
 import { ThemeProvider, createGlobalStyle } from "styled-components";
 import { theme } from "./theme";
 import "antd/dist/antd.min.css";
@@ -86,6 +87,7 @@ dependencyInject();
 root.render(
   // <React.StrictMode>
   <RecoilRoot>
+    <RecoilNexus />
     <ThemeProvider theme={theme}>
       <GlobalModal />
       <GlobalStyle />

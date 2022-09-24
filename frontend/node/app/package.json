@@ -39,6 +39,7 @@
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
     "recoil": "^0.7.5",
+    "recoil-nexus": "^0.4.0",
     "recoil-persist": "^4.2.0",
     "socket.io-client": "^4.5.2",
     "styled-components": "^5.3.5",
@@ -52,8 +53,7 @@
     "start": "craco start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "postinstall": "patch-package"
+    "eject": "react-scripts eject"
   },
   "browserslist": {
     "production": [
@@ -70,6 +70,7 @@
   "devDependencies": {
     "@types/recoil": "^0.0.9",
     "@types/styled-components": "^5.1.26",
+    "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "craco-alias": "^3.0.1",

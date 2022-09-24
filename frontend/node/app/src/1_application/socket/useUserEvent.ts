@@ -1,20 +1,26 @@
-import { useEffect } from "react";
-import { useRecoilState, useResetRecoilState } from "recoil";
+import { useEffect, useState } from "react";
+import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil";
 
 import SocketDto from "SocketDto";
 import Get from "@root/lib/di/get";
 import ISocket from "@domain/socket/ISocket";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import { getRecoil, setRecoil } from "recoil-nexus";
+import { recoilUsers, userMe } from "@presentation/components/SocketHandler";
 
 const useUserEvent = () => {
   const socket: ISocket<any, any> = Get.get("ISocket");
+  const [me2, setMe2] = useState(undefined);
   const [me, setMe] = useRecoilState(RecoilAtom.user.me);
-  const [, setUsers] = useRecoilState(RecoilAtom.user.users);
+  const [users, setUsers] = useRecoilState(RecoilAtom.user.users);
   const [, setChannels] = useRecoilState(RecoilAtom.channel.channels);
   const [, setError] = useRecoilState(RecoilAtom.error);
+  // const users1 = useRecoilValue(selectorUsers);
 
   const handleConnected = (data: SocketDto.Connection) => {
     setMe(data.me);
+    // setRecoil(recoilUsers, data.users);
     setUsers(data.users);
     setChannels(data.channels);
   };
@@ -32,61 +38,53 @@ const useUserEvent = () => {
 
   const handleError = (data: SocketDto.Error) => {
     console.log(data);
-    setError(data);
+    // setError(data);
   };
 
-  const handleBlockUser = (data: number) => {
-    setMe((curr) => {
-      curr.blocks.push(data);
-      return curr;
-    });
+  const handleBlockUser = (data: SocketDto.User) => {
+    setMe(data);
   };
 
-  const handleFollowUser = (data: number) => {
-    setMe((curr) => {
-      curr.follows.push(data);
-      return curr;
-    });
+  const handleFollowUser = (data: SocketDto.User) => {
+    setMe(data);
   };
 
-  const handleUnfollowUser = (data: number) => {
-    setMe((curr) => {
-      curr.follows = curr.follows.filter((id) => id !== data);
-      return curr;
-    });
+  const handleUnfollowUser = (data: SocketDto.User) => {
+    setMe(data);
   };
 
   const handleChangeStatus = (data: SocketDto.UserInfo) => {
-    if (me.userId === data.userId) {
-      setMe((curr) => {
-        curr.status = data.status;
-        return curr;
-      });
-    } else {
-      setUsers((curr) => {
-        if (curr.findIndex((user) => user.userId === data.userId) === -1) {
-          curr.push(data);
+    setRecoil(RecoilAtom.user.users, (currVal) => {
+      const userIdx = currVal.findIndex((user) => user.userId === data.userId);
+
+      if (userIdx === -1) {
+        return [...currVal, data];
+      } else {
+        if (data.status === "offline") {
+          return [...currVal.filter((user, idx) => idx !== userIdx)];
         } else {
-          curr.map((user, idx) => {
-            if (user.userId === data.userId) {
-              if (data.status === "offline") curr.splice(idx, 1);
-              else user.status = data.status;
-            }
-          });
+          return [
+            ...currVal.map((user, idx) => {
+              if (idx === userIdx) user.status = data.status;
+              return user;
+            }),
+          ];
         }
-        return curr;
-      });
-    }
+      }
+
+      // return [...users];
+    });
   };
 
   useEffect(() => {
-    socket.on("broad:user:changeStatus", handleChangeStatus);
+    // socket.on("broad:user:changeStatus", handleChangeStatus);
     socket.on("single:user:connected", handleConnected);
     socket.on("single:user:disconnected", handleDisconnect);
     socket.on("single:user:error", handleError);
     socket.on("single:user:blockUser", handleBlockUser);
     socket.on("single:user:followUser", handleFollowUser);
     socket.on("single:user:unFollowUser", handleUnfollowUser);
+    socket.on("broad:user:changeStatus", handleChangeStatus);
   }, []);
 
   return;
