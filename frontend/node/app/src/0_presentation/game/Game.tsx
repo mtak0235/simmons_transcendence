@@ -277,7 +277,10 @@ function WaitingUserList() {
       />
       <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
         {waiters.map(({ userId }) => userId).includes(userId) && (
-          <Link to={"/"}>나가기</Link>
+          <Link to={"/"}>게임 대기 취소</Link>
+        )}
+        {!waiters.map(({ userId }) => userId).includes(userId) && (
+          <Link to={"/"}>게임 대기</Link>
         )}
       </Button>
     </GameWaitingQueue>
@@ -369,11 +372,17 @@ function Game() {
 
   return (
     <Wrapper>
+      <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
+        <Link to={"/"}>방 설정</Link>
+      </Button>
       <GameScreen>
         <GameScreenControl>
           <GameWaitingScreen></GameWaitingScreen>
         </GameScreenControl>
         <WaitingUserList></WaitingUserList>
+        <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
+          <Link to={"/"}>나가기</Link>
+        </Button>
       </GameScreen>
       <ChattingScreen>
         <Radio.Group size="large">
