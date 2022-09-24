@@ -8,6 +8,7 @@ import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
 import { useRecoilState } from "recoil";
 import { useRef, useState, useEffect } from "react";
+import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 
 const Wrapper = styled.div`
   display: flex;
@@ -103,6 +104,12 @@ const Message = styled.div`
   line-height: 1.5em;
 `;
 
+const PaginationStyle = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+`;
+
 // function ChatRoom(nickName) {
 //   const [messages] = useState([]);
 
@@ -116,13 +123,18 @@ const Message = styled.div`
 //   );
 // }
 
-function ChatRoom(nickName) {
+const ContentStyle = styled.div`
+  height: calc(100vh - 100px);
+  width: 100%;
+  overflow: auto;
+`;
+
+function ChatRoom({ nickName }) {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
   let idx = useRef(0);
   const addItem = () => {
-    console.log("here");
-    setMessages((prev) => [...prev, inputValue]);
+    setMessages((prev) => [...prev, `[${nickName}]` + inputValue]);
     setInputValue("");
   };
 
@@ -154,8 +166,191 @@ function MessageItem({ item: message }) {
   return <div style={{ color: "red" }}>{message}</div>;
 }
 
-function Game() {
+function Content({ sidebar, users, friends }) {
+  const { showModal } = useModal();
+  const userInfo = useUserInfo(0);
+
+  const handleUserInfoModal = () => {
+    showModal({
+      modalType: "UserInfoModal",
+      modalProps: {
+        userInfo: userInfo,
+        message: "Success!",
+      },
+    });
+  };
+  return (
+    <ContentStyle style={{ overflow: "scroll" }}>
+      {sidebar == "total" &&
+        users.map(({ userId, username }) => (
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>{username}</ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
+        ))}
+      {sidebar == "friend" &&
+        friends.map(({ userId, username, status }) => (
+          <List key={userId}>
+            <ListItem disablePadding>
+              <ListItemButton
+                style={{
+                  width: 180,
+                  display: "flex",
+                  textAlign: "center",
+                  background: "lightgrey",
+                }}
+                key={userId}
+                onClick={handleUserInfoModal}
+              >
+                <ListItemText>
+                  {username} | {status}
+                </ListItemText>
+              </ListItemButton>
+            </ListItem>
+          </List>
+        ))}
+    </ContentStyle>
+  );
+}
+
+function Pagination({ total, limit, page, setPage }) {
+  const [pageCount] = useState(Math.ceil(total / limit));
+
+  return (
+    <PaginationStyle>
+      <Button
+        onClick={() => {
+          setPage(page - 1);
+        }}
+        disabled={page === 1}
+      >
+        &lt;
+      </Button>
+      <SizedBox width={20} />
+      <Button onClick={() => setPage(page + 1)} disabled={page === pageCount}>
+        &gt;
+      </Button>
+    </PaginationStyle>
+  );
+}
+
+function WaitingUserList() {
+  const [waiters, setWaiters] = useState([]);
+  const [limit] = useState(4);
+  const [page, setPage] = useState(1);
+  const offset = (page - 1) * limit;
+  const userId = "mtakId";
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/posts")
+      .then((res) => res.json())
+      .then((data) =>
+        setWaiters(
+          data.map((record) => {
+            record["userId"] = record.id;
+            record["username"] = `${record.id}님`;
+            return record;
+          })
+        )
+      );
+  }, []);
+  return (
+    <GameWaitingQueue>
+      {waiters.slice(offset, offset + limit).map(({ username, userId }) => (
+        <WaitingUser>{username}</WaitingUser>
+      ))}
+      <Pagination
+        total={waiters.length}
+        limit={limit}
+        page={page}
+        setPage={setPage}
+      />
+      <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
+        {waiters.map(({ userId }) => userId).includes(userId) && (
+          <Link to={"/"}>나가기</Link>
+        )}
+      </Button>
+    </GameWaitingQueue>
+  );
+}
+
+function GameWaitingScreen() {
   const gameLogs = useGameLogs();
+  const userId = 1234;
+
+  return (
+    <>
+      <UserBox>
+        <UserBoxInfo>1 Player</UserBoxInfo>
+        <UserBoxInfo>{gameLogs.playerA}</UserBoxInfo>
+        <Link to={"/gamePlay"}>
+          <Button
+            type="primary"
+            disabled={gameLogs.playerA.id != userId}
+            onClick={() => console.log("ready")}
+          >
+            {gameLogs.playerA.id != userId ? "준비중" : ready}
+          </Button>
+        </Link>
+      </UserBox>
+      <SizedBox width={50}></SizedBox>
+      <UserBox>
+        <UserBoxInfo>2 Player</UserBoxInfo>
+        <UserBoxInfo>{gameLogs.playerB}</UserBoxInfo>
+        <Button
+          type="primary"
+          disabled={gameLogs.playerB.id != userId}
+          onClick={() => console.log("ready")}
+        >
+          {gameLogs.playerB.id != userId ? "준비중" : ready}
+        </Button>
+      </UserBox>
+    </>
+  );
+}
+function Game() {
+  const [sidebar, setSidebar] = useState("chatting");
+  const [users, setUsers] = useState([]);
+  const [friends, setFriends] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/posts")
+      .then((res) => res.json())
+      .then((data) =>
+        setUsers(
+          data.map((record) => {
+            record["userId"] = record.id;
+            record["username"] = `${record.id}님`;
+            return record;
+          })
+        )
+      );
+    fetch("https://jsonplaceholder.typicode.com/posts")
+      .then((res) => res.json())
+      .then((data) =>
+        setFriends(
+          data.map((record) => {
+            record["userId"] = record.id;
+            record["username"] = `${record.id}님`;
+            record["status"] =
+              record.id in users.map((data) => data.userId)
+                ? "online"
+                : "offline";
+            return record;
+          })
+        )
+      );
+  }, []);
 
   // Modal
   const { showModal } = useModal();
@@ -176,45 +371,39 @@ function Game() {
     <Wrapper>
       <GameScreen>
         <GameScreenControl>
-          <UserBox>
-            <UserBoxInfo>1 Player</UserBoxInfo>
-            <UserBoxInfo>{gameLogs.playerA}</UserBoxInfo>
-            <Link to={"/gamePlay"}>
-              <Button type="primary" onClick={() => console.log("ready")}>
-                ready
-              </Button>
-            </Link>
-          </UserBox>
-          <SizedBox width={50}></SizedBox>
-          <UserBox>
-            <UserBoxInfo>2 Player</UserBoxInfo>
-            <UserBoxInfo>{gameLogs.playerB}</UserBoxInfo>
-            <Button type="primary" onClick={() => console.log("ready")}>
-              ready
-            </Button>
-          </UserBox>
+          <GameWaitingScreen></GameWaitingScreen>
         </GameScreenControl>
-        <GameWaitingQueue>
-          {/* Waiting User List Showing */}
-          <WaitingUser>A</WaitingUser>
-          <WaitingUser>B</WaitingUser>
-          <WaitingUser>C</WaitingUser>
-          <WaitingUser>D</WaitingUser>
-          <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
-            <Link to={"/"}>나가기</Link>
-          </Button>
-        </GameWaitingQueue>
+        <WaitingUserList></WaitingUserList>
       </GameScreen>
       <ChattingScreen>
         <Radio.Group size="large">
-          <Radio.Button value="large" onClick={() => console.log("채팅")}>
+          <Radio.Button
+            checked={sidebar == "chatting"}
+            value="large"
+            onClick={() => {
+              setSidebar("chatting");
+              console.log(sidebar);
+            }}
+          >
             채팅
           </Radio.Button>
-          <Radio.Button value="default" onClick={handleClickUserInfoModal}>
-            유저목록
+          <Radio.Button
+            value="default"
+            onClick={() => {
+              setSidebar("total");
+              console.log(sidebar);
+            }}
+          >
+            전체 목록
           </Radio.Button>
-          <Radio.Button value="small" onClick={() => console.log("초대")}>
-            초대
+          <Radio.Button
+            value="small"
+            onClick={() => {
+              setSidebar("friend");
+              console.log(sidebar);
+            }}
+          >
+            친구 목록
           </Radio.Button>
         </Radio.Group>
         {/* <DialogueWindow>
@@ -224,7 +413,10 @@ function Game() {
           </MessageBox>
         </DialogueWindow> */}
         {/* <Input.Group compact> */}
-        <ChatRoom nickname={"ts"}></ChatRoom>
+        {sidebar == "chatting" && <ChatRoom nickName={"ts"}></ChatRoom>}
+        {(sidebar == "total" || sidebar == "friend") && (
+          <Content sidebar={sidebar} users={users} friends={friends}></Content>
+        )}
         {/* <Input
             style={{ width: "calc(100% - 100px)" }}
             placeholder="입력해주세요."

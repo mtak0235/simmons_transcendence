@@ -219,7 +219,7 @@ function Side() {
           })
         )
       );
-  });
+  }, []);
   return (
     <>
       <Radio.Group size={"large"}>
