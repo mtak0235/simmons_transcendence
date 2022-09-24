@@ -9,9 +9,11 @@ import { MainSocketService } from '@socket/service/main.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { ChannelInterceptors } from '@socket/interceptor/channel.socket.interceptor';
 import { MainSocketStore } from '@socket/storage/main.socket.store';
+import { SocketController } from '@socket/socket.controller';
 
 @Module({
   imports: [JwtModule],
+  controllers: [SocketController],
   providers: [
     SocketGateway,
     MainSocketService,

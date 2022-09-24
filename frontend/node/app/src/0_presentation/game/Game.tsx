@@ -1,13 +1,16 @@
 import { Button, Input, Radio } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import useGameLogs from "../../1_application/game/useGame";
 import { useUserInfo } from "../../1_application/user/useUser";
 import User from "../../2_domain/user/user";
 import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { useRef, useState, useEffect } from "react";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import ISocketEmit from "@domain/socket/ISocketEmit";
+import Get from "@root/lib/di/get";
 
 const Wrapper = styled.div`
   display: flex;
@@ -155,7 +158,17 @@ function MessageItem({ item: message }) {
 }
 
 function Game() {
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
   const gameLogs = useGameLogs();
+  const navigate = useNavigate();
+  const channelPublic = useRecoilValue(RecoilSelector.channel.public);
+  const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
+
+  useEffect(() => {
+    console.log(channelPrivate);
+    console.log(channelPublic);
+    if (!channelPublic || !channelPrivate) navigate("/");
+  }, []);
 
   // Modal
   const { showModal } = useModal();
@@ -200,8 +213,12 @@ function Game() {
           <WaitingUser>B</WaitingUser>
           <WaitingUser>C</WaitingUser>
           <WaitingUser>D</WaitingUser>
-          <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
-            <Link to={"/"}>나가기</Link>
+          <Button
+            type="primary"
+            style={{ backgroundColor: "red", border: 0 }}
+            onClick={() => socketEmit.outChannel()}
+          >
+            나가기
           </Button>
         </GameWaitingQueue>
       </GameScreen>

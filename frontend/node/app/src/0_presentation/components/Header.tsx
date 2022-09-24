@@ -57,6 +57,7 @@ const LoginButton = styled.button`
 `;
 
 function Header() {
+  console.log(process.env.REACT_APP_API_URL);
   return (
     <Nav>
       <Col>

@@ -460,7 +460,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.user.follows.indexOf(userId) !== -1)
       await this.unfollowUser(client, userId);
 
-    client.emit('single:user:blockUser', userId);
+    client.emit('single:user:blockUser', client.user);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
@@ -471,7 +471,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.follow(client.user, userId);
 
-    client.emit('single:user:followUser', userId);
+    client.emit('single:user:followUser', client.user);
 
     client.to(`room:user:${userId}`).emit('followedUser', client.user.userId);
   }
@@ -484,6 +484,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.unfollow(client.user, userId);
 
-    client.emit('single:user:unfollowUser', userId);
+    client.emit('single:user:unfollowUser', client.user);
   }
 }

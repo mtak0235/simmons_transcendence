@@ -16,7 +16,10 @@ import {
   ListItem,
 } from "@mui/material";
 import useModal from "../components/modal/hooks";
-import { useUserInfo } from "@root/1_application/user/useUser";
+import { useRecoilValue } from "recoil";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import ISocketEmit from "@domain/socket/ISocketEmit";
+import Get from "@root/lib/di/get";
 
 const Wrapper = styled.div`
   display: flex;
@@ -132,17 +135,17 @@ function Pagination({ total, limit, page, setPage }) {
 
 function Content({ visible, users, friends }) {
   const { showModal } = useModal();
-  const userInfo = useUserInfo(0);
+  // const userInfo = useUserInfo(0);
 
-  const handleUserInfoModal = () => {
-    showModal({
-      modalType: "UserInfoModal",
-      modalProps: {
-        userInfo: userInfo,
-        message: "Success!",
-      },
-    });
-  };
+  // const handleUserInfoModal = () => {
+  //   showModal({
+  //     modalType: "UserInfoModal",
+  //     modalProps: {
+  //       userInfo: userInfo,
+  //       message: "Success!",
+  //     },
+  //   });
+  // };
   return (
     <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
@@ -156,7 +159,7 @@ function Content({ visible, users, friends }) {
                   textAlign: "center",
                   background: "lightgrey",
                 }}
-                onClick={handleUserInfoModal}
+                // onClick={handleUserInfoModal}
               >
                 <ListItemText>{username}</ListItemText>
               </ListItemButton>
@@ -175,7 +178,7 @@ function Content({ visible, users, friends }) {
                   background: "lightgrey",
                 }}
                 key={userId}
-                onClick={handleUserInfoModal}
+                // onClick={handleUserInfoModal}
               >
                 <ListItemText>
                   {username} | {status}
@@ -189,44 +192,17 @@ function Content({ visible, users, friends }) {
 }
 
 function Side() {
-  const [users, setUsers] = useState([]);
   const [visible, setVisible] = useState(true);
-  const [friends, setFriends] = useState([]);
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json())
-      .then((data) =>
-        setUsers(
-          data.map((record) => {
-            record["userId"] = record.id;
-            record["username"] = `${record.id}님`;
-            return record;
-          })
-        )
-      );
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json())
-      .then((data) =>
-        setFriends(
-          data.map((record) => {
-            record["userId"] = record.id;
-            record["username"] = `${record.id}님`;
-            record["status"] =
-              record.id in users.map((data) => data.userId)
-                ? "online"
-                : "offline";
-            return record;
-          })
-        )
-      );
-  });
+  const users = useRecoilValue(RecoilSelector.user.users);
+  const follows = useRecoilValue(RecoilSelector.user.onFollows);
+
   return (
     <>
       <Radio.Group size={"large"}>
         <Radio.Button
           value={"total"}
           onClick={() => {
-            setVisible(false);
+            setVisible(true);
             console.log(visible);
           }}
         >
@@ -235,23 +211,24 @@ function Side() {
         <Radio.Button
           value={"friend"}
           onClick={() => {
-            setVisible(true);
+            setVisible(false);
           }}
         >
           친구 목록
         </Radio.Button>
       </Radio.Group>
-      <Content visible={visible} users={users} friends={friends} />
+      <Content visible={visible} users={users} friends={follows} />
     </>
   );
 }
 
 function Home() {
-  const [posts, setPosts] = useState([]);
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
   const [limit] = useState(6);
   const [page, setPage] = useState(1);
   const offset = (page - 1) * limit;
   const { showModal } = useModal();
+  const channels = useRecoilValue(RecoilSelector.channel.channels);
 
   const handleClickUserMakeModal = () => {
     showModal({
@@ -262,24 +239,13 @@ function Home() {
     });
   };
 
-  // const channels = useChannel();
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json())
-      .then((data) =>
-        setPosts(
-          data.map((record) => {
-            record["adminId"] = record.id;
-            record["channelId"] = record.id;
-            record["accessLayer"] = "public";
-            record["channelName"] = `${record.id}번방의 선물`;
-            record["score"] = 11;
-            record["onGame"] = "true";
-            return record;
-          })
-        )
-      );
-  }, []);
+  const handleClickChannel = (channelId: number) => {
+    console.log(channelId);
+    socketEmit.inChannel({
+      channelId,
+    });
+  };
+
   return (
     <Wrapper>
       <ChannelScreen>
@@ -289,7 +255,7 @@ function Home() {
             spacing={{ xs: 2, md: 3 }}
             columns={{ xs: 1, sm: 3, md: 8 }}
           >
-            {posts
+            {channels
               .slice(offset, offset + limit)
               .map(
                 ({
@@ -301,35 +267,40 @@ function Home() {
                   onGame,
                 }) => (
                   <Grid item xs={4} sm={4} md={4} key={channelId}>
-                    <Link to={`/game/${channelId}`}>
-                      <Card sx={{ maxWidth: 500 }}>
-                        <CardContent>
-                          <Typography
-                            sx={{ fontSize: 14 }}
-                            color="text.secondary"
-                            gutterBottom
-                            component={"span"}
-                          >
-                            <h3>{channelName}</h3>
-                          </Typography>
-                          <Typography variant="h5" component={"span"}>
-                            <p>adminId:{adminId}</p>
-                          </Typography>
-                          <Typography
-                            sx={{ mb: 1.5 }}
-                            color="text.secondary"
-                            component={"span"}
-                          >
-                            <p>score:{score}</p>
-                          </Typography>
-                          <Typography variant="body2" component={"span"}>
-                            <p>accessLayer:{accessLayer}</p>
-                            <br />
-                            <p>onGame:{onGame}</p>
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                    {/*<Link to={`/game/${channelId}`}>*/}
+                    <Card
+                      sx={{ maxWidth: 500, cursor: "pointer" }}
+                      onClick={() => {
+                        handleClickChannel(channelId);
+                      }}
+                    >
+                      <CardContent>
+                        <Typography
+                          sx={{ fontSize: 14 }}
+                          color="text.secondary"
+                          gutterBottom
+                          component={"span"}
+                        >
+                          <h3>{channelName}</h3>
+                        </Typography>
+                        <Typography variant="h5" component={"span"}>
+                          <p>adminId:{adminId}</p>
+                        </Typography>
+                        <Typography
+                          sx={{ mb: 1.5 }}
+                          color="text.secondary"
+                          component={"span"}
+                        >
+                          <p>score:{score}</p>
+                        </Typography>
+                        <Typography variant="body2" component={"span"}>
+                          <p>accessLayer:{accessLayer}</p>
+                          <br />
+                          <p>{onGame ? "게임중" : "대기중"}</p>
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                    {/*</Link>*/}
                   </Grid>
                 )
               )}
@@ -337,7 +308,7 @@ function Home() {
             <TSRow>
               <SizedBox width={25}></SizedBox>
               <Pagination
-                total={posts.length}
+                total={channels.length}
                 limit={limit}
                 page={page}
                 setPage={setPage}
