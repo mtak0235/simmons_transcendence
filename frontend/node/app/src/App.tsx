@@ -76,8 +76,8 @@ function App() {
               {/*</div>*/}
               <Routes>
                 <Route path="*" element={<NotFound />} />
-                {/* <Route path="/" element={<Home />} /> */}
-                <Route path="/" element={<GamePlay />} />
+                <Route path="/" element={<Home />} />
+                {/* <Route path="/" element={<GamePlay />} /> */}
                 <Route path="/game/:id" element={<Game />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/test1" element={<Test1 />} />
