@@ -7,15 +7,19 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UserDto } from '@socket/dto/user.socket.dto';
+import {
+  STATUS_LAYER,
+  UserDto,
+  UserInfoDto,
+} from '@socket/dto/user.socket.dto';
 import {
   ChannelCreateDto,
   ChannelDto,
   ChannelUpdateDto,
-  MutedUser,
 } from '@socket/dto/channel.socket.dto';
 import { Server, Socket } from 'socket.io';
 import {
+  HttpException,
   ParseIntPipe,
   UseFilters,
   UseInterceptors,
@@ -31,7 +35,7 @@ import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
 import {
-  ChannelInterceptor,
+  ChannelAuthInterceptor,
   ChannelMessageInterceptor,
 } from '@socket/interceptor/channel.socket.interceptor';
 export class ClientInstance extends Socket {
@@ -65,47 +69,80 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
       const mainPageDto = await this.mainSocketService.setClient(userInfo);
       client.user = mainPageDto.me;
+      this.mainSocketService.setSocketInstance(userInfo.id, client);
+
+      this.changeStatus(client, 'online');
 
       client.join(`room:user:${client.user.userId}`);
       client.emit('single:user:connected', mainPageDto);
-      client.broadcast.emit('broad:user:connected', {
-        userId: client.user.userId,
-        username: client.user.username,
-        status: client.user.status,
-      });
     } catch (err) {
       // todo: 예외 분기 정확히 작성해야 함
-      if (err instanceof SocketException) client.emit('error', err);
-      else
-        client.emit('single:user:error', {
-          error: 'server',
-          message: 'unKnown',
-        });
-      client.disconnect();
+      if (err instanceof HttpException) {
+        client.emit(
+          'error',
+          new SocketException(err.getStatus(), err.message, err.stack),
+        );
+      } else {
+        client.emit(
+          'single:user:error',
+          new SocketException(500, 'Internal Server Error'),
+        );
+      }
+      this.handleDisconnect(client);
     }
   }
 
-  async handleDisconnect(client: ClientInstance): Promise<any> {
+  handleDisconnect(client: ClientInstance): void {
     if (client.user) {
-      // todo: service 로 빼야함
       if (client.channel) this.outChannel(client);
 
-      this.userSocketService.switchStatus(client.user, 'offline');
+      this.mainSocketService.deleteSocketInstance(client.user.userId);
 
-      client.broadcast.emit('broad:user:disconnected', {
-        userId: client.user.userId,
-        status: client.user.status,
-      });
+      this.changeStatus(client, 'offline');
+      client.rooms.delete(`room:user:${client.user.userId}`);
     }
+    client.disconnect();
+    client.rooms.clear();
+  }
+
+  @UseInterceptors(new SocketBodyCheckInterceptor('status'))
+  @SubscribeMessage('changeStatus')
+  changeStatus(
+    @ConnectedSocket() client: ClientInstance,
+    @MessageBody('status') status: STATUS_LAYER,
+  ) {
+    const userInfo: UserInfoDto = {
+      userId: client.user.userId,
+      username: client.user.username,
+      status: status,
+    };
+    this.userSocketService.switchStatus(client.user, status);
+
+    client.broadcast.emit('broad:user:changeStatus', userInfo);
   }
 
   // todo: delete: 개발용 코드
   @SubscribeMessage('test')
   testUpdate(
     @ConnectedSocket() client: ClientInstance,
-    @MessageBody() targetId: string,
+    @MessageBody('targetId', ParseIntPipe) targetId: number,
   ) {
     // todo: test
+    // console.log(client);
+    // console.log(this.server)
+    const calledClient = this.mainSocketService.getSocketInstance(targetId);
+    console.log(calledClient);
+    this.test1(calledClient);
+  }
+
+  @SubscribeMessage('test1')
+  test1(@ConnectedSocket() client: ClientInstance) {
+    client.emit('test1', { text: 'hello world!!' });
+  }
+
+  @SubscribeMessage('test2')
+  test2(@ConnectedSocket() client: ClientInstance) {
+    client.emit('test2', 'hello world!!');
   }
 
   /* ============================================= */
@@ -113,7 +150,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ============================================= */
 
   @UseInterceptors(
-    new ChannelInterceptor(false, false),
+    new ChannelAuthInterceptor({ hasChannel: false }),
     new SocketBodyCheckInterceptor('channel'),
   )
   @SubscribeMessage('createChannel')
@@ -126,7 +163,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channelCreateDto,
     );
 
-    client.join(`room:channel:${client.channel.channelPublic.channelIdx}`);
+    this.changeStatus(client, 'watchingGame');
+
+    client.join(`room:channel:${client.channel.channelPublic.channelId}`);
     client.emit('single:channel:createChannel', {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
@@ -138,16 +177,21 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(true, true),
+    new ChannelAuthInterceptor({ admin: true }),
     new SocketBodyCheckInterceptor('channel'),
   )
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
-  modifyGame(
+  async modifyChannel(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('channel') channelUpdateDto: ChannelUpdateDto,
+    @MessageBody('password') password?: string,
   ) {
-    this.channelSocketService.updateChannel(client.channel, channelUpdateDto);
+    await this.channelSocketService.updateChannel(
+      client.channel,
+      channelUpdateDto,
+      password,
+    );
 
     this.server.emit(
       'broad:channel:updateChannel',
@@ -156,7 +200,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(false, false),
+    new ChannelAuthInterceptor({ hasChannel: false }),
     new SocketBodyCheckInterceptor('channelId'),
   )
   @SubscribeMessage('inChannel')
@@ -165,58 +209,56 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('channelId', ParseIntPipe) channelId: number,
     @MessageBody('password') password?: string,
   ) {
-    // todo: password도 응답할 때 빼야할 지 고민 해봐야 함
     client.channel = await this.channelSocketService.inChannel(
       client.user,
       channelId,
       password,
     );
-    this.userSocketService.switchStatus(client.user, 'watchingGame');
 
-    client.join(`room:channel:${client.channel.channelPublic.channelIdx}`);
-    client.emit('single:channel:inChannel', client.channel.channelPrivate);
+    this.changeStatus(client, 'watchingGame');
+
+    client.join(`room:channel:${client.channel.channelPublic.channelId}`);
+    client.emit('single:channel:inChannel', {
+      channelPublic: client.channel.channelPublic,
+      channelPrivate: client.channel.channelPrivate,
+    });
     client
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:inChannel', client.user.userId);
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:inChannel', { userId: client.user.userId });
   }
 
-  @UseInterceptors(
-    new ChannelInterceptor(false, false),
-    new SocketBodyCheckInterceptor('channelId'),
-  )
+  // todo: 게임중에 나가면 어떻게 해야할 지 짜야함
+  @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('outChannel')
   outChannel(@ConnectedSocket() client: ClientInstance) {
     const channelStatus = this.channelSocketService.outChannel(
       client.user,
       client.channel,
     );
-    this.userSocketService.switchStatus(client.user, 'online');
 
-    client.leave(`room:channel:${client.channel.channelPublic.channelIdx}`);
-    client.emit('single:channel:outChannel', {
-      channelId: client.channel.channelPublic.channelIdx,
-    });
+    this.changeStatus(client, 'online');
 
-    // todo: add: broad user도 추가해줘야 할까?
+    client.leave(`room:channel:${client.channel.channelPublic.channelId}`);
+    client.emit('single:channel:outChannel');
 
     if (channelStatus.userExist) {
       if (channelStatus.ownerChange || channelStatus.adminChange)
         this.server.emit('broad:channel:setAdmin', {
-          channelId: client.channel.channelPublic.channelIdx,
+          channelId: client.channel.channelPublic.channelId,
           ownerId: client.channel.channelPublic.ownerId,
           adminId: client.channel.channelPublic.adminId,
         });
 
       client
-        .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-        .emit('group:channel:outChannel', client.user.userId);
+        .to(`room:channel:${client.channel.channelPublic.channelId}`)
+        .emit('group:channel:outChannel', { userId: client.user.userId });
     } else {
       this.server.emit(
         'broad:channel:deleteChannel',
-        client.channel.channelPublic.channelIdx,
+        client.channel.channelPublic.channelId,
       );
       this.channelSocketService.deleteChannel(
-        client.channel.channelPublic.channelIdx,
+        client.channel.channelPublic.channelId,
       );
     }
 
@@ -224,7 +266,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(false, false),
+    new ChannelAuthInterceptor(),
     new SocketBodyCheckInterceptor('userId'),
   )
   @SubscribeMessage('inviteUser')
@@ -235,13 +277,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.channelSocketService.inviteUser(client.channel, userId);
 
     client.to(`room:user:${userId}`).emit('single:channel:inviteUser', {
-      channelId: client.channel.channelPublic.channelIdx,
+      inviterId: client.user.userId,
+      channelId: client.channel.channelPublic.channelId,
       channelName: client.channel.channelPublic.channelName,
     });
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(true, false, true),
+    new ChannelAuthInterceptor({ owner: true }),
     new SocketBodyCheckInterceptor('userId'),
   )
   @SubscribeMessage('setAdmin')
@@ -252,14 +295,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.channelSocketService.setAdmin(client.channel, userId);
 
     this.server.emit('broad:channel:setAdmin', {
-      channelId: client.channel.channelPublic.channelIdx,
+      channelId: client.channel.channelPublic.channelId,
       ownerId: client.channel.channelPublic.ownerId,
       adminId: client.channel.channelPublic.adminId,
     });
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(true, true),
+    new ChannelAuthInterceptor({ admin: true }),
     new SocketBodyCheckInterceptor('userId'),
   )
   @SubscribeMessage('kickOutUser')
@@ -268,49 +311,47 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
     this.channelSocketService.kickOutUser(client.channel, userId);
+    this.outChannel(this.mainSocketService.getSocketInstance(userId));
 
     client.to(`room:user:${userId}`).emit('single:channel:kickOut');
     client
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:kickOut', { userId });
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:kickOut', userId);
   }
 
   @UseInterceptors(
-    new ChannelInterceptor(true, true),
-    new SocketBodyCheckInterceptor('mutedUser'),
+    new ChannelAuthInterceptor({ admin: true }),
+    new SocketBodyCheckInterceptor('userId'),
   )
   @SubscribeMessage('muteUser')
   muteUser(
     @ConnectedSocket() client: ClientInstance,
-    @MessageBody('muteUser') muteUser: MutedUser,
+    @MessageBody('userId') userId: number,
   ) {
-    this.channelSocketService.mutedUser(client.channel, muteUser);
+    const mutedUser = this.channelSocketService.mutedUser(
+      client.channel,
+      userId,
+    );
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:muteUser', { muteUser });
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:muteUser', mutedUser);
   }
 
-  @UseInterceptors(
-    new ChannelInterceptor(true, false),
-    new SocketBodyCheckInterceptor('userId'),
-  )
+  @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.waitingGame(client.channel, client.user.userId);
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:getGameParticipants', {
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:waitingGame', {
         matcher: client.channel.channelPrivate.matcher,
         waiter: client.channel.channelPrivate.waiter,
       });
   }
 
-  @UseInterceptors(
-    new ChannelInterceptor(true, false),
-    new SocketBodyCheckInterceptor('userId'),
-  )
+  @UseInterceptors(new ChannelAuthInterceptor({ matcher: true }))
   @SubscribeMessage('readyGame')
   readyGame(@ConnectedSocket() client: ClientInstance) {
     const readyCount = this.channelSocketService.readyGame(
@@ -320,25 +361,35 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (readyCount !== 2) {
       this.server
-        .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-        .emit('group:channel:readyGame', {
-          matcher: client.channel.channelPrivate.matcher,
-        });
+        .to(`room:channel:${client.channel.channelPublic.channelId}`)
+        .emit('group:channel:readyGame', client.channel.channelPrivate.matcher);
       return;
     }
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:startGame', {
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:startGame');
+
+    this.server.emit(
+      'broad:channel:startGame',
+      client.channel.channelPublic.channelId,
+    );
+  }
+
+  @UseInterceptors(new ChannelAuthInterceptor())
+  @SubscribeMessage('leaveGame')
+  leaveGame(@ConnectedSocket() client: ClientInstance) {
+    this.channelSocketService.leaveGame(client.channel, client.user.userId);
+
+    this.server
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:leaveGame', {
         matcher: client.channel.channelPrivate.matcher,
-        score: client.channel.channelPublic.score,
+        waiter: client.channel.channelPrivate.waiter,
       });
   }
 
-  // todo: 어떻게 처리할지 생각 해봐야함
-  @UseInterceptors(
-    new ChannelInterceptor(true, false),
-    new SocketBodyCheckInterceptor('userId'),
-  )
+  // todo: 어떻게 처리할지 생각 해봐야함, 게임 구현하면서 하자
+  @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('endGame')
   endGame(
     @ConnectedSocket() client: ClientInstance,
@@ -346,7 +397,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.channelSocketService.endGame(client.channel, result).then(() => {
       this.server
-        .in(`room:channel:${client.channel.channelPublic.channelIdx}`)
+        .in(`room:channel:${client.channel.channelPublic.channelId}`)
         .emit('gameOver', {
           waiter: client.channel.channelPrivate.waiter,
           matcher: client.channel.channelPrivate.matcher,
@@ -354,33 +405,31 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  //todo: intereceptor에 mute되었는지 검사 필요.
   @UseInterceptors(
-    new ChannelInterceptor(true, false),
+    new ChannelAuthInterceptor(),
     ChannelMessageInterceptor,
     new SocketBodyCheckInterceptor('message'),
   )
-  @SubscribeMessage('sendMsg')
-  sendMSG(
+  @SubscribeMessage('sendMessage')
+  sendMessage(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('message') message: string,
   ) {
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelIdx}`)
-      .emit('group:channel:sendMsg', {
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:channel:sendMessage', {
         sourceId: client.user.userId,
         message: message,
       });
   }
-  //todo: interceptor에서 block 확인
 
   @UseInterceptors(
-    new ChannelInterceptor(true, false),
+    new ChannelAuthInterceptor(),
     ChannelMessageInterceptor,
     new SocketBodyCheckInterceptor('targetId', 'message'),
   )
-  @SubscribeMessage('sendDm')
-  async sendDM(
+  @SubscribeMessage('sendDirectMessage')
+  async sendDirectMessage(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('targetId', ParseIntPipe) targetId: number,
     @MessageBody('message') message: string,
@@ -400,50 +449,41 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*                #2 User Gateway                */
   /* ============================================= */
 
-  @UseInterceptors(new SocketBodyCheckInterceptor('targetId'))
+  @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
   @SubscribeMessage('blockUser')
   async blockUser(
     @ConnectedSocket() client: ClientInstance,
-    @MessageBody('targetId', ParseIntPipe) targetId: number,
+    @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
-    this.userSocketService.block(client.user, targetId).then();
+    await this.userSocketService.block(client.user, userId);
 
-    if (client.user.follows.indexOf(targetId))
-      await this.unfollowUser(client, targetId);
+    if (client.user.follows.indexOf(userId) !== -1)
+      await this.unfollowUser(client, userId);
 
-    client.emit('single:user:blockUser', { targetId });
+    client.emit('single:user:blockUser', userId);
   }
 
-  @UseInterceptors(new SocketBodyCheckInterceptor('targetId'))
+  @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
   @SubscribeMessage('followUser')
   async followUser(
     @ConnectedSocket() client: ClientInstance,
-    @MessageBody('targetId', ParseIntPipe) targetId: number,
+    @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
-    await this.userSocketService.follow(client.user, targetId);
+    await this.userSocketService.follow(client.user, userId);
 
-    client.emit('single:user:followUser', {
-      sourceId: client.user.userId,
-      targetId,
-    });
+    client.emit('single:user:followUser', userId);
 
-    client.to(`room:user:${targetId}`).emit('followedUser', {
-      sourceId: client.user.userId,
-      targetId,
-    });
+    client.to(`room:user:${userId}`).emit('followedUser', client.user.userId);
   }
 
-  @UseInterceptors(new SocketBodyCheckInterceptor('targetId'))
+  @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
   @SubscribeMessage('unfollowUser')
   async unfollowUser(
     @ConnectedSocket() client: ClientInstance,
-    @MessageBody('targetId', ParseIntPipe) targetId: number,
+    @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
-    await this.userSocketService.unfollow(client.user, targetId);
+    await this.userSocketService.unfollow(client.user, userId);
 
-    client.emit('single:user:unfollowUser', {
-      sourceId: client.user.userId,
-      targetId,
-    });
+    client.emit('single:user:unfollowUser', userId);
   }
 }

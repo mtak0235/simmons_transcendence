@@ -10,6 +10,7 @@ export abstract class IHttp {
   // public abstract interceptor(request: HttpRequest): Promise<AxiosPromise>;
   public abstract checkToken(): Promise<boolean>;
   public abstract refreshToken(): Promise<void>;
+  public abstract clearToken(): void;
   public abstract firstAccess(value: any): Promise<void>;
   public abstract twoFactor(value: number): Promise<void>;
   public abstract login(): Promise<void>;

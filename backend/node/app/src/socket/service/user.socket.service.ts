@@ -45,6 +45,10 @@ export class UserSocketService {
     }
   }
 
+  find(userId: number) {
+    return this.userSocketStore.find(userId);
+  }
+
   switchStatus(user: UserDto, status: STATUS_LAYER) {
     this.userSocketStore.update(user, { status: status });
   }
@@ -73,7 +77,7 @@ export class UserSocketService {
         sourceId: user.userId,
         targetId,
       });
-      user.follows.slice(followIdx);
+      user.follows.splice(followIdx, 1);
     } else {
       throw new BadRequestException();
     }
@@ -87,7 +91,7 @@ export class UserSocketService {
         sourceId: user.userId,
         targetId,
       });
-      user.blocks.slice(blockIdx);
+      user.blocks.splice(blockIdx, 1);
     }
 
     const follow = this.followRepository.create({

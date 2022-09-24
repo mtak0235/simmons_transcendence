@@ -9,15 +9,13 @@ import {
 import Get from "@root/lib/di/get";
 import IUserRepository from "@domain/user/IUserRepository";
 import UserRepository from "@infrastructure/user/UserRepository";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IHttp } from "@domain/http/IHttp";
-import { Cookies } from "react-cookie";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
-import { setError } from "@presentation/components/ErrorHandler";
 import ISocket from "@domain/socket/ISocket";
-
-const cookies = new Cookies();
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 const classState = (): RecoilState<UserRepository> => {
   return atom({
@@ -39,7 +37,7 @@ const testRecoilAtom = atom<testRecoilInterface[]>({
 const testRecoilSelector = selector({
   key: "testRecoilSelector",
   get: ({ get }) => get(testRecoilAtom),
-  // set: ({ set }, value) => set(testRecoilAtom, value),
+  set: (param) => param.set(testRecoilAtom, param["value"]),
 });
 
 const textState = atom<number>({
@@ -47,20 +45,55 @@ const textState = atom<number>({
   default: 0,
 });
 
+const channelPublicSelector = selector({
+  key: "selector:single:channelPublic",
+  get: ({ get }) => get(RecoilAtom.channel.channelPublic),
+});
+
+const channelPrivateSelector = selector({
+  key: "selector:single:channelPrivate",
+  get: ({ get }) => get(RecoilAtom.channel.channelPrivate),
+});
+
+const userSelector = selector({
+  key: "selector:single:user",
+  get: ({ get }) => get(RecoilAtom.user.me),
+});
+
 const Test1 = () => {
   const repo: IUserRepository = Get.get("IUserRepository");
+  const conn: IHttp = Get.get("IHttp");
+  const socket: ISocket<any, any> = Get.get("ISocket");
 
   // const [cls, setCls] = useRecoilState(classState());
   const [code, setCode] = useState("");
   const [number, setNumber] = useRecoilState(textState);
   const [number1, setNumber1] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
-  const [errorState, setErrorState] = useRecoilState(setError);
   const [testRecoil, setTestRecoil] = useRecoilState(testRecoilAtom);
   // const []
   const [num, setNum] = useState(0);
-  const conn: IHttp = Get.get("IHttp");
-  const socket: ISocket<any, any> = Get.get("ISocket");
+  const channelPublic = useRecoilValue(channelPublicSelector);
+  const channelPrivate = useRecoilValue(channelPrivateSelector);
+  const user = useRecoilValue(userSelector);
+  const users = useRecoilValue(RecoilSelector.user.users);
+  const newUser = useRecoilValue(RecoilSelector.user.newUser);
+
+  useEffect(() => {
+    console.log(channelPublic);
+  }, [channelPublic]);
+
+  useEffect(() => {
+    console.log(channelPrivate);
+  }, [channelPrivate]);
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
+
+  useEffect(() => {
+    console.log(newUser);
+  }, [newUser]);
 
   // const count = useRecoilValue(repo.charCountState());
 
@@ -84,8 +117,8 @@ const Test1 = () => {
 
   const test2 = async () => {
     await conn.refreshToken();
-    console.log(cookies.get("accessToken"));
-    console.log(cookies.get("refreshToken"));
+    console.log(localStorage.getItem("accessToken"));
+    console.log(localStorage.getItem("refreshToken"));
   };
 
   const test3 = () => {
@@ -99,6 +132,26 @@ const Test1 = () => {
     console.log(testRecoil);
   };
 
+  const test4 = () => {
+    console.log("hello");
+    const channel = {
+      ownerId: user.userId,
+      channelName: "성수와 겜한판ㅋ",
+      accessLayer: "public",
+      score: 11,
+    };
+    socket.emit("createChannel", { channel });
+  };
+
+  const test5 = () => {
+    socket.emit("test1");
+  };
+
+  const test6 = () => {
+    console.log(users);
+  };
+
+  socket.on("test1", (data: any) => console.log(data));
   // useEffect(() => {
   //   // Get.put("number", number);
   // }, [number]);
@@ -135,6 +188,9 @@ const Test1 = () => {
       </div>
       <div>
         <button onClick={test3}>소켓 연결</button>
+        <button onClick={test4}>방 생성</button>
+        <button onClick={test5}>소켓 테스트</button>
+        <button onClick={test6}>유저 콘솔 찍기</button>
       </div>
     </>
   );

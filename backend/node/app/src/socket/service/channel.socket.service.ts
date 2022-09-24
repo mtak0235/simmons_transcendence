@@ -34,21 +34,21 @@ export class ChannelSocketService {
     user: UserDto,
     channelCreateDto: ChannelCreateDto,
   ): Promise<ChannelDto> {
-    const channel = await this.channelSocketStore.create(channelCreateDto);
-
-    this.channelSocketStore.addUser(
-      channel.channelPublic.channelIdx,
-      user.userId,
-    );
-
-    this.userSocketService.switchStatus(user, 'waitingGame');
-
-    return channel;
+    return await this.channelSocketStore.create(channelCreateDto);
   }
 
-  updateChannel(channel: ChannelDto, channelUpdateDto: ChannelUpdateDto) {
+  async updateChannel(
+    channel: ChannelDto,
+    channelUpdateDto: ChannelUpdateDto,
+    password?: string,
+  ) {
     for (const key in channelUpdateDto)
       channel.channelPublic[key] = channelUpdateDto[key];
+
+    if (channel.channelPublic.accessLayer === 'protected') {
+      if (!password) throw new BadRequestException();
+      else channel.password = await this.encryptionService.hash(password);
+    }
   }
 
   deleteChannel(channelId: number) {
@@ -66,14 +66,14 @@ export class ChannelSocketService {
 
     // todo: if문 최적화, interceptor 로 뺴도 될듯
     if (
-      (!channel.invited.indexOf(user.userId) &&
+      (channel.invited.indexOf(user.userId) === -1 &&
         ((channel.channelPublic.accessLayer === 'protected' &&
           !(await this.encryptionService.compare(
             password,
             channel.password,
           ))) ||
           channel.channelPublic.accessLayer === 'private')) ||
-      channel.kickedOutUsers.indexOf(user.userId)
+      channel.kickedOutUsers.indexOf(user.userId) !== -1
     )
       throw new ForbiddenException();
 
@@ -116,17 +116,27 @@ export class ChannelSocketService {
     return readyCount;
   }
 
-  waitingGame(channel: ChannelDto, userId) {
-    if (channel.channelPrivate.matcher.length < 2)
+  waitingGame(channel: ChannelDto, userId: number) {
+    if (channel.channelPrivate.matcher.length < 2) {
       channel.channelPrivate.matcher.push({
         userId: userId,
         isReady: false,
       });
-    else {
+    } else {
       channel.channelPrivate.waiter.push(userId);
     }
   }
 
+  leaveGame(channel: ChannelDto, userId: number) {
+    channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
+      (user) => user.userId !== userId,
+    );
+    channel.channelPrivate.waiter = channel.channelPrivate.waiter.filter(
+      (id) => id !== userId,
+    );
+  }
+
+  // todo: 게임 개발되면서 사용자 나가는 것에 대한 예외처리 해야 함 (ex. 게임 중 나가면 다른 플레이어가 승리하며 게임 종료 된다던지..)
   outChannel(user: UserDto, channel: ChannelDto) {
     const result = {
       userExist: true,
@@ -197,12 +207,18 @@ export class ChannelSocketService {
     channel.kickedOutUsers.push(userId);
   }
 
-  mutedUser(channel: ChannelDto, mutedUser: MutedUser) {
-    if (channel.channelPrivate.users.indexOf(mutedUser.userId) === -1) {
+  mutedUser(channel: ChannelDto, userId: number) {
+    const mutedUser: MutedUser = {
+      userId: userId,
+      expiredAt: Math.floor(new Date().getTime() / 1000) + 300,
+    };
+
+    if (channel.channelPrivate.users.indexOf(userId) === -1)
       throw new BadRequestException();
-    }
 
     channel.mutedUsers.push(mutedUser);
+
+    return mutedUser;
   }
 
   async sendDm(sourceId: number, targetId: number) {

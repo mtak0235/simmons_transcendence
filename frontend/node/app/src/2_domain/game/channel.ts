@@ -1,6 +1,6 @@
 type ChannelParam = {
   adminId: number;
-  channelIdx: number;
+  channelId: number;
   accessLayer: string;
   channelName: string;
   score: number;
@@ -9,7 +9,7 @@ type ChannelParam = {
 
 class Channel {
   adminId: number;
-  channelIdx: number;
+  channelId: number;
   accessLayer: string;
   channelName: string;
   score: number;
@@ -17,7 +17,7 @@ class Channel {
 
   private constructor(param: ChannelParam) {
     this.adminId = param.adminId;
-    this.channelIdx = param.channelIdx;
+    this.channelId = param.channelId;
     this.accessLayer = param.accessLayer;
     this.channelName = param.channelName;
     this.score = param.score;
@@ -26,7 +26,7 @@ class Channel {
   static fromJson = (json: any): Channel => {
     return new Channel({
       adminId: json["adminId"],
-      channelIdx: json["channelIdx"],
+      channelId: json["channelId"],
       accessLayer: json["accessLayer"],
       channelName: json["channelName"],
       score: json("score"),

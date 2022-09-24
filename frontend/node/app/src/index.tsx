@@ -81,7 +81,7 @@ const root = ReactDOM.createRoot(
 
 dependencyInject();
 
-export const socket: ISocket<any, any> = Get.get("ISocket");
+// export const socket: ISocket<any, any> = Get.get("ISocket");
 
 root.render(
   // <React.StrictMode>

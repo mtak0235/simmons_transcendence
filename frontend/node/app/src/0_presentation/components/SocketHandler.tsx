@@ -1,109 +1,92 @@
 import React, { useEffect } from "react";
+import { selector, useRecoilValue } from "recoil";
+import { useAsync } from "react-async";
+import axios, { AxiosError } from "axios";
+
 import Get from "@root/lib/di/get";
 import ISocket from "@domain/socket/ISocket";
-import { MainPageDto } from "@presentation/components/SocketDto";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { getLoginState } from "@presentation/components/LoginHandler";
+import useUserEvent from "@application/socket/useUserEvent";
+import { IHttp } from "@domain/http/IHttp";
+import { HttpRequest } from "@domain/http/HttpRequest";
+import HttpToken from "@domain/http/HttpToken";
+import useChannelEvent from "@application/socket/useChannelEvent";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
+import { Simulate } from "react-dom/test-utils";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 interface SocketHandlerProps {
   children: React.ReactNode;
 }
 
+const connect = selector({
+  key: "ddd",
+  get: ({ get }) => {
+    return get(RecoilAtom.user.me);
+  },
+});
+
+const refreshToken = async () => {
+  const request = new HttpRequest({
+    path: "/auth/token",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      refresh_token: localStorage.getItem("refreshToken"),
+    },
+  });
+
+  await axios({
+    url: process.env.REACT_APP_API_URL + request.path,
+    method: request.method,
+    headers: request.headers,
+    data: request.data,
+    params: request.params,
+  })
+    .then((response) => {
+      const httpToken = new HttpToken(response.data.token);
+      for (const key in httpToken)
+        if (httpToken[key].length) localStorage.setItem(key, httpToken[key]);
+    })
+    .catch((err) => {
+      const http: IHttp = Get.get("IHttp");
+      console.log(err);
+      http.clearToken();
+      window.location.href = process.env.REACT_APP_BASE_URL;
+    });
+};
+
 const SocketHandler = ({ children }: SocketHandlerProps) => {
   const socket: ISocket<any, any> = Get.get("ISocket");
-  const loggedIn = useRecoilValue(getLoginState);
-  const [channels, setChannels] = useRecoilState(testFunc);
-  const channel = useRecoilValue(getTestFunc);
+  const http: IHttp = Get.get("IHttp");
+  const { error } = useAsync({
+    promiseFn: refreshToken,
+  });
 
-  // todo: update: socket response data type to Dto
+
+  const me = useRecoilValue(RecoilSelector.user.me);
+
   useEffect(() => {
-    // connection
-    if (loggedIn === 1) {
-      socket.connect().then(() => {
-        console.log(loggedIn);
-        console.log(socket.socket);
-
-        // todo: Main Page
-        socket.on("single:user:connected", (data: MainPageDto) => {
-          console.log(data);
-          setChannels(data.channels);
-        });
-        // todo: Main Page
-        socket.on("broad:user:connected", (data: any) => {
-          console.log(data);
-        });
-
-        // disconnection
-        // todo: Main Page
-        socket.on("broad:user:disconnected", (data: any) => {});
-
-        // createChannel
-        // todo: update: 백엔드 채널 이름 수정 create -> created
-        socket.on("single:channel:createdChannel", (data: any) => {});
-        // todo: Main Page
-        socket.on("broad:channel:createdChannel", (data: any) => {});
-
-        // updateChannel
-        // todo: update: 백엔드 채널 이름 수정 update -> updated
-        // todo: add: 백엔드에도 single 응답을 내려줘야 할까?
-        // todo: Main Page
-        socket.on("broad:channel:updatedChannel", (data: any) => {});
-
-        // inChannel
-        socket.on("single:channel:inChannel", (data: any) => {});
-        socket.on("group:channel:inChannel", (data: any) => {});
-
-        // outChannel
-        socket.on("single:channel:outChannel", (data: any) => {});
-        // todo: Main Page
-        socket.on("broad:channel:setAdmin", (data: any) => {}); // todo: duplicate: line to 46: setAdmin
-        // todo: Main Page
-        socket.on("broad:channel:deleteChannel", (data: any) => {});
-
-        // inviteUser
-        socket.on("single:channel:inviteUser", (data: any) => {});
-
-        // setAdmin
-        // todo: Main Page
-        socket.on("broad:channel:setAdmin", (data: any) => {});
-
-        // kickOutUser
-        socket.on("single:channel:kickOut", (data: any) => {});
-        socket.on("group:channel:kickOut", (data: any) => {});
-
-        // muteUser
-        socket.on("group:channel:muteUser", (data: any) => {});
-
-        // waitingGame
-        socket.on("group:channel:getGameParticipants", (data: any) => {});
-
-        // readyGame
-        socket.on("group:channel:readyGame", (data: any) => {});
-        socket.on("group:channel:startGame", (data: any) => {});
-
-        // sendMSG
-        // todo: update: sendMsg -> sendMessage 약어 수정
-        socket.on("group:channel:sendMessage", (data: any) => {});
-
-        // sendDM
-        socket.on("single:channel:sendDirectMessage", (data: any) => {});
-
-        // blockUser
-        socket.on("single:user:blockUser", (data: any) => {});
-
-        // followUser
-        socket.on("single:user:followUser", (data: any) => {});
-        socket.on("single:user:followedUser", (data: any) => {});
-
-        // unfollowUser
-        socket.on("single:user:unFollowUser", (data: any) => {});
-      });
-    }
+    socket.connect();
+    console.log(socket);
 
     return () => {
+      console.log("hello");
       socket.reRender();
     };
   }, []);
+
+  useUserEvent();
+  useChannelEvent();
+
+  useEffect(() => {
+    console.log(me);
+  }, [me]);
+
+  if (error) {
+    console.log(error);
+    socket.disconnect();
+    http.clearToken();
+    window.location.href = process.env.REACT_APP_BASE_URL;
+  }
 
   return <>{children}</>;
 };

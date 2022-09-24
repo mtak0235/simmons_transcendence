@@ -25,7 +25,7 @@ class GameLogRepository implements IGameLogRepository {
     return [
       Channel.fromJson({
         adminId: 3,
-        channelIdx: 1,
+        channelId: 1,
         accessLayer: "public",
         channelName: "taeskim과 신나는 게임 한판",
         score: 11,

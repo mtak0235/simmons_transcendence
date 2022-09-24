@@ -270,7 +270,7 @@ function Home() {
         setPosts(
           data.map((record) => {
             record["adminId"] = record.id;
-            record["channelIdx"] = record.id;
+            record["channelId"] = record.id;
             record["accessLayer"] = "public";
             record["channelName"] = `${record.id}번방의 선물`;
             record["score"] = 11;
@@ -294,14 +294,14 @@ function Home() {
               .map(
                 ({
                   adminId,
-                  channelIdx,
+                  channelId,
                   accessLayer,
                   channelName,
                   score,
                   onGame,
                 }) => (
-                  <Grid item xs={4} sm={4} md={4} key={channelIdx}>
-                    <Link to={`/game/${channelIdx}`}>
+                  <Grid item xs={4} sm={4} md={4} key={channelId}>
+                    <Link to={`/game/${channelId}`}>
                       <Card sx={{ maxWidth: 500 }}>
                         <CardContent>
                           <Typography

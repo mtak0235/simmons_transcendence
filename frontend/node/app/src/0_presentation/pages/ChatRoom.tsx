@@ -1,11 +1,7 @@
 import { message } from "antd";
 import { useState, useCallback, useEffect, useContext, useRef } from "react";
 import { Message } from "../../../../../../backend/node/app/src/socket/storage/message.socket.store";
-import {
-  makeMessage,
-  SOCKET_EVENT,
-  SocketContext,
-} from "../../1_application/socket";
+import { makeMessage, SOCKET_EVENT } from "../../1_application/socket";
 
 // function ChatRoom({ nickname }) {
 //   const [messages, setMessages] = useState([]);

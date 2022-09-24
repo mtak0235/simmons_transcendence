@@ -9,17 +9,8 @@ import Test1 from "@presentation/pages/Test1";
 import Test2 from "@presentation/pages/Test2";
 import LoginHandler from "@presentation/components/LoginHandler";
 import Login from "@presentation/pages/Login";
-import ErrorHandler from "@presentation/components/ErrorHandler";
 import SocketHandler from "@presentation/components/SocketHandler";
-import {
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { SOCKET_EVENT } from "./1_application/socket";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
 import ISocket from "@domain/socket/ISocket";

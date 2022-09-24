@@ -2,17 +2,14 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 
 import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
-import { Cookies } from "react-cookie";
 import HttpToken from "@domain/http/HttpToken";
 
 // todo: 통신 관련 오류 Filter 만들어서 직접 처리 하는걸로
 // todo: 집갔다와서 Socket도 빠르게 만들어버리자
 // todo: 함수가 너무 많은데 그냥 application 에서 param 받아올까 고민해보자 (taeskim님하고 같이)
 class Http extends IHttp {
-  private readonly cookies = new Cookies();
-
   private async connect(request: HttpRequest): Promise<AxiosResponse> {
-    request.headers["Authorization"] = `Bearer ${this.cookies.get(
+    request.headers["Authorization"] = `Bearer ${localStorage.getItem(
       request.token
     )}`;
     request.headers["Access-Control-Allow-Origin"] = "*";
@@ -24,13 +21,12 @@ class Http extends IHttp {
       headers: request.headers,
       data: request.data,
       params: request.params,
-      withCredentials: true,
     });
 
     if (response.data.token) {
       const httpToken = new HttpToken(response.data.token);
       for (const key in httpToken)
-        if (httpToken[key].length) this.cookies.set(key, httpToken[key]);
+        if (httpToken[key].length) localStorage.setItem(key, httpToken[key]);
     }
     return response;
 
@@ -75,13 +71,20 @@ class Http extends IHttp {
     const request = new HttpRequest({
       path: "/auth/token",
       headers: {
-        refresh_token: this.cookies.get("refreshToken"),
+        refresh_token: localStorage.getItem("refreshToken"),
       },
     });
     await this.connect(request);
 
     // todo: error: 아마 로그인 페이지로 리다이렉션 시키면 될 듯
     // if (response instanceof AxiosError) throw response; // todo: error handling
+  }
+
+  public clearToken() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("sign");
+    localStorage.removeItem("code");
   }
 
   // todo: update: param type to userAccessDto
@@ -104,7 +107,7 @@ class Http extends IHttp {
       data: value,
     });
     await this.connect(request);
-    this.cookies.remove("sign");
+    localStorage.removeItem("sign");
   }
 
   public async twoFactor(value: number): Promise<void> {
@@ -115,7 +118,7 @@ class Http extends IHttp {
       params: { code: value },
     });
     await this.connect(request);
-    this.cookies.remove("code");
+    localStorage.removeItem("code");
   }
 
   public async login(): Promise<void> {
@@ -140,8 +143,8 @@ class Http extends IHttp {
     } catch (err: any) {
       throw err;
     } finally {
-      this.cookies.remove("accessToken");
-      this.cookies.remove("refreshToken");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     }
   }
 

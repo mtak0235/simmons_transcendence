@@ -14,7 +14,9 @@ abstract class ISocket<
 > {
   abstract socket?: io.Socket;
 
-  public abstract connect(): Promise<void>;
+  public abstract connect(): void;
+
+  public abstract disconnect(): void;
 
   public abstract on<
     Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>
@@ -29,6 +31,8 @@ abstract class ISocket<
   ): void;
 
   public abstract reRender(): void;
+
+  public abstract connected(): boolean;
 }
 
 export default ISocket;
