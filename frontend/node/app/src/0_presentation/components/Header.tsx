@@ -57,7 +57,6 @@ const LoginButton = styled.button`
 `;
 
 function Header() {
-  const chatMatch = useMatch("chat");
   return (
     <Nav>
       <Col>

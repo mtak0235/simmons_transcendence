@@ -9,7 +9,7 @@ type GameLogsParam = {
   updatedAt: Date;
   playerA: User;
   playerB: User;
-}
+};
 
 class GameLogs {
   id: number;
@@ -22,14 +22,14 @@ class GameLogs {
   playerB: User;
 
   private constructor(param: GameLogsParam) {
-    this.id = param.id; 
-    this.playerAId = param.playerAId; 
-    this.playerBId = param.playerBId; 
-    this.result = param.result; 
+    this.id = param.id;
+    this.playerAId = param.playerAId;
+    this.playerBId = param.playerBId;
+    this.result = param.result;
     this.createdAt = param.createdAt;
-    this.updatedAt = param.updatedAt; 
-    this.playerA = param.playerA; 
-    this.playerB = param.playerB; 
+    this.updatedAt = param.updatedAt;
+    this.playerA = param.playerA;
+    this.playerB = param.playerB;
   }
 
   static fromJson = (json: any): GameLogs => {
@@ -42,8 +42,8 @@ class GameLogs {
       updatedAt: json["updatedAt"],
       playerA: json["playerA"],
       playerB: json["playerB"],
-    })
-  }
+    });
+  };
 }
 
-export default GameLogs
+export default GameLogs;

@@ -1,13 +1,8 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  BrowserRouter,
-} from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "@presentation/home/Home";
 import NotFound from "@presentation/pages/core/NotFound";
 import Header from "@presentation/components/Header";
-import Game from "@presentation/pages/Game";
+import Game from "@root/0_presentation/game/Game";
 import Chat from "@presentation/pages/Chat";
 import styled from "styled-components";
 import Test1 from "@presentation/pages/Test1";
@@ -20,6 +15,7 @@ import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
+import GamePlay from "./0_presentation/game/GamePlay";
 
 const Wrapper = styled.div`
   position: relative;
@@ -62,26 +58,29 @@ function App() {
   // );
 
   return (
-    <Router>
-      <LoginHandler>
-        <SocketHandler>
-          <Header />
-          <Wrapper>
-            {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
-            {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
-            {/*</div>*/}
-            <Routes>
-              <Route path="*" element={<NotFound />} />
-              <Route path="/" element={<Home />} />
-              <Route path="/game/:id" element={<Game />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/test1" element={<Test1 />} />
-              <Route path="/test2" element={<Test2 />} />
-            </Routes>
-          </Wrapper>
-        </SocketHandler>
-      </LoginHandler>
-    </Router>
+    <BrowserRouter>
+      <Suspense fallback={<h2>Loading posts...</h2>}>
+        <LoginHandler>
+          <SocketHandler>
+            <Header />
+            <Wrapper>
+              {/*<div className="d-flex flex-column justify-content-center align-items-center vh-100">*/}
+              {/*  <NicknameForm handleSubmitNickname={handleSubmitNickname} />*/}
+              {/*</div>*/}
+              <Routes>
+                <Route path="*" element={<NotFound />} />
+                {/* <Route path="/" element={<Home />} /> */}
+                <Route path="/" element={<GamePlay />} />
+                <Route path="/game/:id" element={<Game />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/test1" element={<Test1 />} />
+                <Route path="/test2" element={<Test2 />} />
+              </Routes>
+            </Wrapper>
+          </SocketHandler>
+        </LoginHandler>
+      </Suspense>
+    </BrowserRouter>
   );
 }
 

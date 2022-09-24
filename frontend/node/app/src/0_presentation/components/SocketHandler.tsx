@@ -61,6 +61,7 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
     promiseFn: refreshToken,
   });
 
+
   const me = useRecoilValue(RecoilSelector.user.me);
 
   useEffect(() => {
