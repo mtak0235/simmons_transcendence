@@ -1,121 +1,276 @@
-import { width } from "@mui/system";
+import React from "react";
 import Box, { BACKGROUND, BALL, PLAYER } from "./components/box";
-import { useUpdateGame } from "@root/1_application/game/useGamePlay";
-import Game from "@root/2_domain/game/game";
 
 /* size */
-const ROW_SIZE: number = 10;
-const COL_SIZE: number = 20;
+const ROW_SIZE = 10;
+const COL_SIZE = 20;
 
 /* paddle */
 const PADDLE_BOARD_SIZE = 3;
 const PADDLE_EDGE_SPACE = 1;
 
 /* buttons */
-const PLAYER_UP = "ArrowUp"; // up arrow
-const PLAYER_DOWN = "ArrowDown"; // down arrow
-const PAUSE = " "; // space
+const PLAYER_UP = 38; // up arrow
+const PLAYER_DOWN = 40; // down arrow
+const PAUSE = 32; // space
 
-const GamePlay = () => {
-  const game = useUpdateGame();
-  const tmpGame = Game.initial();
+const inner = {
+  display: "flex",
+  flexDirection: "row",
+  justifyContent: "justify",
+};
 
-  tmpGame.deltaX = 0;
-  tmpGame.deltaY = 0;
+const outer = {
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "justify",
+  marginTop: "9em",
+  marginLeft: "25em",
+  Text: "100px",
+  padding: "10px",
+};
+const dividerStyle = {
+  marginLeft: "50px",
+  fontSize: "50px",
+  color: "white",
+};
 
-  // useUpdateGame(tmpGame);
+const score = {
+  marginLeft: "100px",
+  fontSize: "50px",
+  color: "white",
+};
 
-  console.log(game.deltaX, game.deltaY);
+const style = {
+  width: "250px",
+  heigth: "250px",
+  display: "grid",
+  gridTemplate: `repeat(${ROW_SIZE}, 1fr) / repeat(${COL_SIZE}, 1fr)`,
+};
 
-  // game.deltaX = 999;
+const InitialState = () => {
+  const paddle = [...Array(PADDLE_BOARD_SIZE)].map((_, pos) => pos);
+  return {
+    /* board */
+    player: paddle.map((x) => x * COL_SIZE + PADDLE_EDGE_SPACE),
+    opponent: paddle.map((x) => (x + 1) * COL_SIZE - (PADDLE_EDGE_SPACE + 1)),
+    ball: Math.round((ROW_SIZE * COL_SIZE) / 2) + ROW_SIZE,
+    /* ball */
+    ballSpeed: 100,
+    deltaY: -COL_SIZE,
+    deltaX: -1, // -1 means the ball is moving towards player 1 means towards opponent
+    pause: true,
+    /* for dumb Ai */
+    opponentSpeed: 150,
+    opponentDir: false,
+    /* Score */
+    playerScore: 0,
+    opponentScore: 0,
+  };
+};
 
-  // console.log(game.deltaX, game.deltaY);
+class GamePlay extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = InitialState();
+  }
 
-  // const { deltaY } = useGameSettings();
+  resetGame = () =>
+    this.setState({
+      ball: Math.round((ROW_SIZE * COL_SIZE) / 2) + ROW_SIZE,
+    });
 
-  document.onkeydown = (event) => {
-    switch (event.key) {
+  moveBoard = (playerBoard, isUp) => {
+    const playerEdge = isUp
+      ? playerBoard[0]
+      : playerBoard[PADDLE_BOARD_SIZE - 1];
+
+    if (!this.touchingEdge(playerEdge)) {
+      const deltaY = isUp ? -COL_SIZE : COL_SIZE;
+      /* if ball touches the edge */
+      const newDir =
+        (this.state.deltaY !== COL_SIZE) ^ isUp
+          ? -this.state.deltaY
+          : this.state.deltaY;
+
+      if (!this.touchingEdge(this.state.ball)) {
+        switch (this.state.ball) {
+          case playerEdge + deltaY - 1:
+            this.setState({
+              deltaY: newDir,
+              deltaX: -1,
+            });
+            break;
+          case playerEdge:
+            this.setState({
+              deltaY: newDir,
+            });
+            break;
+          case playerEdge + deltaY + 1:
+            this.setState({
+              deltaY: newDir,
+              deltaX: 1,
+            });
+            break;
+        }
+      }
+      return playerBoard.map((x) => x + deltaY);
+    }
+    return false;
+  };
+
+  componentDidMount() {
+    /* moving the ball */
+    setInterval(() => {
+      if (!this.state.pause) {
+        this.bounceBall();
+      }
+    }, this.state.ballSpeed);
+    /* moving the opponent */
+    setInterval(() => {
+      if (!this.state.pause) {
+        this.moveOpponent();
+      }
+    }, this.state.opponentSpeed);
+
+    document.onkeydown = this.keyInput;
+    document.title = "ping-pong";
+  }
+
+  touchingEdge = (pos) =>
+    (0 <= pos && pos < COL_SIZE) ||
+    (COL_SIZE * (ROW_SIZE - 1) <= pos && pos < COL_SIZE * ROW_SIZE);
+
+  touchingPaddle = (pos) => {
+    return (
+      this.state.player.indexOf(pos) !== -1 ||
+      this.state.opponent.indexOf(pos) !== -1 ||
+      this.state[this.state.deltaX === -1 ? "player" : "opponent"].indexOf(
+        pos + this.state.deltaX
+      ) !== -1
+    );
+  };
+
+  isScore = (pos) =>
+    (this.state.deltaX === -1 && pos % COL_SIZE === 0) ||
+    (this.state.deltaX === 1 && (pos + 1) % COL_SIZE === 0);
+
+  moveOpponent = () => {
+    const movedPlayer = this.moveBoard(
+      this.state.opponent,
+      this.state.opponentDir
+    );
+    movedPlayer
+      ? this.setState({ opponent: movedPlayer })
+      : this.setState({ opponentDir: !this.state.opponentDir });
+  };
+
+  touchingPaddleEdge = (pos) =>
+    this.state.player[0] === pos ||
+    this.state.player[PADDLE_BOARD_SIZE - 1] === pos ||
+    this.state.opponent[0] === pos ||
+    this.state.opponent[PADDLE_BOARD_SIZE - 1] === pos;
+
+  bounceBall = () => {
+    const newState = this.state.ball + this.state.deltaY + this.state.deltaX;
+    if (this.touchingEdge(newState)) {
+      this.setState({ deltaY: -this.state.deltaY });
+    }
+
+    if (this.touchingPaddleEdge(newState)) {
+      this.setState({ deltaY: -this.state.deltaY });
+    }
+
+    if (this.touchingPaddle(newState)) {
+      this.setState({ deltaX: -this.state.deltaX });
+    }
+
+    /* updating board */
+    this.setState({ ball: newState });
+
+    /* checking if loss or won */
+    if (this.isScore(newState)) {
+      if (this.state.deltaX !== -1) {
+        /* player won */
+        this.setState({
+          playerScore: this.state.playerScore + 1,
+          ball: newState,
+        });
+      } else {
+        /* opponent won */
+        this.setState({
+          opponentScore: this.state.opponentScore + 1,
+          ball: newState,
+        });
+      }
+      this.setState({ pause: true });
+      this.resetGame();
+    }
+  };
+
+  keyInput = ({ keyCode }) => {
+    switch (keyCode) {
       case PLAYER_UP:
       case PLAYER_DOWN:
-        console.log(event.key);
+        const movedPlayer = this.moveBoard(
+          this.state.player,
+          keyCode === PLAYER_UP
+        );
+        if (movedPlayer) {
+          this.setState({ player: movedPlayer, pause: false });
+        }
         break;
       case PAUSE:
-        console.log("Pause");
+        this.setState({ pause: true });
         break;
     }
   };
 
-  const touchingEdge = (pos) =>
-    (0 <= pos && pos < COL_SIZE) ||
-    (COL_SIZE * (ROW_SIZE - 1) <= pos && pos < COL_SIZE * ROW_SIZE);
+  render() {
+    const board = [...Array(ROW_SIZE * COL_SIZE)].map((_, pos) => {
+      let val = BACKGROUND;
+      if (
+        this.state.player.indexOf(pos) !== -1 ||
+        this.state.opponent.indexOf(pos) !== -1
+      ) {
+        val = PLAYER;
+      } else if (this.state.ball === pos) {
+        val = BALL;
+      }
+      return <Box key={pos} k={pos} name={val} />;
+    });
 
-  // const moveBoard = (playerBoard, isUp) => {
-  //   const playerEdge = isUp
-  //     ? playerBoard[0]
-  //     : playerBoard[PADDLE_BOARD_SIZE - 1];
+    const divider = [...Array(ROW_SIZE / 2 + 2)].map((_) => <div>{"|"}</div>);
+    return (
+      <div style={outer}>
+        <h1>
+          {" "}
+          {"[space]"} {this.state.pause ? "PLAY/pause" : "play/PAUSE"}{" "}
+        </h1>
+        <div style={inner}>
+          <div style={style}>{board}</div>
+          <div style={score}>{this.state.playerScore}</div>
+          <div style={dividerStyle}> {divider} </div>
+          <div style={dividerStyle}>{this.state.opponentScore}</div>
+        </div>
+        <h3> {"press up and down to move"} </h3>
+      </div>
+    );
+  }
+}
 
-  //   if (!touchingEdge(playerEdge)) {
-  //     const deltaY = isUp ? -COL_SIZE : COL_SIZE;
-  //     /* if ball touches the edge */
-  //     const newDir = (deltaY != COL_SIZE) ^ isUp ? -deltaY : deltaY;
-
-  //     if (!this.touchingEdge(ball)) {
-  //       switch (this.state.ball) {
-  //         case playerEdge + deltaY - 1:
-  //           this.setState({
-  //             deltaY: newDir,
-  //             deltaX: -1,
-  //           });
-  //           break;
-  //         case playerEdge:
-  //           this.setState({
-  //             deltaY: newDir,
-  //           });
-  //           break;
-  //         case playerEdge + deltaY + 1:
-  //           this.setState({
-  //             deltaY: newDir,
-  //             deltaX: 1,
-  //           });
-  //           break;
-  //       }
-  //     }
-  //     return playerBoard.map((x) => x + deltaY);
-  //   }
-  //   return false;
-  // };
-
-  // const board = [...Array(ROW_SIZE * COL_SIZE)].map((_, pos) => {
-  //   let val = BACKGROUND;
-  //   if (player.indexOf(pos) !== -1 || opponent.indexOf(pos) !== -1) {
-  //     val = PLAYER;
-  //   } else if (state.ball === pos) {
-  //     val = BALL;
-  //   }
-  //   return <Box key={pos} k={pos} name={val} />;
-  // });
-
-  // const paddle = [...Array(PADDLE_BOARD_SIZE)].map((_, pos) => pos);
-  // const [player, setPlayer] = paddle.map(
-  //   (x) => x * COL_SIZE + PADDLE_EDGE_SPACE
-  // );
-  // const [opponent, setOpponent] = paddle.map(
-  //   (x) => x * COL_SIZE + PADDLE_EDGE_SPACE
-  // );
-
-  // const board = [...Array(ROW_SIZE * COL_SIZE)].map((_, pos) => {
-  //   let val = BACKGROUND;
-  //   if (
-  //     this.state.player.indexOf(pos) !== -1 ||
-  //     this.state.opponent.indexOf(pos) !== -1
-  //   ) {
-  //     val = PLAYER;
-  //   } else if (this.state.ball === pos) {
-  //     val = BALL;
-  //   }
-  //   return <Box key={pos} k={pos} name={val} />;
-  // });
-  return <div tabIndex={0} style={{ width: 200, height: 200 }}></div>;
-};
+window.addEventListener(
+  "keydown",
+  (e) => {
+    if (
+      ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+        e.code
+      )
+    ) {
+      e.preventDefault();
+    }
+  },
+  false
+);
 
 export default GamePlay;
