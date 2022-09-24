@@ -32,6 +32,13 @@ const RecoilSelector: IRecoilSelector = {
         return users.filter((user) => follows.indexOf(user.userId) !== -1);
       },
     }),
+    newUser: selector({
+      key: "selector:user:newUser",
+      get: ({ get }): SocketDto.UserInfo => {
+        const users = get(RecoilAtom.user.users);
+        return users[users.length - 1];
+      },
+    }),
   },
   channel: {
     channels: selector({

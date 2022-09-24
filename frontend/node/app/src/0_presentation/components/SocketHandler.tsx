@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { selector, useRecoilValue } from "recoil";
 import { useAsync } from "react-async";
-import { Cookies } from "react-cookie";
 import axios, { AxiosError } from "axios";
 
 import Get from "@root/lib/di/get";
@@ -27,12 +26,11 @@ const connect = selector({
 });
 
 const refreshToken = async () => {
-  const cookies = new Cookies();
   const request = new HttpRequest({
     path: "/auth/token",
     headers: {
-      Authorization: `Bearer ${cookies.get("accessToken")}`,
-      refresh_token: cookies.get("refreshToken"),
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      refresh_token: localStorage.getItem("refreshToken"),
     },
   });
 
@@ -42,15 +40,15 @@ const refreshToken = async () => {
     headers: request.headers,
     data: request.data,
     params: request.params,
-    withCredentials: true,
   })
     .then((response) => {
       const httpToken = new HttpToken(response.data.token);
       for (const key in httpToken)
-        if (httpToken[key].length) cookies.set(key, httpToken[key]);
+        if (httpToken[key].length) localStorage.setItem(key, httpToken[key]);
     })
-    .catch(() => {
+    .catch((err) => {
       const http: IHttp = Get.get("IHttp");
+      console.log(err);
       http.clearToken();
       window.location.href = process.env.REACT_APP_BASE_URL;
     });
@@ -67,6 +65,7 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
 
   useEffect(() => {
     socket.connect();
+    console.log(socket);
 
     return () => {
       console.log("hello");

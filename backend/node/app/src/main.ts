@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import * as Yaml from 'yamljs';
-import * as cookieParser from 'cookie-parser';
+// import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 import * as passport from 'passport';
 
@@ -39,7 +39,7 @@ async function bootstrap() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  app.use(cookieParser());
+  // app.use(cookieParser());
 
   await app.listen(port, () => {
     console.log(`======= ENV: ${process.env.NODE_ENV} =======`);

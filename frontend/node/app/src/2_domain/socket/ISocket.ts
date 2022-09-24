@@ -31,6 +31,8 @@ abstract class ISocket<
   ): void;
 
   public abstract reRender(): void;
+
+  public abstract connected(): boolean;
 }
 
 export default ISocket;

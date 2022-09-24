@@ -51,9 +51,9 @@ export class MainSocketService {
     };
     if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
       // todo: delete: 개발용 if문, 삭제 필요, 조건문만 삭제해야 함
-      if (process.env.NODE_ENV !== 'local') {
-        throw new InternalServerErrorException('Forbidden');
-      }
+      // if (process.env.NODE_ENV !== 'local') {
+      throw new InternalServerErrorException('Forbidden');
+      // }
     }
     mainPageDto.me = await this.userSocketService.connect(
       !mainPageDto.me ? userInfo : mainPageDto.me,

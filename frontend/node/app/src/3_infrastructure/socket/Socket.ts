@@ -1,5 +1,4 @@
 import * as io from "socket.io-client";
-import { Cookies } from "react-cookie";
 import {
   EventNames,
   EventParams,
@@ -16,14 +15,12 @@ class Socket<
   EmitEvents extends EventsMap,
   ReservedEvents extends EventsMap = {}
 > extends ISocket<any, any> {
-  private readonly cookies = new Cookies();
   socket?: io.Socket;
 
   public async connect() {
     this.socket = io.connect(process.env.REACT_APP_SOCKET_URL, {
-      withCredentials: true,
       extraHeaders: {
-        access_token: this.cookies.get("accessToken"),
+        access_token: localStorage.getItem("accessToken"),
       },
     });
 
@@ -50,6 +47,10 @@ class Socket<
 
   public reRender(): void {
     this.socket?.removeAllListeners();
+  }
+
+  public connected(): boolean {
+    return this.socket !== undefined;
   }
 }
 

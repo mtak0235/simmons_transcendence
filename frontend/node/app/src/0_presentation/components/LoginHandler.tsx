@@ -6,7 +6,6 @@ import {
   selector,
   useRecoilState,
 } from "recoil";
-import { Cookies } from "react-cookie";
 import queryString from "query-string";
 import Get from "@root/lib/di/get";
 import { IAuthRepository } from "@domain/auth/IAuthRepository";
@@ -19,8 +18,6 @@ import ISocket from "@domain/socket/ISocket";
 interface LoginHandlerProps {
   children: React.ReactNode;
 }
-
-const cookies = new Cookies();
 
 export const loginState: RecoilState<number> = atom<number>({
   key: "loginState",
@@ -53,7 +50,7 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
   useEffect(() => {
     const token = queryString.parse(window.location.search);
     if (Object.keys(token).length) {
-      for (const key in token) cookies.set(key, token[key]);
+      for (const key in token) localStorage.setItem(key, String(token[key]));
       window.location.href = "http://localhost:3000";
     }
     // async function checkToken() {
@@ -70,7 +67,7 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
   }, []);
 
   useEffect(() => {
-    if (cookies.get("accessToken") !== undefined) {
+    if (localStorage.getItem("accessToken")) {
       setIsLoggedIn(1);
     } else {
       setIsLoggedIn(2);

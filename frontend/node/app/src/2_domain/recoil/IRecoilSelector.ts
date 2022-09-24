@@ -7,6 +7,7 @@ interface IRecoilSelector {
     users: RecoilValueReadOnly<SocketDto.UserInfo[]>;
     status: RecoilValueReadOnly<SocketDto.UserInfo>;
     onFollows: RecoilValueReadOnly<SocketDto.UserInfo[]>;
+    newUser: RecoilValueReadOnly<SocketDto.UserInfo>;
   };
   channel: {
     channels: RecoilValueReadOnly<SocketDto.ChannelPublic[]>;

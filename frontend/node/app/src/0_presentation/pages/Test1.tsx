@@ -11,13 +11,11 @@ import IUserRepository from "@domain/user/IUserRepository";
 import UserRepository from "@infrastructure/user/UserRepository";
 import { useEffect, useState } from "react";
 import { IHttp } from "@domain/http/IHttp";
-import { Cookies } from "react-cookie";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
 import ISocket from "@domain/socket/ISocket";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
-
-const cookies = new Cookies();
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 const classState = (): RecoilState<UserRepository> => {
   return atom({
@@ -78,6 +76,8 @@ const Test1 = () => {
   const channelPublic = useRecoilValue(channelPublicSelector);
   const channelPrivate = useRecoilValue(channelPrivateSelector);
   const user = useRecoilValue(userSelector);
+  const users = useRecoilValue(RecoilSelector.user.users);
+  const newUser = useRecoilValue(RecoilSelector.user.newUser);
 
   useEffect(() => {
     console.log(channelPublic);
@@ -90,6 +90,10 @@ const Test1 = () => {
   useEffect(() => {
     console.log(user);
   }, [user]);
+
+  useEffect(() => {
+    console.log(newUser);
+  }, [newUser]);
 
   // const count = useRecoilValue(repo.charCountState());
 
@@ -113,8 +117,8 @@ const Test1 = () => {
 
   const test2 = async () => {
     await conn.refreshToken();
-    console.log(cookies.get("accessToken"));
-    console.log(cookies.get("refreshToken"));
+    console.log(localStorage.getItem("accessToken"));
+    console.log(localStorage.getItem("refreshToken"));
   };
 
   const test3 = () => {
@@ -141,6 +145,10 @@ const Test1 = () => {
 
   const test5 = () => {
     socket.emit("test1");
+  };
+
+  const test6 = () => {
+    console.log(users);
   };
 
   socket.on("test1", (data: any) => console.log(data));
@@ -182,6 +190,7 @@ const Test1 = () => {
         <button onClick={test3}>소켓 연결</button>
         <button onClick={test4}>방 생성</button>
         <button onClick={test5}>소켓 테스트</button>
+        <button onClick={test6}>유저 콘솔 찍기</button>
       </div>
     </>
   );

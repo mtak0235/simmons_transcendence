@@ -88,18 +88,21 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
           new SocketException(500, 'Internal Server Error'),
         );
       }
-      client.disconnect();
+      this.handleDisconnect(client);
     }
   }
 
-  async handleDisconnect(client: ClientInstance): Promise<any> {
+  handleDisconnect(client: ClientInstance): void {
     if (client.user) {
       if (client.channel) this.outChannel(client);
 
       this.mainSocketService.deleteSocketInstance(client.user.userId);
 
       this.changeStatus(client, 'offline');
+      client.rooms.delete(`room:user:${client.user.userId}`);
     }
+    client.disconnect();
+    client.rooms.clear();
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('status'))
