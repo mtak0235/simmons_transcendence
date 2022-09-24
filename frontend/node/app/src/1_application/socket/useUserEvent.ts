@@ -80,7 +80,7 @@ const useUserEvent = () => {
   };
 
   useEffect(() => {
-    socket.on("broad.user:changeStatus", handleChangeStatus);
+    socket.on("broad:user:changeStatus", handleChangeStatus);
     socket.on("single:user:connected", handleConnected);
     socket.on("single:user:disconnected", handleDisconnect);
     socket.on("single:user:error", handleError);
