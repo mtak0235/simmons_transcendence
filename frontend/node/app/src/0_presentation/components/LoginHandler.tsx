@@ -45,7 +45,6 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
   const [socketConn, setSocketConn] = useState(null);
   const conn: IHttp = Get.get("IHttp");
-  const socket: ISocket<any, any> = Get.get("ISocket");
 
   useEffect(() => {
     const token = queryString.parse(window.location.search);

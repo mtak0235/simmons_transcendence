@@ -24,7 +24,7 @@ export class ChannelSocketStore {
         onGame: false,
       },
       channelPrivate: {
-        users: [],
+        users: [2000],
         waiter: [],
         matcher: [],
       },

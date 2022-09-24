@@ -1,16 +1,24 @@
-import { useRecoilState, useRecoilValue } from "recoil";
-import Get from "@root/lib/di/get";
-import IUserRepository from "@domain/user/IUserRepository";
+import { useRecoilValue } from "recoil";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Test2 = () => {
-  const repo: IUserRepository = Get.get("IUserRepository");
-  const count = useRecoilValue(repo.charCountState());
-  // const [number, setNumber] = useRecoilState(repo.textState());
+  const navigate = useNavigate();
+  const channelPublic = useRecoilValue(RecoilSelector.channel.public);
+  const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
+
+  useEffect(() => {
+    console.log(channelPublic);
+    console.log(channelPrivate);
+
+    if (!channelPrivate || !channelPublic) navigate("/");
+  }, []);
+
   return (
-    <div>
-      <h1>Test2</h1>
-      <h1>{count}</h1>
-    </div>
+    <>
+      <h1>Hello World!!</h1>
+    </>
   );
 };
 

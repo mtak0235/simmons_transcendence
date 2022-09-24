@@ -15,7 +15,17 @@ import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
 import ISocket from "@domain/socket/ISocket";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
-import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import RecoilSelector, {
+  selectorUsers,
+} from "@infrastructure/recoil/RecoilSelector";
+import SocketDto from "SocketDto";
+import { Socket } from "socket.io-client";
+import { getRecoil } from "recoil-nexus";
+import {
+  recoilSelectUsers,
+  recoilUsers,
+  userMe,
+} from "@presentation/components/SocketHandler";
 
 const classState = (): RecoilState<UserRepository> => {
   return atom({
@@ -29,83 +39,53 @@ interface testRecoilInterface {
   b: string;
 }
 
-const testRecoilAtom = atom<testRecoilInterface[]>({
-  key: "testRecoilAtom",
-  default: [],
-});
-
-const testRecoilSelector = selector({
-  key: "testRecoilSelector",
-  get: ({ get }) => get(testRecoilAtom),
-  set: (param) => param.set(testRecoilAtom, param["value"]),
-});
-
-const textState = atom<number>({
-  key: "textState",
-  default: 0,
-});
-
-const channelPublicSelector = selector({
-  key: "selector:single:channelPublic",
-  get: ({ get }) => get(RecoilAtom.channel.channelPublic),
-});
-
-const channelPrivateSelector = selector({
-  key: "selector:single:channelPrivate",
-  get: ({ get }) => get(RecoilAtom.channel.channelPrivate),
-});
-
-const userSelector = selector({
-  key: "selector:single:user",
-  get: ({ get }) => get(RecoilAtom.user.me),
-});
-
 const Test1 = () => {
   const repo: IUserRepository = Get.get("IUserRepository");
   const conn: IHttp = Get.get("IHttp");
-  const socket: ISocket<any, any> = Get.get("ISocket");
+  const socket: Socket = Get.get("ISocket");
 
-  // const [cls, setCls] = useRecoilState(classState());
-  const [code, setCode] = useState("");
-  const [number, setNumber] = useRecoilState(textState);
-  const [number1, setNumber1] = useState(0);
+  // const [users, setUsers] = useRecoilState(RecoilAtom.user.users);
+  const users1 = useRecoilValue(RecoilSelector.user.users);
+  const me = useRecoilValue(RecoilSelector.user.me);
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
-  const [testRecoil, setTestRecoil] = useRecoilState(testRecoilAtom);
-  // const []
-  const [num, setNum] = useState(0);
-  const channelPublic = useRecoilValue(channelPublicSelector);
-  const channelPrivate = useRecoilValue(channelPrivateSelector);
-  const user = useRecoilValue(userSelector);
-  const users = useRecoilValue(RecoilSelector.user.users);
-  const newUser = useRecoilValue(RecoilSelector.user.newUser);
 
   useEffect(() => {
-    console.log(channelPublic);
-  }, [channelPublic]);
-
+    console.log(me);
+  }, [me]);
   useEffect(() => {
-    console.log(channelPrivate);
-  }, [channelPrivate]);
-
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
-  useEffect(() => {
-    console.log(newUser);
-  }, [newUser]);
+    console.log(users1);
+  }, [users1]);
+  // useEffect(() => {
+  //   socket.on("broad:user:changeStatus", (data: SocketDto.UserInfo) => {
+  //     console.log(data);
+  //     if (me.userId === data.userId) {
+  //       setMe((curr) => {
+  //         curr.status = data.status;
+  //         return curr;
+  //       });
+  //     } else {
+  //       setUsers((curr) => {
+  //         if (curr.findIndex((user) => user.userId === data.userId) === -1) {
+  //           curr.push(data);
+  //         } else {
+  //           curr.map((user, idx) => {
+  //             if (user.userId === data.userId) {
+  //               if (data.status === "offline") curr.splice(idx, 1);
+  //               else user.status = data.status;
+  //             }
+  //           });
+  //         }
+  //         return curr;
+  //       });
+  //     }
+  //   });
+  // }, [users]);
 
   // const count = useRecoilValue(repo.charCountState());
 
-  const onIncrease = () => {
-    setNumber(number + 1);
-    console.log(number);
-  };
-
-  const onDecrease = () => {
-    setNumber(number - 1);
-  };
-
+  // useEffect(() => {
+  //   console.log(getRecoil(recoilUsers));
+  // }, getRecoil(recoilUsers));
   const test = () => {
     localStorage.setItem("accessToken", "hello");
   };
@@ -121,47 +101,38 @@ const Test1 = () => {
     console.log(localStorage.getItem("refreshToken"));
   };
 
-  const test3 = () => {
-    console.log("dd", testRecoil);
-    setNumber1(number1 + 1);
-    const arg: testRecoilInterface = {
-      a: number1,
-      b: "2",
-    };
-    setTestRecoil((prev) => [...prev, arg]);
-    console.log(testRecoil);
-  };
-
-  const test4 = () => {
-    console.log("hello");
-    const channel = {
-      ownerId: user.userId,
-      channelName: "성수와 겜한판ㅋ",
-      accessLayer: "public",
-      score: 11,
-    };
-    socket.emit("createChannel", { channel });
-  };
-
   const test5 = () => {
     socket.emit("test1");
   };
 
   const test6 = () => {
-    console.log(users);
+    // console.log(getRecoil(recoilUsers));
+    // console.log(users);
+    console.log(users1);
   };
 
-  socket.on("test1", (data: any) => console.log(data));
-  // useEffect(() => {
-  //   // Get.put("number", number);
-  // }, [number]);
+  const test7 = () => {
+    console.log(getRecoil(RecoilAtom.user.me));
+  };
+
+  const test8 = () => {
+    socket.emit("blockUser", { userId: 80479 });
+  };
+
+  const test9 = () => {
+    socket.emit("createChannel", {
+      channel: {
+        ownerId: 85274,
+        channelName: "테스트 겜",
+        accessLayer: "public",
+        score: 11,
+      },
+    });
+  };
 
   return (
     <>
       <div>
-        <h1>{number}</h1>
-        <button onClick={onIncrease}>+</button>
-        <button onClick={onDecrease}>-</button>
         <button onClick={test}>테스트</button>
         <button onClick={test1}>테스트2</button>
 
@@ -187,10 +158,13 @@ const Test1 = () => {
         <button onClick={test2}>토큰재발급</button>
       </div>
       <div>
-        <button onClick={test3}>소켓 연결</button>
-        <button onClick={test4}>방 생성</button>
         <button onClick={test5}>소켓 테스트</button>
         <button onClick={test6}>유저 콘솔 찍기</button>
+        <button onClick={test7}>내정보 찍기</button>
+        <button onClick={test8}>사용자 차단</button>
+      </div>
+      <div>
+        <button onClick={test9}>방 생성</button>
       </div>
     </>
   );
