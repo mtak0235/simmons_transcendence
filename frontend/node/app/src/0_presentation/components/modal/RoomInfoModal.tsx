@@ -57,6 +57,7 @@ const RoomInfoModal = ({
     if (handleConfirm) {
       await handleConfirm();
     }
+
     hideModal();
   };
 

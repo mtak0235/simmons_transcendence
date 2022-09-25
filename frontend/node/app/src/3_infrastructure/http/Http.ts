@@ -143,8 +143,7 @@ class Http extends IHttp {
     } catch (err: any) {
       throw err;
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      this.clearToken();
     }
   }
 

@@ -9,6 +9,10 @@ import {
 } from "@mui/material";
 import styled from "styled-components";
 import useModal from "./hooks";
+import { useState } from "react";
+import ISocketEmit from "@domain/socket/ISocketEmit";
+import Get from "@root/lib/di/get";
+import SocketDto from "SocketDto";
 
 export interface RoomMakeModalProps {
   message: string;
@@ -49,6 +53,13 @@ const RoomMakeModal = ({
 }: RoomMakeModalProps) => {
   const { hideModal } = useModal();
 
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+
+  const [channelName, setChannelName] = useState("");
+  const [accessLayer, setAccessLayer] = useState("public");
+  const [password, setPassword] = useState("");
+  const [score, setScore] = useState(11);
+
   const onClose = () => {
     if (handleClose) {
       handleClose();
@@ -60,6 +71,14 @@ const RoomMakeModal = ({
     if (handleConfirm) {
       await handleConfirm();
     }
+
+    socketEmit.createChannel({
+      ownerId: 11,
+      channelName,
+      accessLayer,
+      password: accessLayer === "protected" ? password : undefined,
+      score,
+    });
     hideModal();
   };
 
@@ -74,7 +93,12 @@ const RoomMakeModal = ({
       sx={{ whiteSpace: "break-spaces" }}
     >
       <Wrapper>
-        <TSTextField id="outlined-basic" label="방제목" variant="outlined" />
+        <TSTextField
+          id="outlined-basic"
+          label="방제목"
+          variant="outlined"
+          onChange={(e) => setChannelName(e.target.value)}
+        />
         <FormControl>
           <RadioGroup
             row
@@ -86,16 +110,19 @@ const RoomMakeModal = ({
             <FormControlLabel
               value="public"
               control={<Radio />}
+              onClick={() => setAccessLayer("public")}
               label="Public"
             />
             <FormControlLabel
               value="private"
               control={<Radio />}
+              onClick={() => setAccessLayer("private")}
               label="Private"
             />
             <FormControlLabel
               value="protected"
               control={<Radio />}
+              onClick={() => setAccessLayer("protected")}
               label="Protected"
             />
           </RadioGroup>
@@ -105,6 +132,8 @@ const RoomMakeModal = ({
           label="Password"
           type="password"
           autoComplete="current-password"
+          hidden={accessLayer !== "protected"}
+          onChange={(e) => setPassword(e.target.value)}
         />
         <TSTextField
           id="outlined-number"
@@ -113,11 +142,12 @@ const RoomMakeModal = ({
           InputLabelProps={{
             shrink: true,
           }}
-          defaultValue="11"
+          defaultValue={score}
           inputProps={{ min: "1", max: "11", step: "1" }}
+          onChange={(e) => setScore(parseInt(e.target.value, 10))}
         />
         <Row>
-          <TSButton variant="contained" onClick={() => console.log("방생성")}>
+          <TSButton variant="contained" onClick={onConfirm}>
             {confirmText}
           </TSButton>
           <TSButton variant="outlined" onClick={onClose}>

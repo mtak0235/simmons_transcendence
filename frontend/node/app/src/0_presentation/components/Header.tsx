@@ -1,6 +1,11 @@
 import { Link, useMatch } from "react-router-dom";
 import styled from "styled-components";
 import { useLogin } from "../../1_application/user/useUser";
+import { useRecoilValue } from "recoil";
+import { getLoginState } from "@presentation/components/LoginHandler";
+import ISocket from "@domain/socket/ISocket";
+import Get from "@root/lib/di/get";
+import { IHttp } from "@domain/http/IHttp";
 
 const Nav = styled.nav`
   display: flex;
@@ -57,7 +62,17 @@ const LoginButton = styled.button`
 `;
 
 function Header() {
-  console.log(process.env.REACT_APP_API_URL);
+  const isLoggedIn = useRecoilValue(getLoginState);
+  const socket: ISocket<any, any> = Get.get("ISocket");
+  const http: IHttp = Get.get("IHttp");
+
+  const handleLogout = async () => {
+    await http.logout();
+    socket.reRender();
+    socket.disconnect();
+    window.location.href = "/";
+  };
+
   return (
     <Nav>
       <Col>
@@ -70,9 +85,13 @@ function Header() {
         <LoginButton>
           <Link to={"/test1"}>TEST</Link>
         </LoginButton>
-        <LoginButton>
-          <a href={process.env.REACT_APP_API_URL + "/auth/login"}>Login</a>
-        </LoginButton>
+        {isLoggedIn !== 1 ? (
+          <a href={process.env.REACT_APP_API_URL + "/auth/login"}>
+            <LoginButton>Login</LoginButton>
+          </a>
+        ) : (
+          <LoginButton onClick={handleLogout}>Logout</LoginButton>
+        )}
       </Col>
     </Nav>
   );

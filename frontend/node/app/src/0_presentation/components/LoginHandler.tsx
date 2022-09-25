@@ -12,8 +12,10 @@ import { IAuthRepository } from "@domain/auth/IAuthRepository";
 import Test3 from "@presentation/pages/Test3";
 import { recoilPersist } from "recoil-persist";
 import { IHttp } from "@domain/http/IHttp";
-import Login from "@presentation/pages/Login";
+import Login from "@presentation/auth/Login";
 import ISocket from "@domain/socket/ISocket";
+import Sign from "@presentation/auth/Sign";
+import Code from "@presentation/auth/Code";
 
 interface LoginHandlerProps {
   children: React.ReactNode;
@@ -68,15 +70,24 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
   useEffect(() => {
     if (localStorage.getItem("accessToken")) {
       setIsLoggedIn(1);
-    } else {
+    } else if (localStorage.getItem("sign")) {
       setIsLoggedIn(2);
+    } else if (localStorage.getItem("code")) {
+      setIsLoggedIn(3);
+    } else {
+      setIsLoggedIn(4);
     }
+    console.log(isLoggedIn);
   }, [window.location.href]);
 
   return isLoggedIn === 0 ? (
     <h1>로딩중</h1>
   ) : isLoggedIn === 1 ? (
     <>{children}</>
+  ) : isLoggedIn === 2 ? (
+    <>{<Sign />}</>
+  ) : isLoggedIn === 3 ? (
+    <>{<Code />}</>
   ) : (
     <Login />
   );
