@@ -24,7 +24,6 @@ import { getRecoil } from "recoil-nexus";
 import {
   recoilSelectUsers,
   recoilUsers,
-  userMe,
 } from "@presentation/components/SocketHandler";
 
 const classState = (): RecoilState<UserRepository> => {
@@ -130,6 +129,12 @@ const Test1 = () => {
     });
   };
 
+  const test10 = () => {
+    socket.emit("followUser", {
+      userId: 85166,
+    });
+  };
+
   return (
     <>
       <div>
@@ -165,6 +170,7 @@ const Test1 = () => {
       </div>
       <div>
         <button onClick={test9}>방 생성</button>
+        <button onClick={test10}>친구 추가</button>
       </div>
     </>
   );

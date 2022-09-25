@@ -6,9 +6,10 @@ import { useUserInfo } from "../../1_application/user/useUser";
 import User from "../../2_domain/user/user";
 import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { useRef, useState, useEffect } from "react";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 const Wrapper = styled.div`
   display: flex;
@@ -287,6 +288,7 @@ function WaitingUserList() {
 function GameWaitingScreen() {
   const gameLogs = useGameLogs();
   const userId = 1234;
+  const ready = "준비완료";
 
   return (
     <>
@@ -297,7 +299,9 @@ function GameWaitingScreen() {
           <Button
             type="primary"
             disabled={gameLogs.playerA.id != userId}
-            onClick={() => console.log("ready")}
+            onClick={() => {
+              console.log("ready");
+            }}
           >
             {gameLogs.playerA.id != userId ? "준비중" : ready}
           </Button>
@@ -373,7 +377,6 @@ function Game() {
         <GameScreenControl>
           <GameWaitingScreen></GameWaitingScreen>
         </GameScreenControl>
-        <WaitingUserList></WaitingUserList>
       </GameScreen>
       <ChattingScreen>
         <Radio.Group size="large">

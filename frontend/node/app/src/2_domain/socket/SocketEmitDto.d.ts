@@ -8,7 +8,7 @@ declare module "SocketEmitDto" {
       ownerId: number;
       channelName: string;
       password?: string;
-      accessLayer: ACCESS_LAYER;
+      accessLayer: string;
       score: number;
     }
 
