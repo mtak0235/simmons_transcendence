@@ -2,11 +2,13 @@ import { Button, Dialog, MenuItem, TextField } from "@mui/material";
 import { useState } from "react";
 import styled from "styled-components";
 import useModal from "./hooks";
+import Channel from "@domain/game/channel";
 
 export interface RoomInfoModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  roomInfo?: Channel;
   handleClose?: (...arg: any[]) => any;
   handleConfirm?: (...arg: any[]) => any;
 }

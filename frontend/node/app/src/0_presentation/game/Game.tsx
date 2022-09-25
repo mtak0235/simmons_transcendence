@@ -10,6 +10,9 @@ import { useRecoilState, useRecoilValue } from "recoil";
 import { useRef, useState, useEffect } from "react";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import ISocketEmit from "@domain/socket/ISocketEmit";
+import Get from "@root/lib/di/get";
+import GamePlay from "@presentation/game/GamePlay";
 
 const Wrapper = styled.div`
   display: flex;
@@ -291,14 +294,27 @@ function WaitingUserList() {
 function GameWaitingScreen() {
   const gameLogs = useGameLogs();
   const userId = 1234;
-  const ready = "준비완료";
-
+  const ready = "ready";
   return (
     <>
-      <UserBox>
-        <UserBoxInfo>1 Player</UserBoxInfo>
-        <UserBoxInfo>{gameLogs.playerA}</UserBoxInfo>
-        <Link to={"/gamePlay"}>
+      <GameScreenControl>
+        <UserBox>
+          <UserBoxInfo>1 Player</UserBoxInfo>
+          <UserBoxInfo>{gameLogs.playerA}</UserBoxInfo>
+          <Link to={"/gamePlay"}>
+            <Button
+              type="primary"
+              disabled={gameLogs.playerA.id != userId}
+              onClick={() => console.log("ready")}
+            >
+              {gameLogs.playerA.id != userId ? "준비중" : ready}
+            </Button>
+          </Link>
+        </UserBox>
+        <SizedBox width={50}></SizedBox>
+        <UserBox>
+          <UserBoxInfo>2 Player</UserBoxInfo>
+          <UserBoxInfo>{gameLogs.playerB}</UserBoxInfo>
           <Button
             type="primary"
             disabled={gameLogs.playerA.id != userId}
@@ -306,22 +322,11 @@ function GameWaitingScreen() {
               console.log("ready");
             }}
           >
-            {gameLogs.playerA.id != userId ? "준비중" : ready}
+            {gameLogs.playerB.id != userId ? "준비중" : ready}
           </Button>
-        </Link>
-      </UserBox>
-      <SizedBox width={50}></SizedBox>
-      <UserBox>
-        <UserBoxInfo>2 Player</UserBoxInfo>
-        <UserBoxInfo>{gameLogs.playerB}</UserBoxInfo>
-        <Button
-          type="primary"
-          disabled={gameLogs.playerB.id != userId}
-          onClick={() => console.log("ready")}
-        >
-          {gameLogs.playerB.id != userId ? "준비중" : ready}
-        </Button>
-      </UserBox>
+        </UserBox>
+      </GameScreenControl>
+      <WaitingUserList></WaitingUserList>
     </>
   );
 }
@@ -363,6 +368,9 @@ function Game() {
   const { showModal } = useModal();
   const [idx, setIdx] = useState(0);
   const userInfo = useUserInfo(idx);
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+  const [bothReady, setBothReady] = useState(false);
+  // const channelInfo = useChannel();
 
   const handleClickUserInfoModal = () => {
     showModal({
@@ -376,16 +384,35 @@ function Game() {
 
   return (
     <Wrapper>
-      <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
-        <Link to={"/"}>방 설정</Link>
+      <Button
+        type="primary"
+        style={{ backgroundColor: "red", border: 0 }}
+        onClick={() => {
+          showModal({
+            modalType: "RoomInfoModal",
+            modalProps: {
+              // channelInfo: channelInfo,
+              message: "Success!",
+            },
+          });
+        }}
+      >
+        방 설정
       </Button>
       <GameScreen>
-        <GameScreenControl>
+        {!bothReady ? (
           <GameWaitingScreen></GameWaitingScreen>
-        </GameScreenControl>
-        <WaitingUserList></WaitingUserList>
-        <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
-          <Link to={"/"}>나가기</Link>
+        ) : (
+          <GamePlay></GamePlay>
+        )}
+        <Button
+          type="primary"
+          style={{ backgroundColor: "red", border: 0 }}
+          onClick={() => {
+            socketEmit.outChannel();
+          }}
+        >
+          나가기
         </Button>
       </GameScreen>
       <ChattingScreen>
