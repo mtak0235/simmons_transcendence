@@ -23,6 +23,9 @@ export const channelLogsSelector = selectorFamily<
   },
 });
 
+// const useChannelInfo = () =>{
+//   repo = Get.get<
+// }
 const useChannel = () => {
   const repo = Get.get<IGameLogRepository>("IGameLogRepository");
   const channels = useRecoilValue(channelLogsSelector({ repo: repo }));
