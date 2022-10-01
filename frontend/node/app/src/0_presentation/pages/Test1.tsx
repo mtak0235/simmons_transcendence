@@ -9,7 +9,7 @@ import {
 import Get from "@root/lib/di/get";
 import IUserRepository from "@domain/user/IUserRepository";
 import UserRepository from "@infrastructure/user/UserRepository";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import { loginState } from "@presentation/components/LoginHandler";
@@ -25,6 +25,8 @@ import {
   recoilSelectUsers,
   recoilUsers,
 } from "@presentation/components/SocketHandler";
+import { Button, Input } from "@mui/material";
+import axios from "axios";
 
 const classState = (): RecoilState<UserRepository> => {
   return atom({
@@ -47,6 +49,7 @@ const Test1 = () => {
   const users1 = useRecoilValue(RecoilSelector.user.users);
   const me = useRecoilValue(RecoilSelector.user.me);
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
+  const fileInput = React.useRef(null);
 
   useEffect(() => {
     console.log(me);
@@ -135,6 +138,25 @@ const Test1 = () => {
     });
   };
 
+  const test11 = async (e) => {
+    console.log(e.target.files[0]);
+    const file = e.target.files[0];
+
+    const frm = new FormData();
+    frm.append("image", file);
+
+    const accessToken = localStorage.getItem("accessToken");
+    await axios
+      .put(process.env.REACT_APP_API_URL + "/user/image", frm, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      .then((response) => console.log(response))
+      .catch((err) => console.log(err));
+  };
+
   return (
     <>
       <div>
@@ -171,6 +193,10 @@ const Test1 = () => {
       <div>
         <button onClick={test9}>방 생성</button>
         <button onClick={test10}>친구 추가</button>
+        {/*<React.Fragment>*/}
+        {/*<Button onClick={test11}>이미지 업로드</Button>*/}
+        <Input type="file" onChange={test11} />
+        {/*</React.Fragment>*/}
       </div>
     </>
   );

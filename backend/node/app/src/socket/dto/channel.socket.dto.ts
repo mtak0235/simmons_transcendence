@@ -2,6 +2,7 @@ import {
   IsEmpty,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -77,15 +78,15 @@ export class ChannelCreateDto {
 }
 
 export class ChannelUpdateDto {
-  @IsEmpty()
+  @IsOptional()
   @IsString()
   channelName?: string;
 
-  @IsEmpty()
+  @IsOptional()
   @IsString()
   accessLayer?: ACCESS_LAYER;
 
-  @IsEmpty()
+  @IsOptional()
   @IsNumber()
   score?: number;
 }

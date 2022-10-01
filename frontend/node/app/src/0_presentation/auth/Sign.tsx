@@ -1,7 +1,7 @@
 import Get from "@root/lib/di/get";
 import { IHttp } from "@domain/http/IHttp";
-import { useEffect, useState } from "react";
-import { FormControlLabel, Switch, TextField } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { FormControlLabel, Input, Switch, TextField } from "@mui/material";
 
 const Sign = () => {
   const conn: IHttp = Get.get("IHttp");
@@ -9,6 +9,11 @@ const Sign = () => {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [twoFactor, setTwoFactor] = useState(false);
+  const [image, setImage] = useState<File>(null);
+
+  const handleImage = (e) => {
+    setImage(e.target.files[0]);
+  };
 
   const handleSign = async () => {
     await conn
@@ -16,6 +21,7 @@ const Sign = () => {
         displayName: displayName.length !== 0 ? displayName : undefined,
         email: email.length !== 0 ? email : undefined,
         twoFactor: twoFactor,
+        image: image ? image : undefined,
       })
       .catch(() => {
         alert("잘못된 요청입니다.");
@@ -53,6 +59,9 @@ const Sign = () => {
           labelPlacement="start"
           onClick={() => setTwoFactor(!twoFactor)}
         />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <Input type="file" onChange={handleImage} />
       </div>
       <button
         style={{

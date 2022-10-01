@@ -14,7 +14,6 @@ class Http extends IHttp {
     )}`;
     request.headers["Access-Control-Allow-Origin"] = "*";
 
-    console.log(request);
     const response = await axios({
       url: process.env.REACT_APP_API_URL + request.path,
       method: request.method,
@@ -100,11 +99,18 @@ class Http extends IHttp {
    *
    * */
   public async firstAccess(value: any): Promise<void> {
+    const form = new FormData();
+
+    for (const key in value) if (value[key]) form.append(key, value[key]);
+
     const request = new HttpRequest({
       path: "/auth/login/access",
       token: "sign",
       method: "post",
-      data: value,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      data: form,
     });
     await this.connect(request);
     localStorage.removeItem("sign");
@@ -189,11 +195,18 @@ class Http extends IHttp {
 
   // todo: update param type to Image File
   // todo: multipart-form/data 처리
-  public async updateUserImage(value: any): Promise<void> {
+  public async updateUserImage(value: File): Promise<void> {
+    const form = new FormData();
+
+    form.append("image", value);
+
     const request = new HttpRequest({
       path: "/user/image",
       method: "put",
       data: value,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
     await this.interceptor(request);
   }

@@ -1,8 +1,8 @@
 import { Button, Input, Radio } from "antd";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import useGameLogs from "../../1_application/game/useGame";
-import { useUserInfo } from "../../1_application/user/useUser";
+import useGameLogs from "@application/game/useGame";
+import { useUserInfo } from "@application/user/useUser";
 import User from "../../2_domain/user/user";
 import useModal from "../components/modal/hooks";
 import { SizedBox } from "../components/TSDesign";

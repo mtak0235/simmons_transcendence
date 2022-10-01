@@ -56,7 +56,7 @@ const InitialState = () => {
     opponent: paddle.map((x) => (x + 1) * COL_SIZE - (PADDLE_EDGE_SPACE + 1)),
     ball: Math.round((ROW_SIZE * COL_SIZE) / 2) + ROW_SIZE,
     /* ball */
-    ballSpeed: 100,
+    ballSpeed: 200,
     deltaY: -COL_SIZE,
     deltaX: -1, // -1 means the ball is moving towards player 1 means towards opponent
     pause: true,
@@ -173,6 +173,7 @@ class GamePlay extends React.Component {
 
   bounceBall = () => {
     const newState = this.state.ball + this.state.deltaY + this.state.deltaX;
+    console.log(this.state.ball, newState);
     if (this.touchingEdge(newState)) {
       this.setState({ deltaY: -this.state.deltaY });
     }

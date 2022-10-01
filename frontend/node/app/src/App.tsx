@@ -14,7 +14,7 @@ import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
-import GamePlay from "./0_presentation/game/GamePlay";
+import GamePlay from "./0_presentation/game/GamePlay1";
 import Test2 from "@presentation/pages/Test2";
 
 const Wrapper = styled.div`
@@ -69,7 +69,7 @@ function App() {
             <Routes>
               <Route path="*" element={<NotFound />} />
               <Route path="/" element={<Home />} />
-              {/* <Route path="/" element={<GamePlay />} /> */}
+              <Route path="/ggg" element={<GamePlay />} />
               <Route path="/game/:id" element={<Game />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/test1" element={<Test1 />} />
