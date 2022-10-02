@@ -1,5 +1,5 @@
 import { Button, Input, Radio } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import useGameLogs from "@application/game/useGame";
 import { useUserInfo } from "@application/user/useUser";
@@ -10,6 +10,8 @@ import { useRecoilState, useRecoilValue } from "recoil";
 import { useRef, useState, useEffect } from "react";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import ISocketEmit from "@domain/socket/ISocketEmit";
+import Get from "@root/lib/di/get";
 
 const Wrapper = styled.div`
   display: flex;
@@ -323,6 +325,8 @@ function GameWaitingScreen() {
   );
 }
 function Game() {
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+  const navigate = useNavigate();
   const [sidebar, setSidebar] = useState("chatting");
   const [users, setUsers] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -360,6 +364,13 @@ function Game() {
   const { showModal } = useModal();
   const [idx, setIdx] = useState(0);
   const userInfo = useUserInfo(idx);
+
+  useEffect(() => {
+    return () => {
+      socketEmit.outChannel();
+      // navigate("/");
+    };
+  }, []);
 
   const handleClickUserInfoModal = () => {
     showModal({

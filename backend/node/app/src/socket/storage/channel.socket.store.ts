@@ -4,6 +4,8 @@ import {
   ChannelDto,
   ChannelCreateDto,
   ChannelPublicDto,
+  GameInfoDto,
+  GameMatcherInfoDto,
 } from '@socket/dto/channel.socket.dto';
 import { EncryptionService } from '@util/encryption.service';
 
@@ -28,6 +30,7 @@ export class ChannelSocketStore {
         waiter: [],
         matcher: [],
       },
+      gameInfo: this.initialGameSetting(),
       password: '123123',
       kickedOutUsers: [],
       mutedUsers: [],
@@ -46,6 +49,18 @@ export class ChannelSocketStore {
           return channel.channelPublic;
       })
       .filter((channel) => channel);
+  }
+
+  initialGameSetting(): GameInfoDto {
+    return {
+      round: 0,
+      onRound: false,
+      pause: false,
+      ballSpeed: 150,
+      matcher: new Array<GameMatcherInfoDto>(2),
+      deltaX: -20,
+      deltaY: 1,
+    };
   }
 
   async create(channelCreateDto: ChannelCreateDto): Promise<ChannelDto> {
@@ -71,6 +86,7 @@ export class ChannelSocketStore {
         waiter: [],
         matcher: [],
       },
+      gameInfo: this.initialGameSetting(),
       password: password,
       kickedOutUsers: [],
       mutedUsers: [],

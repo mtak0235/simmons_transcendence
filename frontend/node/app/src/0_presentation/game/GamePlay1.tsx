@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Box, { BACKGROUND, BALL, PLAYER } from "./components/box";
 
 /* size */
@@ -48,7 +48,12 @@ const style = {
   gridTemplate: `repeat(${ROW_SIZE}, 1fr) / repeat(${COL_SIZE}, 1fr)`,
 };
 
+/*
+ * 1. 키 down시 시
+ * */
+
 const GamePlay = () => {
+  const gameDoing = useRef(null);
   const paddle = [...Array(PADDLE_BOARD_SIZE)].map((_, pos) => pos);
   const [playerA, setPlayerA] = useState(
     paddle.map((x) => x * COL_SIZE + PADDLE_EDGE_SPACE)
@@ -105,6 +110,8 @@ const GamePlay = () => {
 
   const componentDidMount = () => {
     /* moving the ball */
+    // document.onkeydown = keyInput;
+    // document.title = "ping-pong";
     setInterval(() => {
       if (!pause) {
         bounceBall();
@@ -116,14 +123,26 @@ const GamePlay = () => {
         moveOpponent();
       }
     }, playerBSpeed);
-
-    document.onkeydown = keyInput;
-    document.title = "ping-pong";
   };
 
   useEffect(() => {
-    // componentDidMount();
+    componentDidMount();
   }, []);
+
+  useEffect(() => {
+    console.log(pause);
+    const ball = setInterval(() => {
+      if (!pause) {
+        bounceBall();
+      } else clearInterval(ball);
+    }, ballSpeed);
+    /* moving the opponent */
+    const player = setInterval(() => {
+      if (!pause) {
+        moveOpponent();
+      } else clearInterval(player);
+    }, playerBSpeed);
+  }, [pause]);
 
   const touchingEdge = (pos) =>
     (0 <= pos && pos < COL_SIZE) ||
@@ -155,7 +174,7 @@ const GamePlay = () => {
 
   const bounceBall = () => {
     const newState = ball + deltaY + deltaX;
-    console.log(ball, newState);
+    // console.log(ball, newState);
     if (touchingEdge(newState)) {
       setDeltaY(-deltaY);
     }
@@ -188,7 +207,10 @@ const GamePlay = () => {
   };
 
   const keyInput = (e) => {
+    e.preventDefault();
     const keyCode = e.keyCode;
+    console.log(keyCode);
+    if (keyCode !== 40 && keyCode !== 38 && keyCode !== 32) return;
     switch (e.keyCode) {
       case 40:
       case 38:
@@ -217,14 +239,28 @@ const GamePlay = () => {
   const divider = [...Array(ROW_SIZE / 2 + 2)].map((_) => <div>{"|"}</div>);
   return (
     <div
-      onKeyDown={keyInput}
-      tabIndex={0}
+      // onKeyDown={keyInput}
+      // tabIndex={0}
+      onClick={(e) => {
+        const { current }: any = gameDoing;
+        current.focus();
+      }}
       style={{ width: "100%", height: "100%" }}
     >
+      <input
+        style={{
+          border: "none",
+          cursor: "default",
+          textAlign: "center",
+          outline: "none",
+        }}
+        onKeyDown={keyInput}
+        readOnly
+        ref={gameDoing}
+      ></input>
       <div
         style={{
           display: "flex",
-
           flexDirection: "column",
           justifyContent: "justify",
           marginTop: "9em",

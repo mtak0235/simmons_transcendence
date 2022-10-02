@@ -10,6 +10,7 @@ import { ChannelSocketService } from '@socket/service/channel.socket.service';
 import { ChannelInterceptors } from '@socket/interceptor/channel.socket.interceptor';
 import { MainSocketStore } from '@socket/storage/main.socket.store';
 import { SocketController } from '@socket/socket.controller';
+import { GameSocketService } from '@socket/service/game.socket.service';
 
 @Module({
   imports: [JwtModule],
@@ -19,6 +20,7 @@ import { SocketController } from '@socket/socket.controller';
     MainSocketService,
     UserSocketService,
     ChannelSocketService,
+    GameSocketService,
     UserSocketStore,
     ChannelSocketStore,
     MainSocketStore,

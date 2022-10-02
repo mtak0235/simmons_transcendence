@@ -33,11 +33,13 @@ import {
 import { MainSocketService } from '@socket/service/main.socket.service';
 import { UserSocketService } from '@socket/service/user.socket.service';
 import { ChannelSocketService } from '@socket/service/channel.socket.service';
+import { GameSocketService } from '@socket/service/game.socket.service';
 import { SocketBodyCheckInterceptor } from '@socket/interceptor/index.socket.interceptor';
 import {
   ChannelAuthInterceptor,
   ChannelMessageInterceptor,
 } from '@socket/interceptor/channel.socket.interceptor';
+
 export class ClientInstance extends Socket {
   user: UserDto;
   channel: ChannelDto;
@@ -56,6 +58,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly mainSocketService: MainSocketService,
     private readonly userSocketService: UserSocketService,
     private readonly channelSocketService: ChannelSocketService,
+    private readonly gameSocketService: GameSocketService,
   ) {}
 
   /* ============================================= */
@@ -485,5 +488,23 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.userSocketService.unfollow(client.user, userId);
 
     client.emit('single:user:unfollowUser', client.user);
+  }
+
+  /* ============================================= */
+  /*                #3 Game Gateway                */
+  /* ============================================= */
+
+  @SubscribeMessage('changeBar')
+  async changeBar(@ConnectedSocket() client: ClientInstance) {
+    //
+  }
+
+  @SubscribeMessage('processRound')
+  processRound(@ConnectedSocket() client: ClientInstance) {
+    const dd = setInterval(() => {
+      client.emit('test123', 'hello');
+      // if (id === 2)
+      // clearInterval(dd);
+    }, 1000);
   }
 }

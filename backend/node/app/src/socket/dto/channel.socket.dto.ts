@@ -48,9 +48,26 @@ export interface ChannelPrivateDto {
   matcher: Matcher[];
 }
 
+export interface GameMatcherInfoDto {
+  userId: number;
+  score: number;
+  pos: number[];
+}
+
+export class GameInfoDto {
+  round: number;
+  onRound: boolean;
+  pause: boolean;
+  ballSpeed: number;
+  matcher: GameMatcherInfoDto[];
+  deltaX: number;
+  deltaY: number;
+}
+
 export class ChannelDto {
   channelPublic: ChannelPublicDto;
   channelPrivate: ChannelPrivateDto;
+  gameInfo: GameInfoDto;
   password?: string;
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
