@@ -36,6 +36,7 @@ export class ChannelSocketStore {
         ],
       },
       channelControl: {
+        room: `room:channel:${this.channelIdx}`,
         password: '123123',
         kickedOutUsers: [],
         mutedUsers: [],
@@ -97,6 +98,7 @@ export class ChannelSocketStore {
         matcher: [],
       },
       channelControl: {
+        room: `room:channel:${this.channelIdx}`,
         password: password,
         kickedOutUsers: [],
         mutedUsers: [],

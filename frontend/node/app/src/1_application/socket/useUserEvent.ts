@@ -65,8 +65,10 @@ const useUserEvent = () => {
         } else {
           return [
             ...currVal.map((user, idx) => {
-              if (idx === userIdx) user.status = data.status;
-              return user;
+              return {
+                ...user,
+                status: idx === userIdx ? data.status : user.status,
+              };
             }),
           ];
         }
@@ -74,6 +76,7 @@ const useUserEvent = () => {
 
       // return [...users];
     });
+    console.log(data);
   };
 
   useEffect(() => {

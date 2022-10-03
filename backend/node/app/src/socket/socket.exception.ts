@@ -40,6 +40,7 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
     const client: ClientInstance = host.switchToWs().getClient();
     let error: SocketException;
 
+    console.log(exception);
     if (exception instanceof HttpException) {
       error = new SocketException(
         exception.getStatus(),

@@ -74,10 +74,18 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.user = mainPageDto.me;
       this.mainSocketService.setSocketInstance(userInfo.id, client);
 
-      this.changeStatus(client, 'online');
+      client.join(client.user.room);
 
-      client.join(`room:user:${client.user.userId}`);
-      client.emit('single:user:connected', mainPageDto);
+      this.server
+        .except(client.user.room)
+        .emit(
+          'broad:user:changeStatus',
+          this.userSocketService.switchStatus(client.user.userId, 'online'),
+        );
+
+      this.server
+        .to(client.user.room)
+        .emit('single:user:connected', mainPageDto);
     } catch (err) {
       // todo: 예외 분기 정확히 작성해야 함
       if (err instanceof HttpException) {
@@ -104,27 +112,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.mainSocketService.deleteSocketInstance(client.user.userId);
 
-      this.changeStatus(client, 'offline');
-      client.rooms.delete(`room:user:${client.user.userId}`);
+      this.server
+        .except(client.user.room)
+        .emit(
+          'broad:user:changeStatus',
+          this.userSocketService.switchStatus(client.user.userId, 'offline'),
+        );
+      client.rooms.delete(client.user.room);
     }
     client.disconnect();
     client.rooms.clear();
-  }
-
-  @UseInterceptors(new SocketBodyCheckInterceptor('status'))
-  @SubscribeMessage('changeStatus')
-  changeStatus(
-    @ConnectedSocket() client: ClientInstance,
-    @MessageBody('status') status: STATUS_LAYER,
-  ) {
-    const userInfo: UserInfoDto = {
-      userId: client.user.userId,
-      username: client.user.username,
-      status: status,
-    };
-    this.userSocketService.switchStatus(client.user, status);
-
-    client.broadcast.emit('broad:user:changeStatus', userInfo);
   }
 
   // todo: delete: 개발용 코드
@@ -169,24 +166,24 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channelCreateDto,
     );
 
-    // console.log(client);
-    this.changeStatus(client, 'inChannel');
+    client.join(client.channel.channelControl.room);
 
-    client.join(`room:channel:${client.channel.channelPublic.channelId}`);
-    // console.log(client);
-    console.log(
-      client.rooms.has(`room:channel${client.channel.channelPublic.channelId}`),
-    );
-    client.emit('single:channel:createChannel', {
+    this.server.to(client.user.room).emit('single:channel:createChannel', {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
     });
-    console.log('test1');
-    client.broadcast.emit(
+
+    this.server.emit(
       'broad:channel:createChannel',
       client.channel.channelPublic,
     );
-    console.log('test2');
+
+    this.server
+      .except(client.user.room)
+      .emit(
+        'broad:user:changeStatus',
+        this.userSocketService.switchStatus(client.user.userId, 'inChannel'),
+      );
   }
 
   @UseInterceptors(
@@ -228,35 +225,45 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       password,
     );
 
-    this.changeStatus(client, 'inChannel');
+    this.server
+      .except(client.user.room)
+      .emit(
+        'broad:user:changeStatus',
+        this.userSocketService.switchStatus(client.user.userId, 'inChannel'),
+      );
 
-    client.join(`room:channel:${client.channel.channelPublic.channelId}`);
-    client.emit('single:channel:inChannel', {
+    client.join(client.channel.channelControl.room);
+
+    this.server.to(client.user.room).emit('single:channel:inChannel', {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
     });
-    // console.log(client);
-    console.log(`room:channel:${client.channel.channelPublic.channelId}`);
+
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:channel:inChannel', { userId: client.user.userId });
   }
 
   // todo: 게임중에 나가면 어떻게 해야할 지 짜야함
   @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('outChannel')
-  outChannel(@ConnectedSocket() client: ClientInstance) {
-    console.log('찍힘');
+  async outChannel(@ConnectedSocket() client: ClientInstance) {
     const channelStatus = this.channelSocketService.outChannel(
       client.user,
       client.channel,
     );
 
-    this.changeStatus(client, 'online');
+    client.leave(client.channel.channelControl.room);
+    this.server.to(client.user.room).emit('single:channel:outChannel');
 
-    client.leave(`room:channel:${client.channel.channelPublic.channelId}`);
-    client.emit('single:channel:outChannel');
+    this.server
+      .except(client.user.room)
+      .emit(
+        'broad:user:changeStatus',
+        this.userSocketService.switchStatus(client.user.userId, 'online'),
+      );
 
+    console.log(channelStatus);
     if (channelStatus.userExist) {
       if (channelStatus.ownerChange || channelStatus.adminChange)
         this.server.emit('broad:channel:setAdmin', {
@@ -265,8 +272,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
           adminId: client.channel.channelPublic.adminId,
         });
 
-      client
-        .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      this.server
+        .to(client.channel.channelControl.room)
         .emit('group:channel:outChannel', { userId: client.user.userId });
     } else {
       this.server.emit(
@@ -276,7 +283,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.channelSocketService.deleteChannel(
         client.channel.channelPublic.channelId,
       );
-      console.log(client.channel.channelPublic.channelId);
     }
 
     client.channel = undefined;
@@ -292,8 +298,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
     this.channelSocketService.inviteUser(client.channel, userId);
-
-    client.to(`room:user:${userId}`).emit('single:channel:inviteUser', {
+    // todo: 초대한 유저가 offline이 아닌지 확인해봐야 함
+    this.server.to(`room:user:${userId}`).emit('single:channel:inviteUser', {
       inviterId: client.user.userId,
       channelId: client.channel.channelPublic.channelId,
       channelName: client.channel.channelPublic.channelName,
@@ -328,12 +334,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
     this.channelSocketService.kickOutUser(client.channel, userId);
-    this.outChannel(this.mainSocketService.getSocketInstance(userId));
 
     client.to(`room:user:${userId}`).emit('single:channel:kickOut');
     client
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:channel:kickOut', userId);
+
+    this.outChannel(this.mainSocketService.getSocketInstance(userId));
   }
 
   @UseInterceptors(
@@ -351,7 +358,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:channel:muteUser', mutedUser);
   }
 
@@ -359,11 +366,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.waitingGame(client.channel, client.user.userId);
-    console.log(client.channel.channelPrivate);
-    this.changeStatus(client, 'waitingGame');
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .except(client.user.room)
+      .emit(
+        'broad:user:changeStatus',
+        this.userSocketService.switchStatus(client.user.userId, 'waitingGame'),
+      );
+
+    this.server
+      .to(client.channel.channelControl.room)
       .emit('group:channel:waitingGame', {
         matcher: client.channel.channelPrivate.matcher,
         waiter: client.channel.channelPrivate.waiter,
@@ -381,14 +393,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // startGame 이벤트와 의존관계 생겨야함
     if (readyCount !== 2) {
       this.server
-        .to(`room:channel:${client.channel.channelPublic.channelId}`)
+        .to(client.channel.channelControl.room)
         .emit('group:channel:readyGame', client.channel.channelPrivate.matcher);
       return;
     }
-    // this.server
-    //   .to(`room:channel:${client.channel.channelPublic.channelId}`)
-    //   .emit('group:channel:startGame');
-    this.startGame(client.channel);
+
+    this.startGame(client.channel.channelPublic.channelId);
 
     this.server.emit(
       'broad:channel:startGame',
@@ -401,10 +411,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   leaveGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.leaveGame(client.channel, client.user.userId);
 
-    this.changeStatus(client, 'inChannel');
+    this.server
+      .except(client.user.room)
+      .emit(
+        'broad:user:changeStatus',
+        this.userSocketService.switchStatus(client.user.userId, 'inChannel'),
+      );
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:channel:leaveGame', {
         matcher: client.channel.channelPrivate.matcher,
         waiter: client.channel.channelPrivate.waiter,
@@ -422,7 +437,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('message') message: string,
   ) {
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:channel:sendMessage', {
         sourceId: client.user.userId,
         message: message,
@@ -443,7 +458,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.channelSocketService.sendDm(client.user.userId, targetId);
 
     this.server
-      .to([`room:user:${targetId}`, `room:user:${client.user.userId}`])
+      .to([`room:user:${targetId}`, client.user.room])
       .emit('single:channel:sendDm', {
         sourceId: client.user.userId,
         targetId: targetId,
@@ -466,7 +481,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.user.follows.indexOf(userId) !== -1)
       await this.unfollowUser(client, userId);
 
-    client.emit('single:user:blockUser', client.user);
+    this.server.to(client.user.room).emit('single:user:blockUser', client.user);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
@@ -477,9 +492,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.follow(client.user, userId);
 
-    client.emit('single:user:followUser', client.user);
+    this.server
+      .to(client.user.room)
+      .emit('single:user:followUser', client.user);
 
-    client.to(`room:user:${userId}`).emit('followedUser', client.user.userId);
+    this.server
+      .to(`room:user:${userId}`)
+      .emit('followedUser', client.user.userId);
   }
 
   @UseInterceptors(new SocketBodyCheckInterceptor('userId'))
@@ -490,7 +509,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     await this.userSocketService.unfollow(client.user, userId);
 
-    client.emit('single:user:unfollowUser', client.user);
+    this.server
+      .to(client.user.room)
+      .emit('single:user:unfollowUser', client.user);
   }
 
   /* ============================================= */
@@ -517,7 +538,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('testStart')
   testStart(@ConnectedSocket() client: ClientInstance) {
-    this.startGame(client.channel);
+    this.startGame(client.channel.channelPublic.channelId);
   }
 
   @SubscribeMessage('inputKey')
@@ -536,28 +557,30 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .to(client.channel.channelControl.room)
       .emit('group:game:inputKey', {
         userIdx: userIdx,
         pos: pos,
       });
   }
 
-  startGame(channel: ChannelDto) {
+  startGame(channelId: number) {
+    const channel: ChannelDto = this.channelSocketService.getChannel(channelId);
+
     channel.channelPrivate.matcher.map((user) => {
-      this.changeStatus(
-        this.mainSocketService.getSocketInstance(user.userId),
-        'inGame',
-      );
+      this.server
+        .except(`room:user:${user.userId}`)
+        .emit(
+          'broad:user:changeStatus',
+          this.userSocketService.switchStatus(user.userId, 'inGame'),
+        );
     });
 
     this.gameSocketService.initialGameSetting(channel);
-    this.server
-      .to(`room:channel:${channel.channelPublic.channelId}`)
-      .emit('group:game:startGame', {
-        matcher: channel.gameInfo.matcher,
-        ball: channel.gameInfo.ball.pos,
-      });
+    this.server.to(channel.channelControl.room).emit('group:game:startGame', {
+      matcher: channel.gameInfo.matcher,
+      ball: channel.gameInfo.ball.pos,
+    });
 
     setTimeout(() => {
       channel.gameInfo.onRound = false;
@@ -576,7 +599,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!channel.gameInfo.onRound) {
         this.server
-          .to(`room:channel:${channel.channelPublic.channelId}`)
+          .to(channel.channelControl.room)
           .emit('group:game:startRound', {
             matcher: channel.gameInfo.matcher,
             ball: channel.gameInfo.ball.pos,
@@ -598,34 +621,36 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.gameSocketService.moveBall(channel.gameInfo);
       this.server
-        .to(`room:channel:${channel.channelPublic.channelId}`)
+        .to(channel.channelControl.room)
         .emit('group:game:moveBall', channel.gameInfo.ball.pos);
     }, channel.gameInfo.ball.speed);
   }
 
   async endGame(channel: ChannelDto) {
-    if (!channel.channelPublic.onGame) return;
+    // if (!channel.channelPublic.onGame) return;
+    console.log(channel);
 
     channel.channelPrivate.matcher.map((user) => {
-      this.changeStatus(
-        this.mainSocketService.getSocketInstance(user.userId),
-        'inChannel',
-      );
+      this.server
+        .except(`room:user:${user.userId}`)
+        .emit(
+          'broad:user:changeStatus',
+          this.userSocketService.switchStatus(user.userId, 'inGame'),
+        );
     });
 
     await this.gameSocketService.endGame(channel);
-    this.server
-      .to(`room:channel:${channel.channelPublic.channelId}`)
-      .emit('group:game:endGame', {
-        waiter: channel.channelPrivate.waiter,
-        matcher: channel.channelPrivate.matcher,
-      });
+    this.server.to(channel.channelControl.room).emit('group:game:endGame', {
+      waiter: channel.channelPrivate.waiter,
+      matcher: channel.channelPrivate.matcher,
+    });
+    console.log(channel);
   }
 
   endRound(channel: ChannelDto) {
     this.gameSocketService.endRound(channel.gameInfo);
     this.server
-      .to(`room:channel:${channel.channelPublic.channelId}`)
+      .to(channel.channelControl.room)
       .emit('group:game:endRound', channel.gameInfo.matcher);
   }
 }

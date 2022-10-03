@@ -32,6 +32,7 @@ export class GameSocketService {
       deltaX: 1,
       deltaY: -this.colSize,
     };
+
     channel.channelPrivate.matcher.map((user, idx) => {
       channel.gameInfo.matcher[idx] = {
         userId: user.userId,
@@ -139,7 +140,7 @@ export class GameSocketService {
     )
       clearInterval(channel.gameInfo.gameInterval);
     if (
-      channel.gameInfo.gameInterval &&
+      channel.gameInfo.roundInterval &&
       !channel.gameInfo.roundInterval['_destroyed']
     )
       clearInterval(channel.gameInfo.roundInterval);
@@ -178,7 +179,6 @@ export class GameSocketService {
     } else {
       gameInfo.matcher[1].score++;
     }
-    console.log(gameInfo);
 
     setTimeout(() => {
       gameInfo.onRound = false;

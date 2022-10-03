@@ -13,7 +13,7 @@ import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 import ISocketEmit from "@domain/socket/ISocketEmit";
 import Get from "@root/lib/di/get";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
-import GamePlay2 from "@presentation/game/GamePlay2";
+import GamePlay from "@presentation/game/GamePlay";
 import SocketDto from "SocketDto";
 import socketEmit from "@infrastructure/socket/SocketEmit";
 import { getRecoil } from "recoil-nexus";
@@ -41,6 +41,7 @@ const GameScreenControl = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
+  width: 80%;
 `;
 
 const GameWaitingQueue = styled.div`
@@ -190,7 +191,7 @@ function Content({ sidebar, users, friends }) {
   return (
     <ContentStyle style={{ overflow: "scroll" }}>
       {sidebar == "total" &&
-        users.map(({ userId, username }) => (
+        users.map(({ userId, username, status }) => (
           <List key={userId}>
             <ListItem disablePadding>
               <ListItemButton
@@ -202,7 +203,14 @@ function Content({ sidebar, users, friends }) {
                 }}
                 onClick={handleUserInfoModal}
               >
-                <ListItemText>{username}</ListItemText>
+                <ListItemText>
+                  {status === "online"
+                    ? "🟢"
+                    : status === "inGame"
+                    ? "🔵"
+                    : "🟡"}{" "}
+                  {username}
+                </ListItemText>
               </ListItemButton>
             </ListItem>
           </List>
@@ -324,9 +332,9 @@ function GameWaitingScreen() {
   // }, []);
 
   useEffect(() => {
-    console.log(channelPrivate.matcher);
-    setMatcher(channelPrivate.matcher);
-  }, [channelPrivate.matcher]);
+    if (channelPrivate.matcher && channelPrivate.matcher.length > 0)
+      setMatcher(channelPrivate.matcher);
+  }, [channelPrivate]);
   //
   // const userBox = matcher.map((user, idx) => {
   //   console.log(user);
@@ -445,7 +453,7 @@ function Game() {
           {!onGame ? (
             <GameWaitingScreen></GameWaitingScreen>
           ) : (
-            <GamePlay2></GamePlay2>
+            <GamePlay></GamePlay>
           )}
         </GameScreenControl>
         <div style={{ marginBottom: "20px" }}>

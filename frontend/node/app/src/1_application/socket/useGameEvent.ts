@@ -20,14 +20,16 @@ const useGameEvent = () => {
   const [, setBall] = useRecoilState(RecoilAtom.game.ball);
 
   const handleInputKey = (data: SocketDto.ChangeKeyPos) => {
+    console.log("inputKey1");
     setMatcher((curr) => {
       return [
         ...curr.map((user, idx) => {
-          if (idx === data.userIdx) user.pos = data.pos;
-          return user;
+          if (idx === data.userIdx) return { ...user, pos: data.pos };
+          else return user;
         }),
       ];
     });
+    console.log("inputKey2");
   };
 
   const handleMoveBall = (data: number) => {
@@ -35,34 +37,41 @@ const useGameEvent = () => {
   };
 
   const handleStartGame = (data: SocketDto.RoundInitialSetting) => {
+    console.log("startGame1");
     setMatcher(data.matcher);
     setBall(data.ball);
     setOnGame(true);
+    console.log("startGame2");
   };
 
   const handleStartRound = (data: SocketDto.RoundInitialSetting) => {
+    console.log("startRound1");
     setMatcher(data.matcher);
     setBall(data.ball);
     setOnRound(true);
     setRound(round + 1);
+    console.log("startRound2");
   };
 
   const handleEndGame = (data: SocketDto.GameQueue) => {
+    console.log("endGame1");
     setChannelPrivate((curr) => {
-      curr.matcher = data.matcher;
-      curr.waiter = data.waiter;
-      return { ...curr };
+      return { ...curr, matcher: [...data.matcher], waiter: [...data.waiter] };
     });
-    useResetRecoilState(RecoilAtom.game.matcher);
-    useResetRecoilState(RecoilAtom.game.ball);
-    useResetRecoilState(RecoilAtom.game.round);
-    useResetRecoilState(RecoilAtom.game.onGame);
-    useResetRecoilState(RecoilAtom.game.onRound);
+    setOnGame(false);
+    setOnRound(false);
+    console.log("endGame2");
+    setMatcher([]);
+    setBall(110);
+    setRound(0);
+    console.log("endGame3");
   };
 
   const handleEndRound = (data: SocketDto.GameMatcherInfoDto[]) => {
+    console.log("endRound1");
     setMatcher(data);
     setOnRound(false);
+    console.log("endRound2");
   };
 
   useEffect(() => {

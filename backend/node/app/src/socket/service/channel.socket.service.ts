@@ -37,6 +37,10 @@ export class ChannelSocketService {
     return await this.channelSocketStore.create(channelCreateDto);
   }
 
+  getChannel(channelId: number): ChannelDto {
+    return this.channelSocketStore.find(channelId);
+  }
+
   async updateChannel(
     channel: ChannelDto,
     channelUpdateDto: ChannelUpdateDto,
@@ -66,6 +70,8 @@ export class ChannelSocketService {
     const channel: ChannelDto = this.channelSocketStore.find(channelId);
 
     if (!channel) throw new NotFoundException();
+
+    console.log(user);
 
     // todo: if문 최적화, interceptor 로 뺴도 될듯
     if (
@@ -103,6 +109,15 @@ export class ChannelSocketService {
   }
 
   waitingGame(channel: ChannelDto, userId: number) {
+    console.log(channel);
+    if (
+      channel.channelPrivate.matcher.findIndex(
+        (user) => user.userId === userId,
+      ) !== -1 ||
+      channel.channelPrivate.waiter.indexOf(userId) !== -1
+    )
+      throw new ForbiddenException();
+
     if (channel.channelPrivate.matcher.length < 2) {
       channel.channelPrivate.matcher.push({
         userId: userId,

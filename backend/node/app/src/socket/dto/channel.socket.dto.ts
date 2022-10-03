@@ -49,6 +49,7 @@ export interface ChannelPrivateDto {
 }
 
 export interface ChannelControlDto {
+  room: string;
   password?: string;
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];

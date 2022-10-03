@@ -39,8 +39,6 @@ export class ChannelAuthInterceptor implements NestInterceptor {
   ): Promise<Observable<any>> {
     const client: ClientInstance = context.switchToWs().getClient();
 
-    console.log('인터셉터');
-
     if (
       (this.hasChannel && !client.channel) ||
       (!this.hasChannel && client.channel)
@@ -49,19 +47,18 @@ export class ChannelAuthInterceptor implements NestInterceptor {
     }
 
     if (
-      this.hasChannel &&
-      (client.channel.channelPublic.onGame ||
-        (this.admin &&
-          client.channel.channelPublic.adminId !== client.user.userId &&
-          client.channel.channelPublic.ownerId !== client.user.userId) ||
-        (this.owner &&
-          client.channel.channelPublic.ownerId !== client.user.userId) ||
-        (this.matcher &&
-          [
-            ...client.channel.channelPrivate.matcher.filter(
-              (user) => user.userId === client.user.userId,
-            ),
-          ].length !== 1)) // todo: matcher 인 경우 status가 waiting일 때만 가능하게 조건 추가
+      (this.hasChannel &&
+        this.admin &&
+        client.channel.channelPublic.adminId !== client.user.userId &&
+        client.channel.channelPublic.ownerId !== client.user.userId) ||
+      (this.owner &&
+        client.channel.channelPublic.ownerId !== client.user.userId) ||
+      (this.matcher &&
+        [
+          ...client.channel.channelPrivate.matcher.filter(
+            (user) => user.userId === client.user.userId,
+          ),
+        ].length !== 1) // todo: matcher 인 경우 status가 waiting일 때만 가능하게 조건 추가
     ) {
       throw new ForbiddenException();
     }

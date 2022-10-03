@@ -17,6 +17,7 @@ export class UserSocketStore {
       status: 'online',
       follows: [],
       blocks: [],
+      room: `room:user:${2000}`,
     }); // todo: delete: 개발용 코드
   }
 

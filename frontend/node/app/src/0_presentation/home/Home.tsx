@@ -150,7 +150,7 @@ function Content({ visible, users, friends }) {
   return (
     <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
-        users.map(({ userId, username }) => (
+        users.map(({ userId, username, status }) => (
           <List key={userId}>
             <ListItem disablePadding>
               <ListItemButton
@@ -166,7 +166,14 @@ function Content({ visible, users, friends }) {
                 }}
                 onClick={handleUserInfoModal}
               >
-                <ListItemText>{username}</ListItemText>
+                <ListItemText>
+                  {status === "online"
+                    ? "🟢"
+                    : status === "inGame"
+                    ? "🔵"
+                    : "🟡"}{" "}
+                  {username}
+                </ListItemText>
               </ListItemButton>
             </ListItem>
           </List>
