@@ -62,6 +62,10 @@ class SocketEmit extends ISocketEmit {
   public sendDirectMessage(data: SocketEmitDto.DirectMessage) {
     this.socket.emit("sendDirectMessage", { ...data });
   }
+
+  public inputKey(data: SocketEmitDto.ChangeKeyPos) {
+    this.socket.emit("inputKey", data);
+  }
 }
 
 export default SocketEmit;

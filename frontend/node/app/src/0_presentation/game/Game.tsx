@@ -12,6 +12,11 @@ import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 import ISocketEmit from "@domain/socket/ISocketEmit";
 import Get from "@root/lib/di/get";
+import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
+import GamePlay2 from "@presentation/game/GamePlay2";
+import SocketDto from "SocketDto";
+import socketEmit from "@infrastructure/socket/SocketEmit";
+import { getRecoil } from "recoil-nexus";
 
 const Wrapper = styled.div`
   display: flex;
@@ -288,76 +293,130 @@ function WaitingUserList() {
 }
 
 function GameWaitingScreen() {
-  const gameLogs = useGameLogs();
-  const userId = 1234;
-  const ready = "준비완료";
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+  const me = useRecoilValue(RecoilSelector.user.me);
+  const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
+  const [matcher, setMatcher] = useState<SocketDto.Matcher[]>([]);
+  const [playerA, setPlayerA] = useState<SocketDto.Matcher>({
+    userId: 0,
+    isReady: false,
+  });
+  const [playerB, setPlayerB] = useState<SocketDto.Matcher>({
+    userId: 0,
+    isReady: false,
+  });
+
+  // const preventClose = (e: BeforeUnloadEvent) => {
+  //   e.preventDefault();
+  //   // e.returnValue = ""; // chrome에서는 설정이 필요해서 넣은 코드
+  // };
+  //
+  // // 브라우저에 렌더링 시 한 번만 실행하는 코드
+  // useEffect(() => {
+  //   (() => {
+  //     window.addEventListener("beforeunload", preventClose);
+  //   })();
+  //
+  //   return () => {
+  //     // window.location.href = "/";
+  //     window.removeEventListener("beforeunload", preventClose);
+  //   };
+  // }, []);
+
+  useEffect(() => {
+    console.log(channelPrivate.matcher);
+    setMatcher(channelPrivate.matcher);
+  }, [channelPrivate.matcher]);
+  //
+  // const userBox = matcher.map((user, idx) => {
+  //   console.log(user);
+  //   return (
+  //     <UserBox key={idx}>
+  //       <UserBoxInfo>{idx === 0 ? "Player A" : "Player B"}</UserBoxInfo>
+  //       <UserBoxInfo>{user.userId}</UserBoxInfo>
+  //
+  //       <Button
+  //         type="primary"
+  //         disabled={user.userId != me.userId}
+  //         onClick={() => {
+  //           socketEmit.readyGame();
+  //         }}
+  //       >
+  //         {user.isReady ? "준비완료" : "대기중"}
+  //       </Button>
+  //     </UserBox>
+  //   );
+  // });
 
   return (
     <>
-      <UserBox>
-        <UserBoxInfo>1 Player</UserBoxInfo>
-        <UserBoxInfo>{gameLogs.playerA}</UserBoxInfo>
-        <Link to={"/gamePlay"}>
-          <Button
-            type="primary"
-            disabled={gameLogs.playerA.id != userId}
-            onClick={() => {
-              console.log("ready");
-            }}
-          >
-            {gameLogs.playerA.id != userId ? "준비중" : ready}
-          </Button>
-        </Link>
-      </UserBox>
-      <SizedBox width={50}></SizedBox>
-      <UserBox>
-        <UserBoxInfo>2 Player</UserBoxInfo>
-        <UserBoxInfo>{gameLogs.playerB}</UserBoxInfo>
-        <Button
-          type="primary"
-          disabled={gameLogs.playerB.id != userId}
-          onClick={() => console.log("ready")}
-        >
-          {gameLogs.playerB.id != userId ? "준비중" : ready}
-        </Button>
-      </UserBox>
+      {matcher.map((user, idx) => {
+        console.log(user);
+        return (
+          <UserBox key={idx}>
+            <UserBoxInfo>{idx === 0 ? "Player A" : "Player B"}</UserBoxInfo>
+            <UserBoxInfo>{user.userId}</UserBoxInfo>
+
+            <Button
+              type="primary"
+              disabled={user.userId != me.userId}
+              onClick={() => {
+                socketEmit.readyGame();
+              }}
+            >
+              {user.isReady ? "준비완료" : "대기중"}
+            </Button>
+          </UserBox>
+        );
+      })}
+      {/*{userBox}*/}
+      {/*<UserBox>*/}
+      {/*  <UserBoxInfo>Player A</UserBoxInfo>*/}
+      {/*  <UserBoxInfo>{playerA ? playerA.userId : ""}</UserBoxInfo>*/}
+      {/*  <Link to={"/gamePlay"}>*/}
+      {/*    <Button*/}
+      {/*      type="primary"*/}
+      {/*      disabled={playerA.userId !== me.userId}*/}
+      {/*      onClick={() => {*/}
+      {/*        console.log("ready");*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      {playerA.isReady ? "준비완료" : "대기중"}*/}
+      {/*    </Button>*/}
+      {/*  </Link>*/}
+      {/*</UserBox>*/}
+      {/*<SizedBox width={50}></SizedBox>*/}
+      {/*<UserBox>*/}
+      {/*  <UserBoxInfo>Player B</UserBoxInfo>*/}
+      {/*  <UserBoxInfo>{playerB ? playerB.userId : ""}</UserBoxInfo>*/}
+      {/*  <Button*/}
+      {/*    type="primary"*/}
+      {/*    disabled={playerB.userId !== me.userId}*/}
+      {/*    onClick={() => console.log("ready")}*/}
+      {/*  >*/}
+      {/*    {playerB.isReady ? "준비완료" : "대기중"}*/}
+      {/*  </Button>*/}
+      {/*</UserBox>*/}
     </>
   );
 }
 function Game() {
   const socketEmit: ISocketEmit = Get.get("ISocketEmit");
-  const navigate = useNavigate();
+  const me = useRecoilValue(RecoilSelector.user.me);
+  const users = useRecoilValue(RecoilSelector.user.users);
+  // const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
+  const [channelPrivate, setChannelPrivate] = useRecoilState(
+    RecoilAtom.channel.channelPrivate
+  );
+  const onGame = useRecoilValue(RecoilAtom.game.onGame);
   const [sidebar, setSidebar] = useState("chatting");
-  const [users, setUsers] = useState([]);
   const [friends, setFriends] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json())
-      .then((data) =>
-        setUsers(
-          data.map((record) => {
-            record["userId"] = record.id;
-            record["username"] = `${record.id}님`;
-            return record;
-          })
-        )
-      );
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json())
-      .then((data) =>
-        setFriends(
-          data.map((record) => {
-            record["userId"] = record.id;
-            record["username"] = `${record.id}님`;
-            record["status"] =
-              record.id in users.map((data) => data.userId)
-                ? "online"
-                : "offline";
-            return record;
-          })
-        )
-      );
+    return () => {
+      socketEmit.outChannel();
+    };
   }, []);
 
   // Modal
@@ -366,11 +425,8 @@ function Game() {
   const userInfo = useUserInfo(idx);
 
   useEffect(() => {
-    return () => {
-      socketEmit.outChannel();
-      // navigate("/");
-    };
-  }, []);
+    console.log("hello");
+  }, [getRecoil(RecoilSelector.channel.private)]);
 
   const handleClickUserInfoModal = () => {
     showModal({
@@ -386,8 +442,21 @@ function Game() {
     <Wrapper>
       <GameScreen>
         <GameScreenControl>
-          <GameWaitingScreen></GameWaitingScreen>
+          {!onGame ? (
+            <GameWaitingScreen></GameWaitingScreen>
+          ) : (
+            <GamePlay2></GamePlay2>
+          )}
         </GameScreenControl>
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            onClick={(e) => {
+              socketEmit.waitingGame();
+            }}
+          >
+            게임 대기
+          </button>
+        </div>
       </GameScreen>
       <ChattingScreen>
         <Radio.Group size="large">

@@ -65,6 +65,28 @@ const RecoilSelector: IRecoilSelector = {
       get: ({ get }) => get(RecoilAtom.channel.message),
     }),
   },
+  game: {
+    round: selector({
+      key: `selector:game:round/${v1()}`,
+      get: ({ get }) => get(RecoilAtom.game.round),
+    }),
+    onGame: selector({
+      key: `selector:game:onGame/${v1()}`,
+      get: ({ get }) => get(RecoilAtom.game.onGame),
+    }),
+    onRound: selector({
+      key: `selector:game:onRound/${v1()}`,
+      get: ({ get }) => get(RecoilAtom.game.onRound),
+    }),
+    matcher: selector({
+      key: `selector:game:matcher/${v1()}`,
+      get: ({ get }) => get(RecoilAtom.game.matcher),
+    }),
+    ball: selector({
+      key: `selector:game:ball/${v1()}`,
+      get: ({ get }) => get(RecoilAtom.game.ball),
+    }),
+  },
   error: selector({
     key: `selector:error/${v1()}`,
     get: ({ get }) => get(RecoilAtom.error),

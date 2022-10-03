@@ -14,7 +14,7 @@ import NicknameForm from "./0_presentation/pages/NicknameForm";
 import ChatRoom from "./0_presentation/pages/ChatRoom";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
-import GamePlay from "./0_presentation/game/GamePlay1";
+import GamePlay from "./0_presentation/game/GamePlay2";
 import Test2 from "@presentation/pages/Test2";
 
 const Wrapper = styled.div`
