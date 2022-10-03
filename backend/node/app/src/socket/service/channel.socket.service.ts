@@ -47,7 +47,10 @@ export class ChannelSocketService {
 
     if (channel.channelPublic.accessLayer === 'protected') {
       if (!password) throw new BadRequestException();
-      else channel.password = await this.encryptionService.hash(password);
+      else
+        channel.channelControl.password = await this.encryptionService.hash(
+          password,
+        );
     }
   }
 
@@ -66,41 +69,24 @@ export class ChannelSocketService {
 
     // todo: if문 최적화, interceptor 로 뺴도 될듯
     if (
-      (channel.invited.indexOf(user.userId) === -1 &&
+      (channel.channelControl.invited.indexOf(user.userId) === -1 &&
         ((channel.channelPublic.accessLayer === 'protected' &&
           !(await this.encryptionService.compare(
             password,
-            channel.password,
+            channel.channelControl.password,
           ))) ||
           channel.channelPublic.accessLayer === 'private')) ||
-      channel.kickedOutUsers.indexOf(user.userId) !== -1
+      channel.channelControl.kickedOutUsers.indexOf(user.userId) !== -1
     )
       throw new ForbiddenException();
 
-    channel.invited = channel.invited.filter((id) => id != user.userId);
+    channel.channelControl.invited = channel.channelControl.invited.filter(
+      (id) => id != user.userId,
+    );
 
     this.channelSocketStore.addUser(channelId, user.userId);
 
     return channel;
-  }
-
-  async endGame(channel: ChannelDto, result: number) {
-    channel.channelPublic.onGame = false;
-    const logs = this.gameLogRepository.create({
-      playerAId: channel.channelPrivate.matcher.at(0).userId,
-      playerBId: channel.channelPrivate.matcher.at(1).userId,
-      result,
-    });
-    channel.channelPrivate.matcher = [];
-    if (channel.channelPrivate.waiter.length >= 2) {
-      for (let i = 0; i < 2; i++) {
-        channel.channelPrivate.matcher.push({
-          isReady: false,
-          userId: channel.channelPrivate.waiter.shift(),
-        });
-      }
-    }
-    await this.gameLogRepository.save(logs);
   }
 
   readyGame(channel: ChannelDto, userId: number) {
@@ -149,21 +135,25 @@ export class ChannelSocketService {
     else if (channel.channelPublic.adminId === user.userId)
       result.adminChange = true;
 
-    if (user.status === 'inGame') {
-      // todo: endGame func 만들어야 함
-      channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
-        (matcher) => matcher.userId !== user.userId,
-      );
-    } else if (user.status === 'waitingGame')
-      channel.channelPrivate.waiter = channel.channelPrivate.waiter.filter(
-        (id) => id !== user.userId,
-      );
+    // todo: endGame func 만들어야 함
+    channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
+      (matcher) => matcher.userId !== user.userId,
+    );
+
+    channel.channelPrivate.waiter = channel.channelPrivate.waiter.filter(
+      (id) => id !== user.userId,
+    );
 
     channel.channelPrivate.users = channel.channelPrivate.users.filter(
       (id) => id !== user.userId,
     );
 
-    if (channel.channelPrivate.users.length === 0) result.userExist = false;
+    if (
+      !channel.channelPrivate.matcher.length &&
+      !channel.channelPrivate.waiter.length &&
+      !channel.channelPrivate.users.length
+    )
+      result.userExist = false;
 
     if (result.userExist) {
       if (result.ownerChange) this.leaveOwner(channel);
@@ -196,7 +186,7 @@ export class ChannelSocketService {
   }
 
   inviteUser(channel: ChannelDto, userId: number) {
-    channel.invited.push(userId);
+    channel.channelControl.invited.push(userId);
   }
 
   kickOutUser(channel: ChannelDto, userId: number) {
@@ -204,7 +194,7 @@ export class ChannelSocketService {
       throw new BadRequestException();
     }
 
-    channel.kickedOutUsers.push(userId);
+    channel.channelControl.kickedOutUsers.push(userId);
   }
 
   mutedUser(channel: ChannelDto, userId: number) {
@@ -216,7 +206,7 @@ export class ChannelSocketService {
     if (channel.channelPrivate.users.indexOf(userId) === -1)
       throw new BadRequestException();
 
-    channel.mutedUsers.push(mutedUser);
+    channel.channelControl.mutedUsers.push(mutedUser);
 
     return mutedUser;
   }

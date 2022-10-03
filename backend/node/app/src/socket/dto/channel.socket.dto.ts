@@ -48,30 +48,41 @@ export interface ChannelPrivateDto {
   matcher: Matcher[];
 }
 
+export interface ChannelControlDto {
+  password?: string;
+  kickedOutUsers: number[];
+  mutedUsers: MutedUser[];
+  invited: number[];
+}
+
 export interface GameMatcherInfoDto {
   userId: number;
   score: number;
   pos: number[];
 }
 
+export interface GameBallInfoDto {
+  speed: number;
+  pos: number;
+  deltaX: number;
+  deltaY: number;
+}
+
 export class GameInfoDto {
+  gameInterval?: NodeJS.Timer;
+  roundInterval?: NodeJS.Timer;
   round: number;
   onRound: boolean;
   pause: boolean;
-  ballSpeed: number;
   matcher: GameMatcherInfoDto[];
-  deltaX: number;
-  deltaY: number;
+  ball: GameBallInfoDto;
 }
 
 export class ChannelDto {
   channelPublic: ChannelPublicDto;
   channelPrivate: ChannelPrivateDto;
+  channelControl: ChannelControlDto;
   gameInfo: GameInfoDto;
-  password?: string;
-  kickedOutUsers: number[];
-  mutedUsers: MutedUser[];
-  invited: number[];
 }
 
 export class ChannelCreateDto {

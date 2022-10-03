@@ -39,6 +39,8 @@ export class ChannelAuthInterceptor implements NestInterceptor {
   ): Promise<Observable<any>> {
     const client: ClientInstance = context.switchToWs().getClient();
 
+    console.log('인터셉터');
+
     if (
       (this.hasChannel && !client.channel) ||
       (!this.hasChannel && client.channel)
@@ -59,7 +61,7 @@ export class ChannelAuthInterceptor implements NestInterceptor {
             ...client.channel.channelPrivate.matcher.filter(
               (user) => user.userId === client.user.userId,
             ),
-          ].length !== 1))
+          ].length !== 1)) // todo: matcher 인 경우 status가 waiting일 때만 가능하게 조건 추가
     ) {
       throw new ForbiddenException();
     }
@@ -76,12 +78,12 @@ export class ChannelMessageInterceptor implements NestInterceptor {
   ): Observable<any> | Promise<Observable<any>> {
     const client: ClientInstance = context.switchToWs().getClient();
 
-    client.channel.mutedUsers.map((user, idx) => {
+    client.channel.channelControl.mutedUsers.map((user, idx) => {
       if (user.userId === client.user.userId) {
         if (user.expiredAt >= Math.floor(new Date().getTime() / 1000)) {
           throw new ForbiddenException();
         } else {
-          client.channel.mutedUsers.splice(idx, 1);
+          client.channel.channelControl.mutedUsers.splice(idx, 1);
         }
       }
     });

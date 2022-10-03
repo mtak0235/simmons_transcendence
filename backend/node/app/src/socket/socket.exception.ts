@@ -54,6 +54,7 @@ export class SocketExceptionFilter extends BaseWsExceptionFilter {
         exception.stack,
       );
     }
+    console.log(exception);
     console.log(error);
 
     client.emit('single:user:error', error);

@@ -28,13 +28,20 @@ export class ChannelSocketStore {
       channelPrivate: {
         users: [2000],
         waiter: [],
-        matcher: [],
+        matcher: [
+          {
+            userId: 2000,
+            isReady: true,
+          },
+        ],
+      },
+      channelControl: {
+        password: '123123',
+        kickedOutUsers: [],
+        mutedUsers: [],
+        invited: [],
       },
       gameInfo: this.initialGameSetting(),
-      password: '123123',
-      kickedOutUsers: [],
-      mutedUsers: [],
-      invited: [],
     }); // todo: delete: 개발용 코드
   }
 
@@ -56,10 +63,13 @@ export class ChannelSocketStore {
       round: 0,
       onRound: false,
       pause: false,
-      ballSpeed: 150,
+      ball: {
+        pos: Math.round((10 * 20) / 2) + 10,
+        speed: 200,
+        deltaX: -1,
+        deltaY: -20,
+      },
       matcher: new Array<GameMatcherInfoDto>(2),
-      deltaX: -20,
-      deltaY: 1,
     };
   }
 
@@ -86,11 +96,13 @@ export class ChannelSocketStore {
         waiter: [],
         matcher: [],
       },
+      channelControl: {
+        password: password,
+        kickedOutUsers: [],
+        mutedUsers: [],
+        invited: [],
+      },
       gameInfo: this.initialGameSetting(),
-      password: password,
-      kickedOutUsers: [],
-      mutedUsers: [],
-      invited: [],
     };
 
     this.channels.set(this.channelIdx, channel);

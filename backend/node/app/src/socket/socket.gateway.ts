@@ -97,6 +97,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: ClientInstance): void {
     if (client.user) {
+      console.log('================================');
+      console.log('================================');
+      console.log(client.channel);
       if (client.channel) this.outChannel(client);
 
       this.mainSocketService.deleteSocketInstance(client.user.userId);
@@ -166,17 +169,24 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channelCreateDto,
     );
 
-    this.changeStatus(client, 'watchingGame');
+    // console.log(client);
+    this.changeStatus(client, 'inChannel');
 
     client.join(`room:channel:${client.channel.channelPublic.channelId}`);
+    // console.log(client);
+    console.log(
+      client.rooms.has(`room:channel${client.channel.channelPublic.channelId}`),
+    );
     client.emit('single:channel:createChannel', {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
     });
+    console.log('test1');
     client.broadcast.emit(
-      'broad:channel:createdChannel',
+      'broad:channel:createChannel',
       client.channel.channelPublic,
     );
+    console.log('test2');
   }
 
   @UseInterceptors(
@@ -218,14 +228,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       password,
     );
 
-    this.changeStatus(client, 'watchingGame');
+    this.changeStatus(client, 'inChannel');
 
     client.join(`room:channel:${client.channel.channelPublic.channelId}`);
     client.emit('single:channel:inChannel', {
       channelPublic: client.channel.channelPublic,
       channelPrivate: client.channel.channelPrivate,
     });
-    client
+    // console.log(client);
+    console.log(`room:channel:${client.channel.channelPublic.channelId}`);
+    this.server
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
       .emit('group:channel:inChannel', { userId: client.user.userId });
   }
@@ -234,6 +246,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('outChannel')
   outChannel(@ConnectedSocket() client: ClientInstance) {
+    console.log('찍힘');
     const channelStatus = this.channelSocketService.outChannel(
       client.user,
       client.channel,
@@ -263,6 +276,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.channelSocketService.deleteChannel(
         client.channel.channelPublic.channelId,
       );
+      console.log(client.channel.channelPublic.channelId);
     }
 
     client.channel = undefined;
@@ -345,6 +359,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('waitingGame')
   waitingGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.waitingGame(client.channel, client.user.userId);
+    console.log(client.channel.channelPrivate);
+    this.changeStatus(client, 'waitingGame');
 
     this.server
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
@@ -362,15 +378,17 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.user.userId,
     );
 
+    // startGame 이벤트와 의존관계 생겨야함
     if (readyCount !== 2) {
       this.server
         .to(`room:channel:${client.channel.channelPublic.channelId}`)
         .emit('group:channel:readyGame', client.channel.channelPrivate.matcher);
       return;
     }
-    this.server
-      .to(`room:channel:${client.channel.channelPublic.channelId}`)
-      .emit('group:channel:startGame');
+    // this.server
+    //   .to(`room:channel:${client.channel.channelPublic.channelId}`)
+    //   .emit('group:channel:startGame');
+    this.startGame(client.channel);
 
     this.server.emit(
       'broad:channel:startGame',
@@ -383,29 +401,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   leaveGame(@ConnectedSocket() client: ClientInstance) {
     this.channelSocketService.leaveGame(client.channel, client.user.userId);
 
+    this.changeStatus(client, 'inChannel');
+
     this.server
       .to(`room:channel:${client.channel.channelPublic.channelId}`)
       .emit('group:channel:leaveGame', {
         matcher: client.channel.channelPrivate.matcher,
         waiter: client.channel.channelPrivate.waiter,
       });
-  }
-
-  // todo: 어떻게 처리할지 생각 해봐야함, 게임 구현하면서 하자
-  @UseInterceptors(new ChannelAuthInterceptor())
-  @SubscribeMessage('endGame')
-  endGame(
-    @ConnectedSocket() client: ClientInstance,
-    @MessageBody('result', ParseIntPipe) result?: number,
-  ) {
-    this.channelSocketService.endGame(client.channel, result).then(() => {
-      this.server
-        .in(`room:channel:${client.channel.channelPublic.channelId}`)
-        .emit('gameOver', {
-          waiter: client.channel.channelPrivate.waiter,
-          matcher: client.channel.channelPrivate.matcher,
-        });
-    });
   }
 
   @UseInterceptors(
@@ -494,17 +497,135 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /*                #3 Game Gateway                */
   /* ============================================= */
 
-  @SubscribeMessage('changeBar')
-  async changeBar(@ConnectedSocket() client: ClientInstance) {
-    //
+  @SubscribeMessage('testGame')
+  async testGame(@ConnectedSocket() client: ClientInstance) {
+    await this.inChannel(client, 0);
+    client.channel.channelPrivate.matcher[0] = {
+      userId: 85166,
+      isReady: true,
+    };
+    client.channel.channelPrivate.matcher[1] = {
+      userId: client.user.userId,
+      isReady: true,
+    };
+
+    client.channel.channelPrivate.waiter[0] = 2000;
+    client.channel.channelPublic.score = 3;
+
+    client.emit('testGame', client.channel);
   }
 
-  @SubscribeMessage('processRound')
-  processRound(@ConnectedSocket() client: ClientInstance) {
-    const dd = setInterval(() => {
-      client.emit('test123', 'hello');
-      // if (id === 2)
-      // clearInterval(dd);
-    }, 1000);
+  @SubscribeMessage('testStart')
+  testStart(@ConnectedSocket() client: ClientInstance) {
+    this.startGame(client.channel);
+  }
+
+  @SubscribeMessage('inputKey')
+  inputKey(
+    @ConnectedSocket() client: ClientInstance,
+    @MessageBody('keyCode', ParseIntPipe) keyCode: number,
+    @MessageBody('userIdx', ParseIntPipe) userIdx: number,
+  ) {
+    if (keyCode !== 38 && keyCode !== 40) return;
+
+    const pos: number[] = this.gameSocketService.movePaddle(
+      client.channel.gameInfo,
+      client.user.userId,
+      keyCode,
+      userIdx,
+    );
+
+    this.server
+      .to(`room:channel:${client.channel.channelPublic.channelId}`)
+      .emit('group:game:inputKey', {
+        userIdx: userIdx,
+        pos: pos,
+      });
+  }
+
+  startGame(channel: ChannelDto) {
+    channel.channelPrivate.matcher.map((user) => {
+      this.changeStatus(
+        this.mainSocketService.getSocketInstance(user.userId),
+        'inGame',
+      );
+    });
+
+    this.gameSocketService.initialGameSetting(channel);
+    this.server
+      .to(`room:channel:${channel.channelPublic.channelId}`)
+      .emit('group:game:startGame', {
+        matcher: channel.gameInfo.matcher,
+        ball: channel.gameInfo.ball.pos,
+      });
+
+    setTimeout(() => {
+      channel.gameInfo.onRound = false;
+    }, 2000);
+
+    channel.gameInfo.gameInterval = setInterval(async () => {
+      if (
+        !this.gameSocketService.monitGame(channel) ||
+        !channel.channelPublic.onGame
+      ) {
+        clearInterval(channel.gameInfo.gameInterval);
+        await this.endGame(channel); // todo: endGame 구현
+        console.log('game end');
+        return;
+      }
+
+      if (!channel.gameInfo.onRound) {
+        this.server
+          .to(`room:channel:${channel.channelPublic.channelId}`)
+          .emit('group:game:startRound', {
+            matcher: channel.gameInfo.matcher,
+            ball: channel.gameInfo.ball.pos,
+          });
+        this.startRound(channel);
+      }
+    }, 100); // todo: interval ms, ball speed 로 통일해야 할 수도
+  }
+
+  startRound(channel: ChannelDto) {
+    this.gameSocketService.resetRoundSetting(channel);
+
+    channel.gameInfo.roundInterval = setInterval(() => {
+      if (!this.gameSocketService.monitRound(channel.gameInfo.ball)) {
+        clearInterval(channel.gameInfo.roundInterval);
+        this.endRound(channel);
+        return;
+      }
+
+      this.gameSocketService.moveBall(channel.gameInfo);
+      this.server
+        .to(`room:channel:${channel.channelPublic.channelId}`)
+        .emit('group:game:moveBall', channel.gameInfo.ball.pos);
+    }, channel.gameInfo.ball.speed);
+  }
+
+  async endGame(channel: ChannelDto) {
+    if (!channel.channelPublic.onGame) return;
+
+    channel.channelPrivate.matcher.map((user) => {
+      this.changeStatus(
+        this.mainSocketService.getSocketInstance(user.userId),
+        'inChannel',
+      );
+    });
+
+    await this.gameSocketService.endGame(channel);
+    this.server
+      .to(`room:channel:${channel.channelPublic.channelId}`)
+      .emit('group:game:endGame', {
+        waiter: channel.channelPrivate.waiter,
+        matcher: channel.channelPrivate.matcher,
+      });
+  }
+
+  endRound(channel: ChannelDto) {
+    this.gameSocketService.endRound(channel.gameInfo);
+    this.server
+      .to(`room:channel:${channel.channelPublic.channelId}`)
+      .emit('group:game:endRound', channel.gameInfo.matcher);
   }
 }
