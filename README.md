@@ -21,8 +21,8 @@
 <br>
 
 > #### [김성수 (seonkim)](https://github.com/nfl1ryxditimo12) - 팀장 및 Full-stack
-> #### [김태선 (taeskim)](https://github.com/mtak0235) - Frontend 퍼블리싱 및 게임 구현
-> #### [탁민경 (mtak)](https://github.com/taeskim-42) - Backend 게임 구현
+> #### [김태선 (taeskim)](https://github.com/taeskim-42) - Frontend 퍼블리싱 및 게임 구현
+> #### [탁민경 (mtak)](https://github.com/mtak0235) - Backend 게임 구현
 > #### [이기영 (gilee)](https://github.com/weg901127) - Infra 및 DBA
 
 <br>
@@ -59,8 +59,6 @@ https://user-images.githubusercontent.com/74334399/197966928-32bc0962-c438-47b3-
 <br>
 
 ## 📝 API 명세
-
-<br>
 
 - [REST API 명세](https://app.swaggerhub.com/apis/NFL1RYXDITIMO12_1/ft_transcendance/1.0.0#/Users/post_v0_users__user_id__follow)
 - [Socket API 명세](https://github.com/mtak0235/simmons_transcendence/wiki/Socket-API-%EB%AA%85%EC%84%B8)
