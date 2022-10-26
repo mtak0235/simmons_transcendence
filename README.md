@@ -21,9 +21,9 @@
 <br>
 
 > #### [김성수 (seonkim)](https://github.com/nfl1ryxditimo12) - 팀장 및 Full-stack
-> #### [김태훈 (taeskim)](https://github.com/mtak0235) - Frontend 퍼블리싱 및 게임 구현
+> #### [김태선 (taeskim)](https://github.com/mtak0235) - Frontend 퍼블리싱 및 게임 구현
 > #### [탁민경 (mtak)](https://github.com/taeskim-42) - Backend 게임 구현
-> #### [이기훈 (gilee)](https://github.com/weg901127) - Infra 및 DBA
+> #### [이기영 (gilee)](https://github.com/weg901127) - Infra 및 DBA
 
 <br>
 
