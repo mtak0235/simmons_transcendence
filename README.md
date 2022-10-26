@@ -60,7 +60,7 @@ https://user-images.githubusercontent.com/74334399/197966928-32bc0962-c438-47b3-
 
 ## 📝 API 명세
 
-- [REST API 명세](https://app.swaggerhub.com/apis/NFL1RYXDITIMO12_1/ft_transcendance/1.0.0#/Users/post_v0_users__user_id__follow)
+- [REST API 명세](https://app.swaggerhub.com/apis/NFL1RYXDITIMO12_1/ft_transcendance/1.0.0)
 - [Socket API 명세](https://github.com/mtak0235/simmons_transcendence/wiki/Socket-API-%EB%AA%85%EC%84%B8)
 
 - [42 OAuth 시퀀스 다이어그램](https://github.com/mtak0235/simmons_transcendence/wiki/42-Login-%EC%8B%9C%ED%80%80%EC%8A%A4-%EB%8B%A4%EC%9D%B4%EC%96%B4%EA%B7%B8%EB%9E%A8)
