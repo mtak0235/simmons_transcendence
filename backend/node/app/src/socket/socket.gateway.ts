@@ -124,30 +124,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.rooms.clear();
   }
 
-  // todo: delete: 개발용 코드
-  @SubscribeMessage('test')
-  testUpdate(
-    @ConnectedSocket() client: ClientInstance,
-    @MessageBody('targetId', ParseIntPipe) targetId: number,
-  ) {
-    // todo: test
-    // console.log(client);
-    // console.log(this.server)
-    const calledClient = this.mainSocketService.getSocketInstance(targetId);
-    console.log(calledClient);
-    this.test1(calledClient);
-  }
-
-  @SubscribeMessage('test1')
-  test1(@ConnectedSocket() client: ClientInstance) {
-    client.emit('test1', { text: 'hello world!!' });
-  }
-
-  @SubscribeMessage('test2')
-  test2(@ConnectedSocket() client: ClientInstance) {
-    client.emit('test2', 'hello world!!');
-  }
-
   /* ============================================= */
   /*              #2 Channel Gateway               */
   /* ============================================= */
@@ -592,7 +568,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         !channel.channelPublic.onGame
       ) {
         clearInterval(channel.gameInfo.gameInterval);
-        await this.endGame(channel); // todo: endGame 구현
+        await this.endGame(channel);
         console.log('game end');
         return;
       }

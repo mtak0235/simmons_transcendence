@@ -28,8 +28,6 @@ export class MutedUser {
 export interface Matcher {
   userId: number;
   isReady: boolean;
-  //todo: 여기에  score가 왜있지?
-  // score: number;
 }
 
 export interface ChannelPublicDto {

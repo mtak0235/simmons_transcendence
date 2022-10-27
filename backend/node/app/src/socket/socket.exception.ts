@@ -33,7 +33,6 @@ export class SocketException {
   }
 }
 
-// todo: Custom Exception 만들자
 @Catch()
 export class SocketExceptionFilter extends BaseWsExceptionFilter {
   catch(exception: HttpException | any, host: ArgumentsHost) {

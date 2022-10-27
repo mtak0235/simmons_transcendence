@@ -214,7 +214,7 @@ const useChannelEvent = () => {
   };
 
   useEffect(() => {
-    // todo: update: 백엔드 채널 이름 수정 create -> created
+    // createChannel
     socket.on("single:channel:createChannel", handleSingleCreateChannel);
     socket.on("broad:channel:createChannel", handleBroadCreateChannel);
 

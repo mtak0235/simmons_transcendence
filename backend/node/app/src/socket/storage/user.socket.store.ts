@@ -11,15 +11,6 @@ import BaseSocketStore from '@socket/storage/base.socket.store';
 export class UserSocketStore extends BaseSocketStore<UserDto> {
   constructor() {
     super();
-
-    this.set(2000, {
-      userId: 2000,
-      username: 'unknown',
-      status: 'online',
-      follows: [],
-      blocks: [],
-      room: `room:user:${2000}`,
-    }); // todo: delete: 개발용 코드
   }
 
   findAll(): UserDto[] {

@@ -16,36 +16,6 @@ export class ChannelSocketStore extends BaseSocketStore<ChannelDto> {
 
   constructor(private readonly encryptionService: EncryptionService) {
     super();
-
-    this.set(0, {
-      channelPublic: {
-        channelId: this.channelIdx,
-        accessLayer: 'public',
-        channelName: '성수와 잼나는 겜 한판 하실 분!!',
-        score: 11,
-        adminId: 2000,
-        ownerId: 2000,
-        onGame: false,
-      },
-      channelPrivate: {
-        users: [2000],
-        waiter: [],
-        matcher: [
-          {
-            userId: 2000,
-            isReady: true,
-          },
-        ],
-      },
-      channelControl: {
-        room: `room:channel:${this.channelIdx}`,
-        password: '123123',
-        kickedOutUsers: [],
-        mutedUsers: [],
-        invited: [],
-      },
-      gameInfo: this.initialGameSetting(),
-    }); // todo: delete: 개발용 코드
   }
 
   findAllInfo(): ChannelPublicDto[] {

@@ -4,9 +4,6 @@ import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import HttpToken from "@domain/http/HttpToken";
 
-// todo: 통신 관련 오류 Filter 만들어서 직접 처리 하는걸로
-// todo: 집갔다와서 Socket도 빠르게 만들어버리자
-// todo: 함수가 너무 많은데 그냥 application 에서 param 받아올까 고민해보자 (taeskim님하고 같이)
 class Http extends IHttp {
   private async connect(request: HttpRequest): Promise<AxiosResponse> {
     request.headers["Authorization"] = `Bearer ${localStorage.getItem(
