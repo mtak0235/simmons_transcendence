@@ -293,7 +293,10 @@ function WaitingUserList() {
       />
       <Button type="primary" style={{ backgroundColor: "red", border: 0 }}>
         {waiters.map(({ userId }) => userId).includes(userId) && (
-          <Link to={"/"}>나가기</Link>
+          <Link to={"/"}>게임 대기 취소</Link>
+        )}
+        {!waiters.map(({ userId }) => userId).includes(userId) && (
+          <Link to={"/"}>게임 대기</Link>
         )}
       </Button>
     </GameWaitingQueue>
@@ -431,6 +434,9 @@ function Game() {
   const { showModal } = useModal();
   const [idx, setIdx] = useState(0);
   const userInfo = useUserInfo(idx);
+  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+  const [bothReady, setBothReady] = useState(false);
+  // const channelInfo = useChannel();
 
   useEffect(() => {
     console.log("hello");
@@ -448,6 +454,21 @@ function Game() {
 
   return (
     <Wrapper>
+      <Button
+        type="primary"
+        style={{ backgroundColor: "red", border: 0 }}
+        onClick={() => {
+          showModal({
+            modalType: "RoomInfoModal",
+            modalProps: {
+              // channelInfo: channelInfo,
+              message: "Success!",
+            },
+          });
+        }}
+      >
+        방 설정
+      </Button>
       <GameScreen>
         <GameScreenControl>
           {!onGame ? (
