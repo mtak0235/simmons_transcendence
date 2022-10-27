@@ -51,11 +51,11 @@ export class UserSocketService {
   }
 
   find(userId: number) {
-    return this.userSocketStore.find(userId);
+    return this.userSocketStore.get(userId);
   }
 
   switchStatus(userId: number, status: STATUS_LAYER): UserInfoDto {
-    const user = this.userSocketStore.find(userId);
+    const user = this.userSocketStore.get(userId);
     this.userSocketStore.update(user, { status: status });
     return {
       userId: user.userId,

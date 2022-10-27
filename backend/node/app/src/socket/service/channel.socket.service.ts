@@ -38,7 +38,7 @@ export class ChannelSocketService {
   }
 
   getChannel(channelId: number): ChannelDto {
-    return this.channelSocketStore.find(channelId);
+    return this.channelSocketStore.get(channelId);
   }
 
   async updateChannel(
@@ -67,7 +67,7 @@ export class ChannelSocketService {
     channelId: number,
     password?: string,
   ): Promise<ChannelDto> {
-    const channel: ChannelDto = this.channelSocketStore.find(channelId);
+    const channel: ChannelDto = this.channelSocketStore.get(channelId);
 
     if (!channel) throw new NotFoundException();
 
@@ -227,7 +227,7 @@ export class ChannelSocketService {
   }
 
   async sendDm(sourceId: number, targetId: number) {
-    const user = this.userSocketStore.find(targetId);
+    const user = this.userSocketStore.get(targetId);
 
     if (user.blocks.indexOf(sourceId) !== -1) {
       throw new ForbiddenException();

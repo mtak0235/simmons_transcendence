@@ -45,7 +45,7 @@ export class MainSocketService {
 
   async setClient(userInfo: Users): Promise<MainPageDto> {
     const mainPageDto: MainPageDto = {
-      me: this.userSocketStore.find(userInfo.id),
+      me: this.userSocketStore.get(userInfo.id),
       users: this.userSocketStore.findAllInfo(userInfo.id),
       channels: this.channelSocketStore.findAllInfo(),
     };

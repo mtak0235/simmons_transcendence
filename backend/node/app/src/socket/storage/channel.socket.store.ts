@@ -8,14 +8,16 @@ import {
   GameMatcherInfoDto,
 } from '@socket/dto/channel.socket.dto';
 import { EncryptionService } from '@util/encryption.service';
+import BaseSocketStore from '@socket/storage/base.socket.store';
 
 @Injectable()
-export class ChannelSocketStore {
+export class ChannelSocketStore extends BaseSocketStore<ChannelDto> {
   private channelIdx = 0;
-  private channels: Map<number, ChannelDto> = new Map();
 
   constructor(private readonly encryptionService: EncryptionService) {
-    this.channels.set(0, {
+    super();
+
+    this.set(0, {
       channelPublic: {
         channelId: this.channelIdx,
         accessLayer: 'public',
@@ -46,12 +48,8 @@ export class ChannelSocketStore {
     }); // todo: delete: 개발용 코드
   }
 
-  find(channelId: number): ChannelDto {
-    return this.channels.get(channelId);
-  }
-
   findAllInfo(): ChannelPublicDto[] {
-    return [...this.channels.values()]
+    return [...this.values()]
       .map((channel: ChannelDto): ChannelPublicDto => {
         if (channel.channelPublic.accessLayer !== 'private')
           return channel.channelPublic;
@@ -107,17 +105,13 @@ export class ChannelSocketStore {
       gameInfo: this.initialGameSetting(),
     };
 
-    this.channels.set(this.channelIdx, channel);
+    this.set(this.channelIdx, channel);
 
     return channel;
   }
 
   addUser(channelId: number, userId: number) {
-    const channel = this.find(channelId);
+    const channel = this.get(channelId);
     channel.channelPrivate.users.push(userId);
-  }
-
-  delete(channelId: number) {
-    this.channels.delete(channelId);
   }
 }

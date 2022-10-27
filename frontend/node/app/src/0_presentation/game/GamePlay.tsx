@@ -67,7 +67,7 @@ const Row = styled.div`
 `;
 
 const Score = styled.div`
-  font-size: 15px;
+  font-size: 50px;
   color: red;
 `;
 
