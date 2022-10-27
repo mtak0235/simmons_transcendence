@@ -18,6 +18,7 @@ abstract class ISocketEmit {
   public abstract readyGame();
   public abstract sendMessage(data: string);
   public abstract sendDirectMessage(data: SocketEmitDto.DirectMessage);
+  public abstract inputKey(data: SocketEmitDto.ChangeKeyPos);
 }
 
 export default ISocketEmit;

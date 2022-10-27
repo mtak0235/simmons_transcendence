@@ -6,7 +6,7 @@ import SocketDto from "SocketDto";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
-import { getRecoil } from "recoil-nexus";
+import { getRecoil, setRecoil } from "recoil-nexus";
 
 export const getTime = () => {
   const date = new Date();
@@ -24,15 +24,21 @@ const useChannelEvent = () => {
   const [channelPublic, setChannelPublic] = useRecoilState(
     RecoilAtom.channel.channelPublic
   );
-  const [, setChannelPrivate] = useRecoilState(
+  const [channelPrivate, setChannelPrivate] = useRecoilState(
     RecoilAtom.channel.channelPrivate
   );
   const [, setAlarm] = useRecoilState(RecoilAtom.alarm);
   const [, setMessage] = useRecoilState(RecoilAtom.channel.message);
   const [, setChannels] = useRecoilState(RecoilAtom.channel.channels);
+  const [, setRound] = useRecoilState(RecoilAtom.game.round);
+  const [, setOnGame] = useRecoilState(RecoilAtom.game.onGame);
+  const [, setOnRound] = useRecoilState(RecoilAtom.game.onRound);
+  const [, setMatcher] = useRecoilState(RecoilAtom.game.matcher);
+  const [, setBall] = useRecoilState(RecoilAtom.game.ball);
   const resetPublic = useResetRecoilState(RecoilAtom.channel.channelPublic);
   const resetPrivate = useResetRecoilState(RecoilAtom.channel.channelPrivate);
   const resetMessage = useResetRecoilState(RecoilAtom.channel.message);
+
   const navigate = useNavigate();
 
   const handleSingleCreateChannel = (data: SocketDto.ChannelSingle) => {
@@ -42,15 +48,27 @@ const useChannelEvent = () => {
   };
 
   const handleSingleInChannel = (data: SocketDto.ChannelSingle) => {
+    console.log("single:inChannel1");
     setChannelPublic(data.channelPublic);
     setChannelPrivate(data.channelPrivate);
+    console.log("single:inChannel2");
     navigate(`/game/${data.channelPublic.channelId}`); // todo: 맞는 게임 페이지로 이동
   };
 
   const handleSingleOutChannel = () => {
-    resetPublic();
-    resetPrivate();
-    resetMessage();
+    console.log("single:outChannel1");
+    setOnGame(false);
+    setOnRound(false);
+    setMatcher([]);
+    setBall(110);
+    setRound(0);
+    setChannelPublic(undefined);
+    setChannelPrivate(undefined);
+    setMessage(undefined);
+    // resetPublic();
+    // resetPrivate();
+    // resetMessage();
+    console.log("single:outChannel2");
     navigate("/");
   };
 
@@ -77,18 +95,16 @@ const useChannelEvent = () => {
   };
 
   const handleGroupInChannel = (data: number) => {
+    console.log("hello2222398749287348972");
     setChannelPrivate((curr) => {
-      const channel = { ...curr };
-      channel.users.push(data);
-      // curr.users.push(data);
-      return { ...channel };
+      return { ...curr, users: [...curr.users, data] };
     });
+    console.log("hello11123");
   };
 
   const handleGroupOutChannel = (data: number) => {
     setChannelPrivate((curr) => {
-      curr.users = curr.users.filter((id) => id !== data);
-      return { ...curr };
+      return { ...curr, users: [...curr.users.filter((id) => id !== data)] };
     });
   };
 
@@ -116,25 +132,21 @@ const useChannelEvent = () => {
   };
 
   const handleGroupWaitingGame = (data: SocketDto.GameQueue) => {
+    console.log(getRecoil(RecoilAtom.channel.channelPrivate));
     setChannelPrivate((curr) => {
-      curr.matcher = [...data.matcher];
-      curr.waiter = [...data.waiter];
-      return { ...curr };
+      return { ...curr, matcher: data.matcher, waiter: data.waiter };
     });
   };
 
   const handleGroupLeaveGame = (data: SocketDto.GameQueue) => {
     setChannelPrivate((curr) => {
-      curr.matcher = [...data.matcher];
-      curr.waiter = [...data.waiter];
-      return { ...curr };
+      return { ...curr, matcher: data.matcher, waiter: data.waiter };
     });
   };
 
   const handleGroupReadyGame = (data: SocketDto.Matcher[]) => {
     setChannelPrivate((curr) => {
-      curr.matcher = [...data];
-      return { ...curr };
+      return { ...curr, matcher: data };
     });
   };
 
@@ -152,7 +164,10 @@ const useChannelEvent = () => {
   };
 
   const handleBroadCreateChannel = (data: SocketDto.ChannelPublic) => {
-    setChannels((curr) => [...curr, data]);
+    console.log("channel1");
+    setRecoil(RecoilAtom.channel.channels, (currVal) => [...currVal, data]);
+    // setChannels((curr) => [...curr, data]);
+    console.log("channel2");
   };
 
   const handleBroadUpdateChannel = (data: SocketDto.ChannelPublic) => {
@@ -161,41 +176,45 @@ const useChannelEvent = () => {
     setChannels((curr) => {
       return [
         ...curr.map((channel) => {
-          if (channel.channelId === data.channelId) channel = data;
-          return channel;
+          if (channel.channelId === data.channelId) return { ...data };
+          else return { ...channel };
         }),
       ];
     });
   };
 
   const handleBroadDeleteChannel = (data: number) => {
+    console.log("gogo");
     setChannels((curr) => [
       ...curr.filter((channel) => channel.channelId !== data),
     ]);
+    console.log("gogo11");
   };
 
   const handleBroadSetAdmin = (data: SocketDto.ChannelAdmin) => {
     if (channelPublic.channelId === data.channelId) {
       setChannelPublic((curr) => {
-        curr.adminId = data.adminId;
-        curr.ownerId = data.ownerId;
-        return curr;
+        return { ...curr, adminId: data.adminId, ownerId: data.ownerId };
       });
     }
 
     setChannels((curr) => {
-      return curr.map((channel) => {
-        if (channel.channelId === data.channelId) {
-          channel.adminId = data.adminId;
-          channel.ownerId = data.ownerId;
-        }
-        return channel;
-      });
+      return [
+        ...curr.map((channel) => {
+          if (channel.channelId === data.channelId)
+            return {
+              ...channel,
+              adminId: data.adminId,
+              ownerId: data.ownerId,
+            };
+          else return { ...channel };
+        }),
+      ];
     });
   };
 
   useEffect(() => {
-    // todo: update: 백엔드 채널 이름 수정 create -> created
+    // createChannel
     socket.on("single:channel:createChannel", handleSingleCreateChannel);
     socket.on("broad:channel:createChannel", handleBroadCreateChannel);
 
@@ -231,9 +250,6 @@ const useChannelEvent = () => {
     // readyGame
     socket.on("group:channel:readyGame", handleGroupReadyGame);
 
-    // todo: 백엔드 개발에 따라 작성
-    // socket.on("group:channel:startGame", handleGroup.);
-
     // sendMSG
     socket.on("group:channel:sendMessage", handleGroupSendMessage);
 
@@ -242,7 +258,12 @@ const useChannelEvent = () => {
       "single:channel:sendDirectMessage",
       handleSingleSendDirectMessage
     );
-  }, []);
+
+    console.log("socket reRender");
+    return () => {
+      socket.reRender();
+    };
+  }, [socket]);
 
   return;
 };

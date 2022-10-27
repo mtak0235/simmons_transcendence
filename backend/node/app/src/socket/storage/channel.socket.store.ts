@@ -4,48 +4,42 @@ import {
   ChannelDto,
   ChannelCreateDto,
   ChannelPublicDto,
+  GameInfoDto,
+  GameMatcherInfoDto,
 } from '@socket/dto/channel.socket.dto';
 import { EncryptionService } from '@util/encryption.service';
+import BaseSocketStore from '@socket/storage/base.socket.store';
 
 @Injectable()
-export class ChannelSocketStore {
+export class ChannelSocketStore extends BaseSocketStore<ChannelDto> {
   private channelIdx = 0;
-  private channels: Map<number, ChannelDto> = new Map();
 
   constructor(private readonly encryptionService: EncryptionService) {
-    this.channels.set(0, {
-      channelPublic: {
-        channelId: this.channelIdx,
-        accessLayer: 'public',
-        channelName: '성수와 잼나는 겜 한판 하실 분!!',
-        score: 11,
-        adminId: 2000,
-        ownerId: 2000,
-        onGame: false,
-      },
-      channelPrivate: {
-        users: [2000],
-        waiter: [],
-        matcher: [],
-      },
-      password: '123123',
-      kickedOutUsers: [],
-      mutedUsers: [],
-      invited: [],
-    }); // todo: delete: 개발용 코드
-  }
-
-  find(channelId: number): ChannelDto {
-    return this.channels.get(channelId);
+    super();
   }
 
   findAllInfo(): ChannelPublicDto[] {
-    return [...this.channels.values()]
+    return [...this.values()]
       .map((channel: ChannelDto): ChannelPublicDto => {
         if (channel.channelPublic.accessLayer !== 'private')
           return channel.channelPublic;
       })
       .filter((channel) => channel);
+  }
+
+  initialGameSetting(): GameInfoDto {
+    return {
+      round: 0,
+      onRound: false,
+      pause: false,
+      ball: {
+        pos: Math.round((10 * 20) / 2) + 10,
+        speed: 200,
+        deltaX: -1,
+        deltaY: -20,
+      },
+      matcher: new Array<GameMatcherInfoDto>(2),
+    };
   }
 
   async create(channelCreateDto: ChannelCreateDto): Promise<ChannelDto> {
@@ -71,23 +65,23 @@ export class ChannelSocketStore {
         waiter: [],
         matcher: [],
       },
-      password: password,
-      kickedOutUsers: [],
-      mutedUsers: [],
-      invited: [],
+      channelControl: {
+        room: `room:channel:${this.channelIdx}`,
+        password: password,
+        kickedOutUsers: [],
+        mutedUsers: [],
+        invited: [],
+      },
+      gameInfo: this.initialGameSetting(),
     };
 
-    this.channels.set(this.channelIdx, channel);
+    this.set(this.channelIdx, channel);
 
     return channel;
   }
 
   addUser(channelId: number, userId: number) {
-    const channel = this.find(channelId);
+    const channel = this.get(channelId);
     channel.channelPrivate.users.push(userId);
-  }
-
-  delete(channelId: number) {
-    this.channels.delete(channelId);
   }
 }

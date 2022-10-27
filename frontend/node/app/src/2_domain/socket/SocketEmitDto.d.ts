@@ -30,6 +30,11 @@ declare module "SocketEmitDto" {
       targetId: number;
       message: string;
     }
+
+    interface ChangeKeyPos {
+      keyCode: number;
+      userIdx: number;
+    }
   }
 
   export default SocketEmitDto;

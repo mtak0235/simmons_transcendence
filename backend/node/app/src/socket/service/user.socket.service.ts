@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { UserSocketStore } from '@socket/storage/user.socket.store';
-import { STATUS_LAYER, UserDto } from '@socket/dto/user.socket.dto';
+import {
+  STATUS_LAYER,
+  UserDto,
+  UserInfoDto,
+} from '@socket/dto/user.socket.dto';
 import Users from '@entity/user.entity';
 import UserRepository from '@repository/user.repository';
 import FollowRepository from '@repository/follow.repository';
@@ -28,6 +32,7 @@ export class UserSocketService {
         status: 'online',
         follows: follows.map((value) => value.targetId),
         blocks: blocks.map((value) => value.targetId),
+        room: `room:user:${userInfo.id}`,
       };
 
       this.userSocketStore.save(user);
@@ -39,18 +44,24 @@ export class UserSocketService {
       );
 
       userInfo.follows = follows.map((value) => value.targetId);
-      this.switchStatus(userInfo, 'online');
+      // this.switchStatus(userInfo, 'online');
 
       return userInfo;
     }
   }
 
   find(userId: number) {
-    return this.userSocketStore.find(userId);
+    return this.userSocketStore.get(userId);
   }
 
-  switchStatus(user: UserDto, status: STATUS_LAYER) {
+  switchStatus(userId: number, status: STATUS_LAYER): UserInfoDto {
+    const user = this.userSocketStore.get(userId);
     this.userSocketStore.update(user, { status: status });
+    return {
+      userId: user.userId,
+      username: user.username,
+      status: status,
+    };
   }
 
   async block(user: UserDto, targetId: number) {

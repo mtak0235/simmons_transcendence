@@ -47,19 +47,18 @@ export class ChannelAuthInterceptor implements NestInterceptor {
     }
 
     if (
-      this.hasChannel &&
-      (client.channel.channelPublic.onGame ||
-        (this.admin &&
-          client.channel.channelPublic.adminId !== client.user.userId &&
-          client.channel.channelPublic.ownerId !== client.user.userId) ||
-        (this.owner &&
-          client.channel.channelPublic.ownerId !== client.user.userId) ||
-        (this.matcher &&
-          [
-            ...client.channel.channelPrivate.matcher.filter(
-              (user) => user.userId === client.user.userId,
-            ),
-          ].length !== 1))
+      (this.hasChannel &&
+        this.admin &&
+        client.channel.channelPublic.adminId !== client.user.userId &&
+        client.channel.channelPublic.ownerId !== client.user.userId) ||
+      (this.owner &&
+        client.channel.channelPublic.ownerId !== client.user.userId) ||
+      (this.matcher &&
+        [
+          ...client.channel.channelPrivate.matcher.filter(
+            (user) => user.userId === client.user.userId,
+          ),
+        ].length !== 1) // todo: matcher 인 경우 status가 waiting일 때만 가능하게 조건 추가
     ) {
       throw new ForbiddenException();
     }
@@ -76,12 +75,12 @@ export class ChannelMessageInterceptor implements NestInterceptor {
   ): Observable<any> | Promise<Observable<any>> {
     const client: ClientInstance = context.switchToWs().getClient();
 
-    client.channel.mutedUsers.map((user, idx) => {
+    client.channel.channelControl.mutedUsers.map((user, idx) => {
       if (user.userId === client.user.userId) {
         if (user.expiredAt >= Math.floor(new Date().getTime() / 1000)) {
           throw new ForbiddenException();
         } else {
-          client.channel.mutedUsers.splice(idx, 1);
+          client.channel.channelControl.mutedUsers.splice(idx, 1);
         }
       }
     });

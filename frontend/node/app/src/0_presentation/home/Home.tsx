@@ -20,6 +20,7 @@ import { useRecoilValue } from "recoil";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 import ISocketEmit from "@domain/socket/ISocketEmit";
 import Get from "@root/lib/di/get";
+import { useUserInfo } from "@application/user/useUser";
 
 const Wrapper = styled.div`
   display: flex;
@@ -135,33 +136,44 @@ function Pagination({ total, limit, page, setPage }) {
 
 function Content({ visible, users, friends }) {
   const { showModal } = useModal();
-  // const userInfo = useUserInfo(0);
+  const userInfo = useUserInfo(0);
 
-  // const handleUserInfoModal = () => {
-  //   showModal({
-  //     modalType: "UserInfoModal",
-  //     modalProps: {
-  //       userInfo: userInfo,
-  //       message: "Success!",
-  //     },
-  //   });
-  // };
+  const handleUserInfoModal = () => {
+    showModal({
+      modalType: "UserInfoModal",
+      modalProps: {
+        userInfo: userInfo,
+        message: "Success!",
+      },
+    });
+  };
   return (
     <ContentStyle style={{ overflow: "scroll" }}>
       {visible &&
-        users.map(({ userId, username }) => (
+        users.map(({ userId, username, status }) => (
           <List key={userId}>
             <ListItem disablePadding>
               <ListItemButton
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  console.log(`우클릭ㅋ ${userId}`);
+                }}
                 style={{
                   width: 180,
                   display: "flex",
                   textAlign: "center",
                   background: "lightgrey",
                 }}
-                // onClick={handleUserInfoModal}
+                onClick={handleUserInfoModal}
               >
-                <ListItemText>{username}</ListItemText>
+                <ListItemText>
+                  {status === "online"
+                    ? "🟢"
+                    : status === "inGame"
+                    ? "🔵"
+                    : "🟡"}{" "}
+                  {username}
+                </ListItemText>
               </ListItemButton>
             </ListItem>
           </List>

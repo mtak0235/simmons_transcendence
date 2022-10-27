@@ -27,7 +27,7 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(
         { id: id, type: 'access' },
-        { expiresIn: '30m' },
+        { expiresIn: '30d' }, // todo: update: 30m
       ),
       refreshToken: this.jwtService.sign({}, { expiresIn: '14d' }),
     };

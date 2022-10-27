@@ -3,7 +3,7 @@ declare module "SocketDto" {
     const STATUS_LAYER = {
       inGame: "inGame",
       waitingGame: "waitingGame",
-      watchingGame: "watchingGame",
+      inChannel: "inChannel",
       online: "online",
       offline: "offline",
     } as const;
@@ -120,6 +120,29 @@ declare module "SocketDto" {
       channelId: number;
       adminId: number;
       ownerId: number;
+    }
+
+    interface GameMatcherInfoDto {
+      userId: number;
+      score: number;
+      pos: number[];
+    }
+
+    interface GameBallInfoDto {
+      speed: number;
+      pos: number;
+      deltaX: number;
+      deltaY: number;
+    }
+
+    interface RoundInitialSetting {
+      matcher: GameMatcherInfoDto[];
+      ball: number;
+    }
+
+    interface ChangeKeyPos {
+      userIdx: number;
+      pos: number[];
     }
   }
 

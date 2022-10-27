@@ -2,6 +2,7 @@ import {
   IsEmpty,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -27,8 +28,6 @@ export class MutedUser {
 export interface Matcher {
   userId: number;
   isReady: boolean;
-  //todo: 여기에  score가 왜있지?
-  // score: number;
 }
 
 export interface ChannelPublicDto {
@@ -47,13 +46,42 @@ export interface ChannelPrivateDto {
   matcher: Matcher[];
 }
 
-export class ChannelDto {
-  channelPublic: ChannelPublicDto;
-  channelPrivate: ChannelPrivateDto;
+export interface ChannelControlDto {
+  room: string;
   password?: string;
   kickedOutUsers: number[];
   mutedUsers: MutedUser[];
   invited: number[];
+}
+
+export interface GameMatcherInfoDto {
+  userId: number;
+  score: number;
+  pos: number[];
+}
+
+export interface GameBallInfoDto {
+  speed: number;
+  pos: number;
+  deltaX: number;
+  deltaY: number;
+}
+
+export class GameInfoDto {
+  gameInterval?: NodeJS.Timer;
+  roundInterval?: NodeJS.Timer;
+  round: number;
+  onRound: boolean;
+  pause: boolean;
+  matcher: GameMatcherInfoDto[];
+  ball: GameBallInfoDto;
+}
+
+export class ChannelDto {
+  channelPublic: ChannelPublicDto;
+  channelPrivate: ChannelPrivateDto;
+  channelControl: ChannelControlDto;
+  gameInfo: GameInfoDto;
 }
 
 export class ChannelCreateDto {
@@ -77,15 +105,15 @@ export class ChannelCreateDto {
 }
 
 export class ChannelUpdateDto {
-  @IsEmpty()
+  @IsOptional()
   @IsString()
   channelName?: string;
 
-  @IsEmpty()
+  @IsOptional()
   @IsString()
   accessLayer?: ACCESS_LAYER;
 
-  @IsEmpty()
+  @IsOptional()
   @IsNumber()
   score?: number;
 }

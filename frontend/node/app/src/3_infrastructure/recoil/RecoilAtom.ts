@@ -55,6 +55,28 @@ const RecoilAtom = {
       default: [],
     }),
   },
+  game: {
+    round: atom<number>({
+      key: `game:round/${v1()}`,
+      default: 0,
+    }),
+    onGame: atom<boolean>({
+      key: `game:round/${v1()}`,
+      default: false,
+    }),
+    onRound: atom<boolean>({
+      key: `game:round/${v1()}`,
+      default: false,
+    }),
+    matcher: atom<SocketDto.GameMatcherInfoDto[]>({
+      key: `game:matcher/${v1()}`,
+      default: [],
+    }),
+    ball: atom<number>({
+      key: `game:ball/${v1()}`,
+      default: 110,
+    }),
+  },
   error: atom<SocketDto.Error>({
     key: `broad:error/${v1()}`,
     default: undefined,

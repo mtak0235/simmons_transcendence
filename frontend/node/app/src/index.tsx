@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import dependencyInject from "./3_infrastructure/core/DependencyInject";
@@ -87,12 +87,14 @@ dependencyInject();
 root.render(
   // <React.StrictMode>
   <RecoilRoot>
-    <RecoilNexus />
-    <ThemeProvider theme={theme}>
-      <GlobalModal />
-      <GlobalStyle />
-      <App />
-    </ThemeProvider>
+    <Suspense fallback={<div>Loading...</div>}>
+      <RecoilNexus />
+      <ThemeProvider theme={theme}>
+        <GlobalModal />
+        <GlobalStyle />
+        <App />
+      </ThemeProvider>
+    </Suspense>
   </RecoilRoot>
   // </React.StrictMode>
 );

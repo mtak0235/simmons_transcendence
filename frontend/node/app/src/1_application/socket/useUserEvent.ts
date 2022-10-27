@@ -7,7 +7,6 @@ import ISocket from "@domain/socket/ISocket";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 import { getRecoil, setRecoil } from "recoil-nexus";
-import { recoilUsers, userMe } from "@presentation/components/SocketHandler";
 
 const useUserEvent = () => {
   const socket: ISocket<any, any> = Get.get("ISocket");
@@ -54,6 +53,7 @@ const useUserEvent = () => {
   };
 
   const handleChangeStatus = (data: SocketDto.UserInfo) => {
+    console.log(data);
     setRecoil(RecoilAtom.user.users, (currVal) => {
       const userIdx = currVal.findIndex((user) => user.userId === data.userId);
 
@@ -65,8 +65,10 @@ const useUserEvent = () => {
         } else {
           return [
             ...currVal.map((user, idx) => {
-              if (idx === userIdx) user.status = data.status;
-              return user;
+              return {
+                ...user,
+                status: idx === userIdx ? data.status : user.status,
+              };
             }),
           ];
         }
@@ -74,6 +76,7 @@ const useUserEvent = () => {
 
       // return [...users];
     });
+    console.log(data);
   };
 
   useEffect(() => {

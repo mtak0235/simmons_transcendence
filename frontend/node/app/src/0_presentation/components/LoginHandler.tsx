@@ -16,19 +16,21 @@ import Login from "@presentation/auth/Login";
 import ISocket from "@domain/socket/ISocket";
 import Sign from "@presentation/auth/Sign";
 import Code from "@presentation/auth/Code";
+import { useNavigate } from "react-router-dom";
+import { v1 } from "uuid";
 
 interface LoginHandlerProps {
   children: React.ReactNode;
 }
 
 export const loginState: RecoilState<number> = atom<number>({
-  key: "loginState",
+  key: `loginState/${v1()}`,
   default: 0,
   effects_UNSTABLE: [recoilPersist().persistAtom],
 });
 
 export const getLoginState: RecoilValueReadOnly<number> = selector({
-  key: "loginState1",
+  key: `loginState1/${v1()}`,
   get: ({ get }) => get(loginState),
 });
 
@@ -46,7 +48,8 @@ export const getLoginState: RecoilValueReadOnly<number> = selector({
 const LoginHandler = ({ children }: LoginHandlerProps) => {
   const [isLoggedIn, setIsLoggedIn] = useRecoilState(loginState);
   const [socketConn, setSocketConn] = useState(null);
-  const conn: IHttp = Get.get("IHttp");
+  const http: IHttp = Get.get("IHttp");
+  const navigator = useNavigate();
 
   useEffect(() => {
     const token = queryString.parse(window.location.search);
@@ -65,6 +68,12 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
     //   });
     // }
     // checkToken().then();
+
+    // http.checkToken().then((value) => {
+    //   if (!value) http.clearToken();
+    //   navigator("");
+    //   console.log(value);
+    // }); // todo: 필요한 로직인지 생각해 봐야함
   }, []);
 
   useEffect(() => {

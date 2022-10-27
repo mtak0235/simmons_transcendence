@@ -12,6 +12,7 @@ import HttpToken from "@domain/http/HttpToken";
 import useChannelEvent from "@application/socket/useChannelEvent";
 import SocketDto from "SocketDto";
 import { v1 } from "uuid";
+import useGameEvent from "@application/socket/useGameEvent";
 
 interface SocketHandlerProps {
   children: React.ReactNode;
@@ -64,11 +65,27 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
   });
 
   useEffect(() => {
-    if (!socket.connected()) socket.connect();
-  }, [socket]);
+    if (!socket.connected()) {
+      socket.connect();
+      console.log(socket.socket);
+    }
+
+    return () => {
+      // if (socket.connected()) {
+      //   socket.reRender();
+      socket.disconnect();
+      window.location.href = "/";
+      // }
+    };
+  }, []);
+
+  // useEffect(() => {
+  //
+  // }, [window.location.href])
 
   useUserEvent();
   useChannelEvent();
+  useGameEvent();
 
   if (error) {
     console.log(error);

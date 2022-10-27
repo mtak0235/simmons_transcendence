@@ -13,6 +13,8 @@ import { useState } from "react";
 import ISocketEmit from "@domain/socket/ISocketEmit";
 import Get from "@root/lib/di/get";
 import SocketDto from "SocketDto";
+import { useRecoilValue } from "recoil";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
 
 export interface RoomMakeModalProps {
   message: string;
@@ -55,6 +57,7 @@ const RoomMakeModal = ({
 
   const socketEmit: ISocketEmit = Get.get("ISocketEmit");
 
+  const me = useRecoilValue(RecoilSelector.user.me);
   const [channelName, setChannelName] = useState("");
   const [accessLayer, setAccessLayer] = useState("public");
   const [password, setPassword] = useState("");
@@ -73,7 +76,7 @@ const RoomMakeModal = ({
     }
 
     socketEmit.createChannel({
-      ownerId: 11,
+      ownerId: me.userId,
       channelName,
       accessLayer,
       password: accessLayer === "protected" ? password : undefined,

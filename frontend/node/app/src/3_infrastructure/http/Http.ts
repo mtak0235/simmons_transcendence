@@ -4,9 +4,6 @@ import { IHttp } from "@domain/http/IHttp";
 import { HttpRequest } from "@domain/http/HttpRequest";
 import HttpToken from "@domain/http/HttpToken";
 
-// todo: 통신 관련 오류 Filter 만들어서 직접 처리 하는걸로
-// todo: 집갔다와서 Socket도 빠르게 만들어버리자
-// todo: 함수가 너무 많은데 그냥 application 에서 param 받아올까 고민해보자 (taeskim님하고 같이)
 class Http extends IHttp {
   private async connect(request: HttpRequest): Promise<AxiosResponse> {
     request.headers["Authorization"] = `Bearer ${localStorage.getItem(
@@ -14,7 +11,6 @@ class Http extends IHttp {
     )}`;
     request.headers["Access-Control-Allow-Origin"] = "*";
 
-    console.log(request);
     const response = await axios({
       url: process.env.REACT_APP_API_URL + request.path,
       method: request.method,
@@ -100,11 +96,18 @@ class Http extends IHttp {
    *
    * */
   public async firstAccess(value: any): Promise<void> {
+    const form = new FormData();
+
+    for (const key in value) if (value[key]) form.append(key, value[key]);
+
     const request = new HttpRequest({
       path: "/auth/login/access",
       token: "sign",
       method: "post",
-      data: value,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      data: form,
     });
     await this.connect(request);
     localStorage.removeItem("sign");
@@ -189,11 +192,18 @@ class Http extends IHttp {
 
   // todo: update param type to Image File
   // todo: multipart-form/data 처리
-  public async updateUserImage(value: any): Promise<void> {
+  public async updateUserImage(value: File): Promise<void> {
+    const form = new FormData();
+
+    form.append("image", value);
+
     const request = new HttpRequest({
       path: "/user/image",
       method: "put",
       data: value,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
     await this.interceptor(request);
   }
