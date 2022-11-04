@@ -207,6 +207,11 @@ function Side() {
   const [visible, setVisible] = useState(true);
   const users = useRecoilValue(RecoilSelector.user.users);
   const follows = useRecoilValue(RecoilSelector.user.onFollows);
+  const handleLike = event => {
+    this.setState({
+      likeHeart: !this.state.likeHeart,
+    });
+  };
 
   return (
     <>

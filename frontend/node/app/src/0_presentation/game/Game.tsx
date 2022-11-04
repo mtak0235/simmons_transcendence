@@ -17,6 +17,10 @@ import GamePlay from "@presentation/game/GamePlay";
 import SocketDto from "SocketDto";
 import socketEmit from "@infrastructure/socket/SocketEmit";
 import { getRecoil } from "recoil-nexus";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import  '@fortawesome/free-regular-svg-icons'; // ♡
+import '@fortawesome/free-solid-svg-icons';
+import {faArrowRightFromBracket, faMicrophoneLines, faMicrophoneLinesSlash} from "@fortawesome/free-solid-svg-icons"; // ♥︎
 
 const Wrapper = styled.div`
   display: flex;
@@ -138,6 +142,13 @@ const ContentStyle = styled.div`
   overflow: auto;
 `;
 
+const ListItemUserText = styled.div`
+  text-align: left;
+`
+
+const ListItemUserFacilitiy = styled.div`
+  text-align: right;
+`
 function ChatRoom({ nickName }) {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
@@ -175,6 +186,27 @@ function MessageItem({ item: message }) {
   return <div style={{ color: "red" }}>{message}</div>;
 }
 
+function UserFacility() {
+    const [mute, setMute] = useState(false);
+    const [expel, setExpel] = useState(true);
+
+    const handleMute = event => {
+        setMute(target => !target);
+        //todo: mute 하는 로직
+    }
+    const handleExpel = event => {
+        setExpel(target => !target);
+        //todo: expel 하는 로직
+    }
+    return (
+        <ListItemUserFacilitiy>
+            <FontAwesomeIcon
+                onClick={handleMute}
+                icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}/>
+            <FontAwesomeIcon onClick={handleExpel} icon={expel && faArrowRightFromBracket}/>
+        </ListItemUserFacilitiy>
+    );
+}
 function Content({ sidebar, users, friends }) {
   const { showModal } = useModal();
   const userInfo = useUserInfo(0);
@@ -196,21 +228,24 @@ function Content({ sidebar, users, friends }) {
             <ListItem disablePadding>
               <ListItemButton
                 style={{
-                  width: 180,
+                  width: "30%",
                   display: "flex",
                   textAlign: "center",
                   background: "lightgrey",
                 }}
-                onClick={handleUserInfoModal}
+                // onClick={handleUserInfoModal}
               >
                 <ListItemText>
+                    <ListItemUserText onClick={handleUserInfoModal}>
                   {status === "online"
                     ? "🟢"
                     : status === "inGame"
                     ? "🔵"
                     : "🟡"}{" "}
                   {username}
+                    </ListItemUserText>
                 </ListItemText>
+                <UserFacility/>
               </ListItemButton>
             </ListItem>
           </List>
@@ -414,7 +449,10 @@ function GameWaitingScreen() {
 function Game() {
   const socketEmit: ISocketEmit = Get.get("ISocketEmit");
   const me = useRecoilValue(RecoilSelector.user.me);
-  const users = useRecoilValue(RecoilSelector.user.users);
+  let users = useRecoilValue(RecoilSelector.user.users);
+  //todo: delete
+  users = [{userId:0, username:"zero", status:"inGame"},
+      {userId:1, username:"one", status:"inGame"}]
   // const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
   const [channelPrivate, setChannelPrivate] = useRecoilState(
     RecoilAtom.channel.channelPrivate
@@ -434,7 +472,7 @@ function Game() {
   const { showModal } = useModal();
   const [idx, setIdx] = useState(0);
   const userInfo = useUserInfo(idx);
-  const socketEmit: ISocketEmit = Get.get("ISocketEmit");
+  // const socketEmit: ISocketEmit = Get.get("ISocketEmit");
   const [bothReady, setBothReady] = useState(false);
   // const channelInfo = useChannel();
 
