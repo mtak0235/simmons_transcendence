@@ -188,22 +188,22 @@ function MessageItem({ item: message }) {
 
 function UserFacility() {
     const [mute, setMute] = useState(false);
-    const [expel, setExpel] = useState(true);
+    const [kickout, setKickout] = useState(true);
 
     const handleMute = event => {
         setMute(target => !target);
         //todo: mute 하는 로직
     }
-    const handleExpel = event => {
-        setExpel(target => !target);
-        //todo: expel 하는 로직
+    const handleKickout = event => {
+        setKickout(target => !target);
+        //todo: kickout 하는 로직
     }
     return (
         <ListItemUserFacilitiy>
             <FontAwesomeIcon
                 onClick={handleMute}
                 icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}/>
-            <FontAwesomeIcon onClick={handleExpel} icon={expel && faArrowRightFromBracket}/>
+            <FontAwesomeIcon onClick={handleKickout} icon={kickout && faArrowRightFromBracket}/>
         </ListItemUserFacilitiy>
     );
 }
