@@ -68,14 +68,16 @@ const WinningHistory = styled.div`
   padding: 10px;
   background: aquamarine;
 `
+
 function GameHistory({history, rate}) {
   return (
       <div>
         <WinningRate>승률
-        <p>{rate["won"] + "/" + rate["total"]}</p></WinningRate>
+        <p>{rate["won"] + " / " + rate["total"]}</p></WinningRate>
         <WinningHistory>전적
           <ul>
-            {history.map(opponent => <li>{opponent}에게 이김</li>)}
+            {history.map(opponent => (<li>{opponent.opponent}에게 {opponent.score.master} : {opponent.score.opponent}로 {
+              opponent.score.master > opponent.score.opponent? "이김" : "짐"}</li>))}
           </ul>
         </WinningHistory>
       </div>
@@ -107,20 +109,24 @@ const UserInfoModal = ({
     }
     hideModal();
   };
-  //todo: following 여부 데이터 넣어줘야 함.
+  //todo: 리코일 follows[]에 profile master Id 있으면 false,아니면 true
   const isFollowing = true;
   const [follow, setFollow] = useState(isFollowing);
   const handleFollow = event => {
     setFollow(target => !target);
-    //todo: follow 로직
+    //todo: 서버에 follow 요청.
   }
-  //todo: 프로필 조회자가 나인가?
+  //todo: 리코일에서 나의 id와 프로필 주인의 id가 같으면 true 아니면 false
   const isMe = false;
-  //todo: 차단 버튼 보이는 조건
-  const [block, setBlock] = useState(false);
+  //todo: 리코일 blocks[]에 해당 프로필 주인의 id가 있으면 true, 없으면 false
+  const blockCondition = false;
+  const [block, setBlock] = useState(blockCondition);
   const handleBlock = event => {
-    //todo:차단 로직
+    //todo: 서버에 block 요청.
   }
+  //todo:해당 프로필 주인의 이름 리코일에서 가져오기, 주인의 최근 경기 기록 5개 그리고 전체 승률 서버에서 가져오기
+  const username = "mtak";
+  const history = {"recentLog":[{"username": "seonkim", "score": {"master": 3, "opponenet": 2}}, {"username":"taeskim", "score": {"master":6, "opponent":3 }}], rate:{"total": 10, "won": 3}};
   return (
     <Dialog
       open
@@ -138,8 +144,8 @@ const UserInfoModal = ({
             src={userInfo.imagePath}
             sx={{ width: 150, height: 150 }}
           />
-          <Name>mtak</Name>
-          <GameHistory history={["a", "b"]} rate={{"total":10, "won":3}}/>
+          <Name>{username}</Name>
+          <GameHistory history={history["recentLog"]} rate={history["rate"]}/>
           { !isMe && <Button onClick={handleFollow}>{follow ? "unfollow" : "follow"}</Button>}
           {!isMe && <Button onClick={handleBlock}>{block ? "unblock" : "block"}</Button>}
         </UserInfo>

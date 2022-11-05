@@ -187,23 +187,25 @@ function MessageItem({ item: message }) {
 }
 
 function UserFacility() {
+    //todo: 리코일에서 사용자의 id가 방장이면 true ifnot, false
+    const isChief = true;
     const [mute, setMute] = useState(false);
-    const [kickout, setKickout] = useState(true);
+    const [kickout, setKickout] = useState(false);
 
     const handleMute = event => {
         setMute(target => !target);
-        //todo: mute 하는 로직
+        //todo: 서버에 mute요청
     }
     const handleKickout = event => {
         setKickout(target => !target);
-        //todo: kickout 하는 로직
+        //todo: 서버에 kickout 요청.
     }
     return (
         <ListItemUserFacilitiy>
-            <FontAwesomeIcon
+            {isChief && <FontAwesomeIcon
                 onClick={handleMute}
-                icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}/>
-            <FontAwesomeIcon onClick={handleKickout} icon={kickout && faArrowRightFromBracket}/>
+                icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}/>}
+            <FontAwesomeIcon onClick={handleKickout} icon={!kickout && faArrowRightFromBracket}/>
         </ListItemUserFacilitiy>
     );
 }
@@ -450,7 +452,7 @@ function Game() {
   const socketEmit: ISocketEmit = Get.get("ISocketEmit");
   const me = useRecoilValue(RecoilSelector.user.me);
   let users = useRecoilValue(RecoilSelector.user.users);
-  //todo: delete
+  //todo: 리코일에서 아래와 같은 데이터가 넘어와야 함.
   users = [{userId:0, username:"zero", status:"inGame"},
       {userId:1, username:"one", status:"inGame"}]
   // const channelPrivate = useRecoilValue(RecoilSelector.channel.private);

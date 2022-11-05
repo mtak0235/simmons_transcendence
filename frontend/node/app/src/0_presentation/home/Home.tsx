@@ -137,7 +137,7 @@ function Pagination({ total, limit, page, setPage }) {
 function Content({ visible, users, friends }) {
   const { showModal } = useModal();
   const userInfo = useUserInfo(0);
-
+//todo:
   const handleUserInfoModal = () => {
     showModal({
       modalType: "UserInfoModal",
@@ -207,6 +207,7 @@ function Side() {
   const [visible, setVisible] = useState(true);
   const users = useRecoilValue(RecoilSelector.user.users);
   const follows = useRecoilValue(RecoilSelector.user.onFollows);
+
 
   return (
     <>
