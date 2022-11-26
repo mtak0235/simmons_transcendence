@@ -187,6 +187,7 @@ function MessageItem({ item: message }) {
 }
 
 function UserFacility() {
+  
     //todo: 리코일에서 사용자의 id가 방장이면 true ifnot, false
     const isChief = true;
     const [mute, setMute] = useState(false);
