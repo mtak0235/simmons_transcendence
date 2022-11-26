@@ -32,7 +32,7 @@ export class FtStrategy extends PassportStrategy(Strategy, 'ft') {
         username: profile._json['login'],
         displayName: profile._json['login'],
         email: profile._json['email'],
-        imagePath: profile._json['image_url'],
+        imagePath: profile._json['image']['link'],
       });
     }
 
