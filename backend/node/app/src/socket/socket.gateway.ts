@@ -39,6 +39,7 @@ import {
   ChannelAuthInterceptor,
   ChannelMessageInterceptor,
 } from '@socket/interceptor/channel.socket.interceptor';
+import { DoesNotAccessOnGame } from '@socket/interceptor/game.socket.interceptor';
 
 export class ClientInstance extends Socket {
   user: UserDto;
@@ -99,16 +100,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
           new SocketException(500, 'Internal Server Error'),
         );
       }
-      this.handleDisconnect(client);
+      await this.handleDisconnect(client);
     }
   }
 
-  handleDisconnect(client: ClientInstance): void {
+  async handleDisconnect(client: ClientInstance): Promise<void> {
     if (client.user) {
-      console.log('================================');
-      console.log('================================');
-      console.log(client.channel);
-      if (client.channel) this.outChannel(client);
+      if (client.channel) await this.outChannel(client);
 
       this.mainSocketService.deleteSocketInstance(client.user.userId);
 
@@ -129,8 +127,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ============================================= */
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ hasChannel: false }),
     new SocketBodyCheckInterceptor('channel'),
+    new ChannelAuthInterceptor({ hasChannel: false }),
   )
   @SubscribeMessage('createChannel')
   async createChannel(
@@ -163,8 +161,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ admin: true }),
     new SocketBodyCheckInterceptor('channel'),
+    new ChannelAuthInterceptor({ admin: true }),
   )
   @UseInterceptors(new SocketBodyCheckInterceptor('channel'))
   @SubscribeMessage('modifyChannel')
@@ -186,8 +184,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ hasChannel: false }),
     new SocketBodyCheckInterceptor('channelId'),
+    new ChannelAuthInterceptor({ hasChannel: false }),
   )
   @SubscribeMessage('inChannel')
   async inChannel(
@@ -224,13 +222,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseInterceptors(new ChannelAuthInterceptor())
   @SubscribeMessage('outChannel')
   async outChannel(@ConnectedSocket() client: ClientInstance) {
+    if (client.channel && client.user.status === 'inGame')
+      await this.endGame(client.channel);
+
     const channelStatus = this.channelSocketService.outChannel(
       client.user,
       client.channel,
     );
-
-    client.leave(client.channel.channelControl.room);
-    this.server.to(client.user.room).emit('single:channel:outChannel');
 
     this.server
       .except(client.user.room)
@@ -239,7 +237,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.userSocketService.switchStatus(client.user.userId, 'online'),
       );
 
-    console.log(channelStatus);
     if (channelStatus.userExist) {
       if (channelStatus.ownerChange || channelStatus.adminChange)
         this.server.emit('broad:channel:setAdmin', {
@@ -261,12 +258,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
     }
 
+    client.leave(client.channel.channelControl.room);
+    this.server.to(client.user.room).emit('single:channel:outChannel');
     client.channel = undefined;
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor(),
     new SocketBodyCheckInterceptor('userId'),
+    new ChannelAuthInterceptor(),
+    DoesNotAccessOnGame,
   )
   @SubscribeMessage('inviteUser')
   inviteUser(
@@ -283,8 +283,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ owner: true }),
     new SocketBodyCheckInterceptor('userId'),
+    new ChannelAuthInterceptor({ owner: true }),
+    DoesNotAccessOnGame,
   )
   @SubscribeMessage('setAdmin')
   setAdmin(
@@ -301,27 +302,29 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ admin: true }),
     new SocketBodyCheckInterceptor('userId'),
+    new ChannelAuthInterceptor({ admin: true }),
+    DoesNotAccessOnGame,
   )
   @SubscribeMessage('kickOutUser')
-  kickOutUser(
+  async kickOutUser(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('userId', ParseIntPipe) userId: number,
   ) {
     this.channelSocketService.kickOutUser(client.channel, userId);
 
+    // todo: outChannel
     client.to(`room:user:${userId}`).emit('single:channel:kickOut');
     client
       .to(client.channel.channelControl.room)
       .emit('group:channel:kickOut', userId);
 
-    this.outChannel(this.mainSocketService.getSocketInstance(userId));
+    await this.outChannel(this.mainSocketService.getSocketInstance(userId));
   }
 
   @UseInterceptors(
-    new ChannelAuthInterceptor({ admin: true }),
     new SocketBodyCheckInterceptor('userId'),
+    new ChannelAuthInterceptor({ admin: true }),
   )
   @SubscribeMessage('muteUser')
   muteUser(
@@ -358,7 +361,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
   }
 
-  @UseInterceptors(new ChannelAuthInterceptor({ matcher: true }))
+  @UseInterceptors(
+    new ChannelAuthInterceptor({ matcher: true }),
+    DoesNotAccessOnGame,
+  )
   @SubscribeMessage('readyGame')
   readyGame(@ConnectedSocket() client: ClientInstance) {
     const readyCount = this.channelSocketService.readyGame(
@@ -403,15 +409,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
+    new SocketBodyCheckInterceptor('message'),
     new ChannelAuthInterceptor(),
     ChannelMessageInterceptor,
-    new SocketBodyCheckInterceptor('message'),
   )
   @SubscribeMessage('sendMessage')
   sendMessage(
     @ConnectedSocket() client: ClientInstance,
     @MessageBody('message') message: string,
   ) {
+    console.log(message);
     this.server
       .to(client.channel.channelControl.room)
       .emit('group:channel:sendMessage', {
@@ -421,9 +428,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @UseInterceptors(
+    new SocketBodyCheckInterceptor('targetId', 'message'),
     new ChannelAuthInterceptor(),
     ChannelMessageInterceptor,
-    new SocketBodyCheckInterceptor('targetId', 'message'),
   )
   @SubscribeMessage('sendDirectMessage')
   async sendDirectMessage(

@@ -70,6 +70,7 @@ export class ChannelSocketService {
     const channel: ChannelDto = this.channelSocketStore.get(channelId);
 
     if (!channel) throw new NotFoundException();
+    if (channel.channelPublic.onGame) throw new ForbiddenException();
 
     console.log(user);
 
@@ -78,7 +79,7 @@ export class ChannelSocketService {
       (channel.channelControl.invited.indexOf(user.userId) === -1 &&
         ((channel.channelPublic.accessLayer === 'protected' &&
           !(await this.encryptionService.compare(
-            password,
+            !password ? '' : password,
             channel.channelControl.password,
           ))) ||
           channel.channelPublic.accessLayer === 'private')) ||
@@ -145,11 +146,6 @@ export class ChannelSocketService {
       ownerChange: false,
     };
 
-    if (channel.channelPublic.ownerId === user.userId)
-      result.ownerChange = true;
-    else if (channel.channelPublic.adminId === user.userId)
-      result.adminChange = true;
-
     // todo: endGame func 만들어야 함
     channel.channelPrivate.matcher = channel.channelPrivate.matcher.filter(
       (matcher) => matcher.userId !== user.userId,
@@ -163,12 +159,13 @@ export class ChannelSocketService {
       (id) => id !== user.userId,
     );
 
-    if (
-      !channel.channelPrivate.matcher.length &&
-      !channel.channelPrivate.waiter.length &&
-      !channel.channelPrivate.users.length
-    )
-      result.userExist = false;
+    if (!channel.channelPrivate.users.length)
+      return { ...result, userExist: false };
+
+    if (channel.channelPublic.ownerId === user.userId)
+      result.ownerChange = true;
+    else if (channel.channelPublic.adminId === user.userId)
+      result.adminChange = true;
 
     if (result.userExist) {
       if (result.ownerChange) this.leaveOwner(channel);
