@@ -42,7 +42,7 @@ class Socket<
     ev: string,
     ...args: EventParams<EmitEvents, Ev>
   ): void {
-    this.socket?.emit(ev, ...args);
+    console.log(this.socket?.emit(ev, ...args));
   }
 
   public reRender(): void {

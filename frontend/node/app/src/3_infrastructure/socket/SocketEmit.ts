@@ -1,10 +1,14 @@
 import ISocketEmit from "@domain/socket/ISocketEmit";
 import ISocket from "@domain/socket/ISocket";
-import Get from "@root/lib/di/get";
 import SocketEmitDto from "SocketEmitDto";
 
 class SocketEmit extends ISocketEmit {
-  socket: ISocket<any, any> = Get.get("ISocket");
+  private socket: ISocket<any, any>;
+
+  constructor(socket: ISocket<any, any>) {
+    super();
+    this.socket = socket;
+  }
 
   // user
   public changeStatus(data: SocketEmitDto.STATUS_LAYER) {
@@ -31,6 +35,7 @@ class SocketEmit extends ISocketEmit {
     this.socket.emit("inChannel", { ...data });
   }
   public outChannel() {
+    console.log("나간다");
     this.socket.emit("outChannel");
   }
   public inviteUser(data: number) {
