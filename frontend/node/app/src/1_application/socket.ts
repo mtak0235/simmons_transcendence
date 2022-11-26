@@ -30,11 +30,6 @@ export const SOCKET_EVENT = {
   SINGLE_USER_FOLLOWUSER: "single:user:followUser",
   FOLLOWEDUSER: "followedUser",
 
-  //todo: remove
-  JOIN_ROOM: "JOIN_ROOM",
-  UPDATE_NICKNAME: "UPDATE_NICKNAME",
-  SEND_MESSAGE: "SEND_MESSAGE",
-  RECEIVE_MESSAGE: "RECEIVE_MESSAGE",
 };
 
 export const makeMessage = (pongData) => {

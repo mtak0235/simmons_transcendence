@@ -3,6 +3,8 @@ import styled from "styled-components";
 import User from "../../../2_domain/user/user";
 import useModal from "./hooks";
 import { userInfo } from "os";
+import {useState} from "react";
+import {Button} from "antd";
 
 export interface UserInfoModalProps {
   message: string;
@@ -22,7 +24,7 @@ const Wrapper = styled.div`
 const UserInfo = styled.div`
   display: flex;
   flex-grow: 3;
-  background-color: blue;
+  background-color: lightgrey;
   height: calc(100vh - 300px);
   justify-content: center;
   align-items: center;
@@ -52,10 +54,39 @@ const ExitButton = styled.button`
   cursor: pointer;
 `;
 
-const InfoRow = styled.div`
-  display: flex;
-`;
 
+
+const WinningRate = styled.div`
+  display: block;
+  width: 300px;
+  padding: 10px;
+  background: aquamarine;
+`
+const WinningHistory = styled.div`
+  display: block;
+  width: 300px;
+  padding: 10px;
+  background: aquamarine;
+`
+
+function GameHistory({history, rate}) {
+  return (
+      <div>
+        <WinningRate>승률
+        <p>{rate["won"] + " / " + rate["total"]}</p></WinningRate>
+        <WinningHistory>전적
+          <ul>
+            {history.map(opponent => (<li>{opponent.opponent}에게 {opponent.score.master} : {opponent.score.opponent}로 {
+              opponent.score.master > opponent.score.opponent? "이김" : "짐"}</li>))}
+          </ul>
+        </WinningHistory>
+      </div>
+  );
+}
+
+const Name = styled.div`
+  font-size: x-large;
+`
 const UserInfoModal = ({
   message,
   confirmText = "Ok",
@@ -78,7 +109,24 @@ const UserInfoModal = ({
     }
     hideModal();
   };
-
+  //todo: 리코일 follows[]에 profile master Id 있으면 false,아니면 true
+  const isFollowing = true;
+  const [follow, setFollow] = useState(isFollowing);
+  const handleFollow = event => {
+    setFollow(target => !target);
+    //todo: 서버에 follow 요청.
+  }
+  //todo: 리코일에서 나의 id와 프로필 주인의 id가 같으면 true 아니면 false
+  const isMe = false;
+  //todo: 리코일 blocks[]에 해당 프로필 주인의 id가 있으면 true, 없으면 false
+  const blockCondition = false;
+  const [block, setBlock] = useState(blockCondition);
+  const handleBlock = event => {
+    //todo: 서버에 block 요청.
+  }
+  //todo:해당 프로필 주인의 이름 리코일에서 가져오기, 주인의 최근 경기 기록 5개 그리고 전체 승률 서버에서 가져오기
+  const username = "mtak";
+  const history = {"recentLog":[{"username": "seonkim", "score": {"master": 3, "opponenet": 2}}, {"username":"taeskim", "score": {"master":6, "opponent":3 }}], rate:{"total": 10, "won": 3}};
   return (
     <Dialog
       open
@@ -96,7 +144,10 @@ const UserInfoModal = ({
             src={userInfo.imagePath}
             sx={{ width: 150, height: 150 }}
           />
-          <InfoRow>asdfa</InfoRow>
+          <Name>{username}</Name>
+          <GameHistory history={history["recentLog"]} rate={history["rate"]}/>
+          { !isMe && <Button onClick={handleFollow}>{follow ? "unfollow" : "follow"}</Button>}
+          {!isMe && <Button onClick={handleBlock}>{block ? "unblock" : "block"}</Button>}
         </UserInfo>
         <UserInfoSetting>
           <ExitButton onClick={onConfirm}>X</ExitButton>
@@ -111,7 +162,6 @@ const UserInfoModal = ({
           />
         </UserInfoSetting>
       </Wrapper>
-      s
     </Dialog>
   );
 };
