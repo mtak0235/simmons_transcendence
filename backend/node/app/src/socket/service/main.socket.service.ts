@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
@@ -52,7 +53,7 @@ export class MainSocketService {
     if (mainPageDto.me && mainPageDto.me.status !== 'offline') {
       // todo: delete: 개발용 if문, 삭제 필요, 조건문만 삭제해야 함
       // if (process.env.NODE_ENV !== 'local') {
-      throw new InternalServerErrorException('Forbidden');
+      throw new ForbiddenException();
       // }
     }
     mainPageDto.me = await this.userSocketService.connect(
