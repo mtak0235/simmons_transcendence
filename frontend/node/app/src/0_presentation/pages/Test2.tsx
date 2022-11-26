@@ -11,8 +11,6 @@ const Test2 = () => {
   useEffect(() => {
     console.log(channelPublic);
     console.log(channelPrivate);
-
-    if (!channelPrivate || !channelPublic) navigate("/");
   }, []);
 
   return (
