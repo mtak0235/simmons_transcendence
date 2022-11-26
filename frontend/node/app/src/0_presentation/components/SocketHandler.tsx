@@ -71,17 +71,10 @@ const SocketHandler = ({ children }: SocketHandlerProps) => {
     }
 
     return () => {
-      // if (socket.connected()) {
-      //   socket.reRender();
-      socket.disconnect();
+      // socket.disconnect();
       window.location.href = "/";
-      // }
     };
   }, []);
-
-  // useEffect(() => {
-  //
-  // }, [window.location.href])
 
   useUserEvent();
   useChannelEvent();
