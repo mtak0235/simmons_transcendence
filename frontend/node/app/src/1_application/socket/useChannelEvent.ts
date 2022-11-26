@@ -192,7 +192,7 @@ const useChannelEvent = () => {
   };
 
   const handleBroadSetAdmin = (data: SocketDto.ChannelAdmin) => {
-    if (channelPublic.channelId === data.channelId) {
+    if (channelPublic && channelPublic.channelId === data.channelId) {
       setChannelPublic((curr) => {
         return { ...curr, adminId: data.adminId, ownerId: data.ownerId };
       });
@@ -259,7 +259,6 @@ const useChannelEvent = () => {
       handleSingleSendDirectMessage
     );
 
-    console.log("socket reRender");
     return () => {
       socket.reRender();
     };
