@@ -4,12 +4,15 @@ import SocketDto from "SocketDto";
 interface IRecoilSelector {
   user: {
     me: RecoilValueReadOnly<SocketDto.User>;
+    userById: (param: number) => RecoilValueReadOnly<SocketDto.UserInfo>;
     users: RecoilValueReadOnly<SocketDto.UserInfo[]>;
     status: RecoilValueReadOnly<SocketDto.UserInfo>;
     onFollows: RecoilValueReadOnly<SocketDto.UserInfo[]>;
     newUser: RecoilValueReadOnly<SocketDto.UserInfo>;
   };
   channel: {
+    isOwner: RecoilValueReadOnly<boolean>;
+    isAdmin: RecoilValueReadOnly<boolean>;
     channels: RecoilValueReadOnly<SocketDto.ChannelPublic[]>;
     public: RecoilValueReadOnly<SocketDto.ChannelPublic>;
     private: RecoilValueReadOnly<SocketDto.ChannelPrivate>;

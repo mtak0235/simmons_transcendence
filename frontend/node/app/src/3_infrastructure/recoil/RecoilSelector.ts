@@ -1,4 +1,4 @@
-import { selector, selectorFamily } from "recoil";
+import { selector, selectorFamily, useRecoilValue } from "recoil";
 import SocketDto from "SocketDto";
 import RecoilAtom from "@infrastructure/recoil/RecoilAtom";
 import IRecoilSelector from "@domain/recoil/IRecoilSelector";
@@ -15,6 +15,15 @@ const RecoilSelector: IRecoilSelector = {
     me: selector({
       key: `selector:user:me/${v1()}`,
       get: ({ get }) => get(RecoilAtom.user.me),
+    }),
+    userById: selectorFamily({
+      key: `selector:user:userById/${v1()}`,
+      get:
+        (param: number) =>
+        ({ get }): SocketDto.UserInfo =>
+          useRecoilValue(RecoilSelector.user.users).find(
+            (user) => user.userId === param
+          ),
     }),
     users: selector({
       key: `selector:user:users/${v1()}`,
@@ -48,6 +57,26 @@ const RecoilSelector: IRecoilSelector = {
     }),
   },
   channel: {
+    isOwner: selector({
+      key: `selector:channel:isOwner/${v1()}`,
+      get: ({ get }): boolean => {
+        const channel = get(RecoilAtom.channel.channelPublic);
+        const user = get(RecoilAtom.user.me);
+        if (channel === undefined || user === undefined) return false;
+        return channel.ownerId === user.userId;
+      },
+    }),
+    isAdmin: selector({
+      key: `selector:channel:isAdmin/${v1()}`,
+      get: ({ get }): boolean => {
+        const channel = get(RecoilAtom.channel.channelPublic);
+        const user = get(RecoilAtom.user.me);
+        if (channel === undefined || user === undefined) return false;
+        return (
+          channel.adminId === user.userId || channel.ownerId === user.userId
+        );
+      },
+    }),
     channels: selector({
       key: `selector:channel:channels/${v1()}`,
       get: ({ get }) => get(RecoilAtom.channel.channels),
