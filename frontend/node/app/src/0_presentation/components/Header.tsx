@@ -6,6 +6,8 @@ import { getLoginState } from "@presentation/components/LoginHandler";
 import ISocket from "@domain/socket/ISocket";
 import Get from "@root/lib/di/get";
 import { IHttp } from "@domain/http/IHttp";
+import RecoilSelector from "@infrastructure/recoil/RecoilSelector";
+import useModal from "@presentation/components/modal/hooks";
 
 const Nav = styled.nav`
   display: flex;
@@ -65,6 +67,10 @@ function Header() {
   const isLoggedIn = useRecoilValue(getLoginState);
   const socket: ISocket<any, any> = Get.get("ISocket");
   const http: IHttp = Get.get("IHttp");
+  const isAdmin = useRecoilValue(RecoilSelector.channel.isAdmin);
+  const { showModal } = useModal();
+
+  console.log(">>>>> " + isAdmin);
 
   const handleLogout = async () => {
     await http.logout();
@@ -82,6 +88,22 @@ function Header() {
       </Col>
       <Col>
         {/*<LoginButton onClick={useLogin}>Login</LoginButton>*/}
+        {isAdmin ? (
+          <LoginButton
+            onClick={() => {
+              showModal({
+                modalType: "RoomInfoModal",
+                modalProps: {
+                  message: "Success!",
+                },
+              });
+            }}
+          >
+            방 설정
+          </LoginButton>
+        ) : (
+          <></>
+        )}
         <LoginButton>
           <Link to={"/test1"}>TEST</Link>
         </LoginButton>
