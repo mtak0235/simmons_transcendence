@@ -11,6 +11,7 @@ import { ChannelInterceptors } from '@socket/interceptor/channel.socket.intercep
 import { MainSocketStore } from '@socket/storage/main.socket.store';
 import { SocketController } from '@socket/socket.controller';
 import { GameSocketService } from '@socket/service/game.socket.service';
+import { GameInterceptors } from '@socket/interceptor/game.socket.interceptor';
 
 @Module({
   imports: [JwtModule],
@@ -25,6 +26,7 @@ import { GameSocketService } from '@socket/service/game.socket.service';
     ChannelSocketStore,
     MainSocketStore,
     ...ChannelInterceptors,
+    ...GameInterceptors,
   ],
 })
 export class SocketModule {}
