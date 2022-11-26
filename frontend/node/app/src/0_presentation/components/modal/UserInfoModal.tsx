@@ -109,6 +109,7 @@ const UserInfoModal = ({
     }
     hideModal();
   };
+  
   //todo: 리코일 follows[]에 profile master Id 있으면 false,아니면 true
   const isFollowing = true;
   const [follow, setFollow] = useState(isFollowing);
