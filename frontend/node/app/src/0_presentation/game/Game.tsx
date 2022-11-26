@@ -17,10 +17,14 @@ import GamePlay from "@presentation/game/GamePlay";
 import SocketDto from "SocketDto";
 import socketEmit from "@infrastructure/socket/SocketEmit";
 import { getRecoil } from "recoil-nexus";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import  '@fortawesome/free-regular-svg-icons'; // ♡
-import '@fortawesome/free-solid-svg-icons';
-import {faArrowRightFromBracket, faMicrophoneLines, faMicrophoneLinesSlash} from "@fortawesome/free-solid-svg-icons"; // ♥︎
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import "@fortawesome/free-regular-svg-icons"; // ♡
+import "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRightFromBracket,
+  faMicrophoneLines,
+  faMicrophoneLinesSlash,
+} from "@fortawesome/free-solid-svg-icons"; // ♥︎
 
 const Wrapper = styled.div`
   display: flex;
@@ -144,17 +148,19 @@ const ContentStyle = styled.div`
 
 const ListItemUserText = styled.div`
   text-align: left;
-`
+`;
 
 const ListItemUserFacilitiy = styled.div`
   text-align: right;
-`
-function ChatRoom({ nickName }) {
+`;
+
+const ChatRoom = () => {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
   let idx = useRef(0);
+
   const addItem = () => {
-    setMessages((prev) => [...prev, `[${nickName}]` + inputValue]);
+    setMessages((prev) => [...prev, `[user] - ` + inputValue]);
     setInputValue("");
   };
 
@@ -180,35 +186,40 @@ function ChatRoom({ nickName }) {
       <button onClick={addItem}>Send</button>
     </div>
   );
-}
+};
 
 function MessageItem({ item: message }) {
   return <div style={{ color: "red" }}>{message}</div>;
 }
 
 function UserFacility() {
-  
-    //todo: 리코일에서 사용자의 id가 방장이면 true ifnot, false
-    const isChief = true;
-    const [mute, setMute] = useState(false);
-    const [kickout, setKickout] = useState(false);
+  //todo: 리코일에서 사용자의 id가 방장이면 true ifnot, false
+  const isChief = true;
+  const [mute, setMute] = useState(false);
+  const [kickout, setKickout] = useState(false);
 
-    const handleMute = event => {
-        setMute(target => !target);
-        //todo: 서버에 mute요청
-    }
-    const handleKickout = event => {
-        setKickout(target => !target);
-        //todo: 서버에 kickout 요청.
-    }
-    return (
-        <ListItemUserFacilitiy>
-            {isChief && <FontAwesomeIcon
-                onClick={handleMute}
-                icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}/>}
-            <FontAwesomeIcon onClick={handleKickout} icon={!kickout && faArrowRightFromBracket}/>
-        </ListItemUserFacilitiy>
-    );
+  const handleMute = (event) => {
+    setMute((target) => !target);
+    //todo: 서버에 mute요청
+  };
+  const handleKickout = (event) => {
+    setKickout((target) => !target);
+    //todo: 서버에 kickout 요청.
+  };
+  return (
+    <ListItemUserFacilitiy>
+      {isChief && (
+        <FontAwesomeIcon
+          onClick={handleMute}
+          icon={mute ? faMicrophoneLines : faMicrophoneLinesSlash}
+        />
+      )}
+      <FontAwesomeIcon
+        onClick={handleKickout}
+        icon={!kickout && faArrowRightFromBracket}
+      />
+    </ListItemUserFacilitiy>
+  );
 }
 function Content({ sidebar, users, friends }) {
   const { showModal } = useModal();
@@ -236,19 +247,18 @@ function Content({ sidebar, users, friends }) {
                   textAlign: "center",
                   background: "lightgrey",
                 }}
-                // onClick={handleUserInfoModal}
               >
                 <ListItemText>
-                    <ListItemUserText onClick={handleUserInfoModal}>
-                  {status === "online"
-                    ? "🟢"
-                    : status === "inGame"
-                    ? "🔵"
-                    : "🟡"}{" "}
-                  {username}
-                    </ListItemUserText>
+                  <ListItemUserText onClick={handleUserInfoModal}>
+                    {status === "online"
+                      ? "🟢"
+                      : status === "inGame"
+                      ? "🔵"
+                      : "🟡"}{" "}
+                    {username}
+                  </ListItemUserText>
                 </ListItemText>
-                <UserFacility/>
+                <UserFacility />
               </ListItemButton>
             </ListItem>
           </List>
@@ -346,56 +356,11 @@ function GameWaitingScreen() {
   const me = useRecoilValue(RecoilSelector.user.me);
   const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
   const [matcher, setMatcher] = useState<SocketDto.Matcher[]>([]);
-  const [playerA, setPlayerA] = useState<SocketDto.Matcher>({
-    userId: 0,
-    isReady: false,
-  });
-  const [playerB, setPlayerB] = useState<SocketDto.Matcher>({
-    userId: 0,
-    isReady: false,
-  });
-
-  // const preventClose = (e: BeforeUnloadEvent) => {
-  //   e.preventDefault();
-  //   // e.returnValue = ""; // chrome에서는 설정이 필요해서 넣은 코드
-  // };
-  //
-  // // 브라우저에 렌더링 시 한 번만 실행하는 코드
-  // useEffect(() => {
-  //   (() => {
-  //     window.addEventListener("beforeunload", preventClose);
-  //   })();
-  //
-  //   return () => {
-  //     // window.location.href = "/";
-  //     window.removeEventListener("beforeunload", preventClose);
-  //   };
-  // }, []);
 
   useEffect(() => {
     if (channelPrivate.matcher && channelPrivate.matcher.length > 0)
       setMatcher(channelPrivate.matcher);
   }, [channelPrivate]);
-  //
-  // const userBox = matcher.map((user, idx) => {
-  //   console.log(user);
-  //   return (
-  //     <UserBox key={idx}>
-  //       <UserBoxInfo>{idx === 0 ? "Player A" : "Player B"}</UserBoxInfo>
-  //       <UserBoxInfo>{user.userId}</UserBoxInfo>
-  //
-  //       <Button
-  //         type="primary"
-  //         disabled={user.userId != me.userId}
-  //         onClick={() => {
-  //           socketEmit.readyGame();
-  //         }}
-  //       >
-  //         {user.isReady ? "준비완료" : "대기중"}
-  //       </Button>
-  //     </UserBox>
-  //   );
-  // });
 
   return (
     <>
@@ -418,51 +383,17 @@ function GameWaitingScreen() {
           </UserBox>
         );
       })}
-      {/*{userBox}*/}
-      {/*<UserBox>*/}
-      {/*  <UserBoxInfo>Player A</UserBoxInfo>*/}
-      {/*  <UserBoxInfo>{playerA ? playerA.userId : ""}</UserBoxInfo>*/}
-      {/*  <Link to={"/gamePlay"}>*/}
-      {/*    <Button*/}
-      {/*      type="primary"*/}
-      {/*      disabled={playerA.userId !== me.userId}*/}
-      {/*      onClick={() => {*/}
-      {/*        console.log("ready");*/}
-      {/*      }}*/}
-      {/*    >*/}
-      {/*      {playerA.isReady ? "준비완료" : "대기중"}*/}
-      {/*    </Button>*/}
-      {/*  </Link>*/}
-      {/*</UserBox>*/}
-      {/*<SizedBox width={50}></SizedBox>*/}
-      {/*<UserBox>*/}
-      {/*  <UserBoxInfo>Player B</UserBoxInfo>*/}
-      {/*  <UserBoxInfo>{playerB ? playerB.userId : ""}</UserBoxInfo>*/}
-      {/*  <Button*/}
-      {/*    type="primary"*/}
-      {/*    disabled={playerB.userId !== me.userId}*/}
-      {/*    onClick={() => console.log("ready")}*/}
-      {/*  >*/}
-      {/*    {playerB.isReady ? "준비완료" : "대기중"}*/}
-      {/*  </Button>*/}
-      {/*</UserBox>*/}
     </>
   );
 }
+
 function Game() {
   const socketEmit: ISocketEmit = Get.get("ISocketEmit");
-  const me = useRecoilValue(RecoilSelector.user.me);
   let users = useRecoilValue(RecoilSelector.user.users);
-  //todo: 리코일에서 아래와 같은 데이터가 넘어와야 함.
-  users = [{userId:0, username:"zero", status:"inGame"},
-      {userId:1, username:"one", status:"inGame"}]
-  // const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
-  const [channelPrivate, setChannelPrivate] = useRecoilState(
-    RecoilAtom.channel.channelPrivate
-  );
+  const channelPrivate = useRecoilValue(RecoilSelector.channel.private);
   const onGame = useRecoilValue(RecoilAtom.game.onGame);
   const [sidebar, setSidebar] = useState("chatting");
-  const [friends, setFriends] = useState([]);
+  const friends = useRecoilValue(RecoilSelector.user.onFollows);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -475,13 +406,10 @@ function Game() {
   const { showModal } = useModal();
   const [idx, setIdx] = useState(0);
   const userInfo = useUserInfo(idx);
-  // const socketEmit: ISocketEmit = Get.get("ISocketEmit");
-  const [bothReady, setBothReady] = useState(false);
-  // const channelInfo = useChannel();
 
   useEffect(() => {
     console.log("hello");
-  }, [getRecoil(RecoilSelector.channel.private)]);
+  }, [channelPrivate]);
 
   const handleClickUserInfoModal = () => {
     showModal({
@@ -495,21 +423,6 @@ function Game() {
 
   return (
     <Wrapper>
-      <Button
-        type="primary"
-        style={{ backgroundColor: "red", border: 0 }}
-        onClick={() => {
-          showModal({
-            modalType: "RoomInfoModal",
-            modalProps: {
-              // channelInfo: channelInfo,
-              message: "Success!",
-            },
-          });
-        }}
-      >
-        방 설정
-      </Button>
       <GameScreen>
         <GameScreenControl>
           {!onGame ? (
@@ -559,30 +472,10 @@ function Game() {
             친구 목록
           </Radio.Button>
         </Radio.Group>
-        {/* <DialogueWindow>
-          <MessageBox>
-            <ChatRoom></ChatRoom>
-            <Message></Message>
-          </MessageBox>
-        </DialogueWindow> */}
-        {/* <Input.Group compact> */}
-        {sidebar == "chatting" && <ChatRoom nickName={"ts"}></ChatRoom>}
+        {sidebar == "chatting" && <ChatRoom></ChatRoom>}
         {(sidebar == "total" || sidebar == "friend") && (
           <Content sidebar={sidebar} users={users} friends={friends}></Content>
         )}
-        {/* <Input
-            style={{ width: "calc(100% - 100px)" }}
-            placeholder="입력해주세요."
-            value={inputValue}
-          />
-          <Button
-            type="primary"
-            style={{ width: "100px" }}
-            onClick={() => addMessage()}
-          >
-            Submit
-          </Button> */}
-        {/* </Input.Group> */}
       </ChattingScreen>
     </Wrapper>
   );
